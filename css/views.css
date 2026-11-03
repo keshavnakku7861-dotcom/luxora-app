@@ -256,3 +256,16 @@
 #viewShop .dealcard__head { font-size: 13px; color: var(--gray-600); }
 #viewShop .dealcard__price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; } #viewShop .dealcard__price strong { font-size: 22px; font-weight: 500; color: var(--orange-deep); } #viewShop .dealcard__price small { flex-basis: 100%; font-size: 12px; color: var(--gray-600); }
 @media (max-width: 760px) { #viewShop .deals__grid { grid-template-columns: 1fr; } #viewShop .dealcard { grid-template-columns: 96px minmax(0, 1fr); } #viewShop .dealcard h3 { font-size: 16px; } }
+
+/* settings */
+#viewSettings .settings { max-width: 720px; padding-bottom: 40px; }
+#viewSettings .sset { border: 1px solid var(--gray-100); border-radius: 14px; padding: 24px; margin-top: 8px; }
+#viewSettings .sset h2 { font-size: 20px; font-weight: 500; margin-bottom: 16px; }
+#viewSettings .sset__who { display: flex; align-items: center; gap: 18px; }
+#viewSettings .sset__who .auth__avatar { margin: 0; flex: none; }
+#viewSettings dl { margin: 0; display: grid; gap: 10px; min-width: 0; }
+#viewSettings dt { font-size: 12px; color: var(--gray-600); } #viewSettings dd { margin: 2px 0 0; font-size: 15px; overflow-wrap: anywhere; }
+#viewSettings .sset__note { margin-top: 16px; font-size: 13px; color: var(--gray-600); }
+#viewSettings .sset__foot { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--gray-100); display: flex; justify-content: flex-start; }
+#viewSettings .sset__logout { min-width: 140px; }
+#viewSettings .eyebrow { font-size: 12px; color: var(--gray-600); margin-bottom: 6px; }

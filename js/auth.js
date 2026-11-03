@@ -69,8 +69,8 @@
   }
   function accountView(p) {
     dlg.replaceChildren();
-    const out = el('button', { type: 'button', class: 'btn btn--ghost', text: 'Sign out' });
-    out.addEventListener('click', () => { mem = null; write(null); paint(); close(); announce('Signed out'); });
+    const out = el('button', { type: 'button', class: 'btn btn--ghost', text: 'Log out' });
+    out.addEventListener('click', () => { mem = null; write(null); paint(); close(); announce('Logged out'); });
     const done = el('button', { type: 'button', class: 'btn', text: 'Close' }); done.addEventListener('click', close);
     const av = el('span', { class: 'auth__avatar', 'aria-hidden': 'true', text: p.name.trim().charAt(0).toUpperCase() });
     dlg.append(closeBtn(), av, el('h2', { id: 'authTitle', text: `Hi, ${first(p.name)}` }), el('p', { class: 'auth__lead', text: p.email }),
@@ -88,5 +88,5 @@
   window.addEventListener('storage', e => { if (e.key === KEY) { mem = null; paint(); } });
   const init = () => paint();
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
-  window.LuxoraAuth = { profile: get, open, signOut() { mem = null; write(null); paint(); } };
+  window.LuxoraAuth = { profile: get, open, logOut() { mem = null; write(null); paint(); } };
 })();

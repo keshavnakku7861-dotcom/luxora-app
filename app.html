@@ -18,6 +18,7 @@
       <a class="rail__btn on" id="navHome" href="#/assistant" aria-label="Assistant" title="Assistant" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10"/></svg></a>
       <a class="rail__btn" id="navSaved" href="#/saved" aria-label="Saved items" title="Saved items"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg><b class="badge" data-saved-badge hidden>0</b></a>
       <a class="rail__btn" id="navCart" href="#/shop" aria-label="Shop and cart" title="Shop &amp; cart"><svg viewBox="0 0 24 24"><path d="M3 4h2.5l2 11h10l2-8H7M9 20h.01M17 20h.01"/></svg><b class="badge" data-cart-badge hidden>0</b></a>
+      <a class="rail__btn" id="navSettings" href="#/settings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/></svg></a>
     </nav>
     <div class="rail__bottom"><button type="button" class="avatar" data-signin data-auth-keep title="Sign in" aria-label="Sign in"><span data-auth-initial></span><svg class="avatar__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.4 7-5.4s6.2 1.8 7 5.4"/></svg></button></div>
   </aside>
@@ -99,6 +100,17 @@
     <footer class="vfoot">Prototype with sample products and prices. Checkout is a demonstration only; no payment is taken and no order is placed.</footer>
   </section>
 
+  <!-- settings view -->
+  <section class="view view--page" id="viewSettings" aria-label="Settings" hidden>
+    <div class="settings">
+      <div class="vhead"><div><p class="eyebrow">Your account</p><h1>Settings</h1></div></div>
+      <section class="sset" aria-labelledby="setProfile">
+        <h2 id="setProfile">Profile</h2>
+        <div id="profileBody"></div>
+      </section>
+    </div>
+  </section>
+
   <!-- cart drawer (stays inside the stage so the sidebar remains visible) -->
   <div class="drawer" id="drawer" hidden>
     <div class="drawer__scrim" data-close-drawer></div>
@@ -128,6 +140,7 @@
 <script src="js/app.js"></script>
 <script src="js/shop.js"></script>
 <script src="js/saved.js"></script>
+<script src="js/settings.js"></script>
 <script src="js/router.js"></script>
 </body>
 </html>
