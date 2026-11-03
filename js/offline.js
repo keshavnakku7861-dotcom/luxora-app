@@ -77,6 +77,10 @@ async function respond(message) {
   const cats = detectCategories(text);
   const words = lower.split(/[^a-z]+/).filter(Boolean);
 
+  if (cats.length === 0 && /\b(grocer(y|ies)|food|snacks?|fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower)) {
+    const which = /\b(fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower) ? 'Fashion' : 'Groceries';
+    return { reply: `${which} isn't available on Luxora yet. I can help with electronics: smart rings, smartwatches, earbuds and headphones. Try “best smart ring under $500”.`, products: [] };
+  }
   if (/^(hi|hello|hey|yo|good (morning|afternoon|evening))\b/.test(lower) && cats.length === 0) {
     return { reply: "Hi! I'm Luxora, your AI shopping assistant. Tell me what you're shopping for, your budget, or a brand, and I'll recommend the best options. Try “best smart ring under $500”.", products: [] };
   }
@@ -153,6 +157,11 @@ async function respond(message, ctx = {}) {
   }
   if (/\b(thanks|thank you|thx|ty)\b/.test(lower)) {
     return { reply: pick(["Anytime! Shout if you need anything else.", "Happy to help! Enjoy your new gear."]), products: [] };
+  }
+
+  if (!/\b(rings?|watch(es)?|buds|earbuds?|headphones?|cans)\b/.test(lower) && /\b(grocer(y|ies)|food|snacks?|fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower)) {
+    const which = /\b(fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower) ? 'Fashion' : 'Groceries';
+    return { reply: `${which} isn't on Luxora's shelves just yet, so I can't recommend anything there right now. What I can do well is electronics: smart rings, smartwatches, earbuds and headphones. Want me to pull up the top picks?`, products: [] };
   }
 
   const out = await rules.respond(text, ctx);

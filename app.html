@@ -19,34 +19,39 @@
       <a class="rail__btn" id="navSaved" href="#/saved" aria-label="Saved items" title="Saved items"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg><b class="badge" data-saved-badge hidden>0</b></a>
       <a class="rail__btn" id="navCart" href="#/shop" aria-label="Shop and cart" title="Shop &amp; cart"><svg viewBox="0 0 24 24"><path d="M3 4h2.5l2 11h10l2-8H7M9 20h.01M17 20h.01"/></svg><b class="badge" data-cart-badge hidden>0</b></a>
     </nav>
-    <div class="rail__bottom"><span class="avatar" title="You">K</span></div>
+    <div class="rail__bottom"><button type="button" class="avatar" data-signin data-auth-keep title="Sign in" aria-label="Sign in"><span data-auth-initial></span><svg class="avatar__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.4 7-5.4s6.2 1.8 7 5.4"/></svg></button></div>
   </aside>
 
   <div class="stage" id="stage">
-  <div class="view view--assistant" id="viewAssistant">
+  <div class="view view--assistant is-empty" id="viewAssistant">
   <main class="chat">
     <header class="chat__top">
-      <div class="tabs"><span class="tab on">AI Assistant</span><span class="tab">Chat</span></div>
-      <a href="index.html" class="x" aria-label="Close and return to landing page">&#10005;</a>
+      <div class="tabs"><span class="tab on" aria-current="true"><span data-sparkle="13" class="tab__ic"></span>AI Assistant</span></div>
+      <div class="chat__tools">
+        <span class="hello" data-auth-name hidden></span>
+        <button type="button" class="newchat" id="newChat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>New chat</span></button>
+        <a href="index.html" class="x" aria-label="Close and return to landing page">&#10005;</a>
+      </div>
     </header>
     <div class="feed" id="feed" aria-live="polite">
       <section class="empty" id="empty">
         <span data-logo class="empty__logo"></span>
         <h1>What can I help you shop for today?</h1>
-        <p>Ask about any product, price or brand, and Luxora will recommend the best options for your needs.</p>
-        <div class="chips" id="chips">
-          <button class="chip" data-q="Best smart ring under $500 for everyday health"><i>&#9678;</i>Smart rings</button>
-          <button class="chip" data-q="Best smartwatch for fitness and running"><i>&#9719;</i>Smartwatches</button>
-          <button class="chip" data-q="Earbuds for my commute under $200"><i>&#9835;</i>Earbuds</button>
-          <button class="chip" data-q="Noise cancelling headphones for work"><i>&#9790;</i>Headphones</button>
+        <p>Describe what you need and Luxora will analyze your options, compare trusted brands and recommend the best products with confidence.</p>
+        <div class="chips" id="chips" role="group" aria-label="Shop by category">
+          <button type="button" class="chip" data-q="Show me the best electronics"><span class="chip__ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M9 20h6M12 16v4"/></svg></span><b>Electronics</b><small>Discover the latest gadgets and tech</small></button>
+          <button type="button" class="chip" data-q="Help me with my weekly groceries"><span class="chip__ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2.5l2 11h10l2-8H7"/><circle cx="9" cy="19.5" r="1"/><circle cx="17" cy="19.5" r="1"/></svg></span><b>Groceries</b><small>Everyday essentials and fresh food</small></button>
+          <button type="button" class="chip" data-q="Help me find something to wear"><span class="chip__ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 7l2 4 2-1v10h9V10l2 1 2-4L15 4a3 3 0 0 1-6 0Z"/></svg></span><b>Fashion</b><small>Clothing, shoes and accessories</small></button>
         </div>
       </section>
     </div>
     <form class="composer" id="composer" autocomplete="off">
       <label class="sr-only" for="msg">Message</label>
+      <div class="composer__file" id="attached" hidden></div>
       <input id="msg" name="message" placeholder="Ask about any product, price, or brand..." maxlength="500">
-      <span class="clip" aria-hidden="true">&#128206;</span>
-      <button class="send" type="submit" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M4 12 20 4l-5 16-3-7-8-1Z"/></svg></button>
+      <input type="file" id="file" accept="image/*" hidden tabindex="-1">
+      <button class="attach" id="attachBtn" type="button" aria-label="Add attachment"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 11-8.2 8.2a5 5 0 0 1-7-7L13.4 3.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg><span>Add attachment</span></button>
+      <button class="send" type="submit" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-5 16-3-7-8-1Z"/></svg></button>
     </form>
   </main>
 
@@ -115,6 +120,7 @@
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="js/art.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/offline.js"></script>
 <script src="js/store.js"></script>
 <script src="js/deals.js"></script>

@@ -10,7 +10,9 @@
 .nav__links { display: flex; gap: 36px; font-size: 14px; color: var(--gray-600); }
 .nav__links a:hover { color: var(--black); }
 .nav__cta { display: flex; align-items: center; gap: 18px; justify-self: end; }
-.nav__signin { font-size: 14px; }
+.nav__signin { font-size: 14px; background: none; border: 0; padding: 6px 4px; color: var(--black); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav__signin:hover { color: var(--orange-deep); }
+html { scroll-behavior: smooth; } section[id], header[id] { scroll-margin-top: 72px; }
 .nav__signin--m { display: none; }
 .nav__burger { display: none; width: 36px; height: 36px; border: 1px solid var(--gray-200); background: var(--white); border-radius: 6px; padding: 9px 8px; flex-direction: column; justify-content: space-between; }
 .nav__burger span { display: block; height: 2px; background: var(--black); border-radius: 2px; }
@@ -99,23 +101,11 @@ h2 { font-size: clamp(28px, 3.4vw, 40px); line-height: 1.1; letter-spacing: -.02
 .guided__rec > span { height: 110px; display: flex; } .guided__rec em { font-style: normal; color: var(--gray-600); }
 .showcase__grid--guided .phone__screen { gap: 8px; }
 
-/* pricing */
-.pricing { padding: 72px 0 80px; }
-.price-grid { margin-top: 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.price-grid article { border: 1px solid var(--gray-100); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
-.price-grid article.on { background: var(--gray-50); border-color: var(--black); }
-.price-grid strong { font-size: 36px; font-weight: 500; } .price-grid small { font-size: 14px; color: var(--gray-600); }
-.price-grid ul { list-style: none; margin: 0 0 12px; padding: 0; font-size: 13px; color: var(--gray-600); display: grid; gap: 6px; flex: 1; }
-.price-grid li::before { content: "\2726  "; color: var(--orange); }
 
 .foot { border-top: 1px solid var(--gray-100); padding: 28px 0; }
 .foot__in { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .foot small { color: var(--gray-400); font-size: 12px; max-width: 520px; }
 
-dialog { border: 0; border-radius: 14px; padding: 28px; max-width: 360px; box-shadow: 0 20px 60px var(--shadow); }
-dialog::backdrop { background: var(--scrim); }
-dialog p { margin: 8px 0 18px; color: var(--gray-600); font-size: 14px; }
-.dlg-btns { display: flex; gap: 10px; }
 
 /* tablet / mobile */
 @media (max-width: 860px) {
@@ -132,7 +122,7 @@ dialog p { margin: 8px 0 18px; color: var(--gray-600); font-size: 14px; }
   .nav__cta .nav__signin { display: none; }
   .nav__links { display: none; position: absolute; top: 64px; left: 0; right: 0; flex-direction: column; gap: 0; background: var(--white); border-bottom: 1px solid var(--gray-100); padding: 8px 16px 16px; font-size: 16px; color: var(--black); }
   .nav__links.open { display: flex; } .nav__links a { padding: 12px 0; border-bottom: 1px solid var(--gray-100); }
-  .nav__signin--m { display: block; }
+  .nav__signin--m { display: block; text-align: left; font-size: 16px; padding: 12px 0; max-width: none; }
   .hero { padding: 36px 0 28px; }
   .hero__btns .btn { padding: 0 20px; }
   .stage__panel { height: 400px; justify-content: center; padding: 0; align-items: flex-end; }
@@ -140,7 +130,6 @@ dialog p { margin: 8px 0 18px; color: var(--gray-600); font-size: 14px; }
   .stage__panel .phone--tilt-r { margin-bottom: -40px; transform: rotate(-5deg); }
   .stage__spark { left: 14%; top: 14%; transform: none; }
   .how { padding-top: 56px; } .how__head { flex-direction: column; }
-  .price-grid { grid-template-columns: 1fr; }
   .foot__in { flex-direction: column; align-items: flex-start; }
 }
 .sec-icon .sparkle { color: var(--white); }
@@ -149,3 +138,7 @@ dialog p { margin: 8px 0 18px; color: var(--gray-600); font-size: 14px; }
 
 .was { color: var(--gray-400); font-weight: 400; font-size: .8em; margin-right: 4px; }
 .is-deal { color: var(--orange-deep); }
+
+.built__go { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--gray-200); display: grid; place-items: center; font-size: 16px; transition: background .15s, color .15s; }
+.built__go:hover { background: var(--black); color: var(--white); border-color: var(--black); }
+@media (max-width: 720px) { .nav__links button.nav__signin--m { border: 0; border-bottom: 1px solid var(--gray-100); width: 100%; } }

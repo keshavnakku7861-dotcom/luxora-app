@@ -15,12 +15,12 @@
   <div class="wrap nav__in">
     <a href="#top" class="logo" aria-label="Luxora home"><span data-logo class="logo__mark"></span>Luxora</a>
     <nav class="nav__links" id="navLinks" aria-label="Primary">
-      <a href="#features">Features</a><a href="#how">How it Works</a><a href="#pricing">Pricing</a>
-      <a href="#" class="nav__signin nav__signin--m" data-signin>Sign In</a>
+      <a href="#features">Features</a><a href="#how">How it Works</a><a href="#signup">Deals</a>
+      <button type="button" class="nav__signin nav__signin--m" data-signin>Sign In</button>
     </nav>
     <div class="nav__cta">
-      <a href="#" class="nav__signin" data-signin>Sign In</a>
-      <a href="app.html" class="btn btn--sm">Get a Demo</a>
+      <button type="button" class="nav__signin" data-signin>Sign In</button>
+      <a href="app.html" class="btn btn--sm">Open App</a>
       <button class="nav__burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -77,10 +77,10 @@
 <section class="built wrap" id="features">
   <h2>Built for Smarter<br>Shopping</h2>
   <ul class="built__list">
-    <li><div><h3>AI Product Recommendations</h3><p>AI recommends products matching your needs and budget.</p></div><span>&#8599;</span></li>
-    <li><div><h3>Smart Product Comparison</h3><p>Compare trusted products from trusted brands in one place.</p></div><span>&#8599;</span></li>
-    <li><div><h3>Order &amp; Delivery Assistant</h3><p>AI guides your purchase from selection to delivery.</p></div><span>&#8599;</span></li>
-    <li><div><h3>Price Tracking &amp; Alerts</h3><p>Stay informed on price drops and delivery tracking.</p></div><span>&#8599;</span></li>
+    <li><div><h3>AI Product Recommendations</h3><p>AI recommends products matching your needs and budget.</p></div><a class="built__go" href="app.html?q=Best%20smart%20ring%20under%20%24500%20for%20everyday%20health" aria-label="Try AI product recommendations in the app">&#8599;</a></li>
+    <li><div><h3>Smart Product Comparison</h3><p>Compare trusted products from trusted brands in one place.</p></div><a class="built__go" href="app.html?q=Compare%20Aura%20Ring%20and%20Nova%20Ring" aria-label="Try product comparison in the app">&#8599;</a></li>
+    <li><div><h3>Order &amp; Delivery Assistant</h3><p>AI guides your purchase from selection to delivery.</p></div><a class="built__go" href="app.html?q=Where%20is%20my%20order%3F" aria-label="Try the order and delivery assistant in the app">&#8599;</a></li>
+    <li><div><h3>Price Tracking &amp; Alerts</h3><p>Stay informed on price drops and delivery tracking.</p></div><a class="built__go" href="#signup" aria-label="Get deal alerts by email">&#8599;</a></li>
   </ul>
 </section>
 
@@ -128,15 +128,6 @@
   </div>
 </section>
 
-<section class="pricing wrap" id="pricing">
-  <h2>Simple pricing</h2>
-  <p class="sec-p">Sample plans for this prototype. No payment is taken.</p>
-  <div class="price-grid">
-    <article><h3>Free</h3><strong>$0</strong><ul><li>AI recommendations</li><li>Product comparison</li></ul><a class="btn btn--ghost" href="app.html">Get Started</a></article>
-    <article class="on"><h3>Plus</h3><strong>$9<small>/mo</small></strong><ul><li>Everything in Free</li><li>Price tracking &amp; alerts</li><li>Order &amp; delivery assistant</li></ul><a class="btn" href="app.html">Get a Demo</a></article>
-    <article><h3>Teams</h3><strong>Custom</strong><ul><li>Shared carts</li><li>Priority support</li></ul><a class="btn btn--ghost" href="app.html">Contact us</a></article>
-  </div>
-</section>
 <section class="signup-sec wrap" id="signup" aria-label="Email sign-up">
   <div data-signup="landing-footer" data-title="Get Luxora deals in your inbox" data-text="Be first to hear about new deals and product updates. Sample prototype list; opt-in only."></div>
 </section>
@@ -144,9 +135,9 @@
 
 <footer class="foot"><div class="wrap foot__in"><a href="#top" class="logo logo--black"><span data-logo class="logo__mark"></span>Luxora</a><small>Prototype with sample data. Layout inspired by a ShopAI UX/UI concept; all code and artwork original.</small></div></footer>
 
-<dialog id="signin"><form method="dialog"><h3>Sign in</h3><p>Accounts are not part of this prototype. Jump straight into the assistant.</p><div class="dlg-btns"><a class="btn" href="app.html">Open assistant</a><button class="btn btn--ghost" value="x">Close</button></div></form></dialog>
 
 <script src="js/art.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/landing.js"></script>
 <script src="js/landing-deals.js"></script>
 <script src="js/signup.js"></script>
