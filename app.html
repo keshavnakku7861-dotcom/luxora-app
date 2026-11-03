@@ -15,8 +15,8 @@
     <a href="index.html" class="rail__logo" aria-label="Luxora home"><span data-logo></span></a>
     <nav class="rail__nav">
       <button class="rail__btn on" id="navHome" aria-label="New chat" title="New chat"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10"/></svg></button>
-      <button class="rail__btn" id="navSaved" aria-label="Saved items" title="Saved"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg></button>
-      <a class="rail__btn" id="navCart" href="cart.html" aria-label="Cart" title="Cart"><svg viewBox="0 0 24 24"><path d="M3 4h2.5l2 11h10l2-8H7M9 20h.01M17 20h.01"/></svg><b class="badge" id="cartBadge" hidden>0</b></a>
+      <a class="rail__btn" id="navSaved" href="saved.html" aria-label="Saved items" title="Saved items"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg><b class="badge" data-saved-badge hidden>0</b></a>
+      <a class="rail__btn" id="navCart" href="shop.html" aria-label="Open the shop and cart" title="Shop &amp; cart"><svg viewBox="0 0 24 24"><path d="M3 4h2.5l2 11h10l2-8H7M9 20h.01M17 20h.01"/></svg><b class="badge" data-cart-badge hidden>0</b></a>
     </nav>
     <div class="rail__bottom"><span class="avatar" title="You">K</span></div>
   </aside>
@@ -50,18 +50,11 @@
   <aside class="panel" id="panel" aria-label="Recommended for you"></aside>
 </div>
 
-<div class="drawer" id="drawer" hidden>
-  <div class="drawer__scrim" data-close></div>
-  <div class="drawer__box" role="dialog" aria-modal="true" aria-label="Cart and saved items">
-    <div class="drawer__head"><div class="tabs"><span class="tab on">Saved</span></div><button class="x" data-close aria-label="Close">&#10005;</button></div>
-    <div class="drawer__body" id="drawerBody"></div>
-    <div class="drawer__foot" id="drawerFoot"></div>
-  </div>
-</div>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="js/art.js"></script>
 <script src="js/offline.js"></script>
+<script src="js/store.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

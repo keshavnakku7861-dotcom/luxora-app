@@ -1,0 +1,51 @@
+body { background: var(--gray-50); min-height: 100vh; }
+.wrap { width: min(1080px, 100% - 48px); margin-inline: auto; }
+[data-logo] { display: inline-flex; } [data-logo] svg { width: 100%; height: auto; }
+.logo__mark { width: 28px; color: var(--orange); }
+
+.top { background: var(--white); border-bottom: 1px solid var(--gray-100); position: sticky; top: 0; z-index: 10; }
+.top__in { display: flex; justify-content: space-between; align-items: center; height: 64px; }
+.top__nav { display: flex; gap: 28px; font-size: 14px; color: var(--gray-600); }
+.top__nav a { display: inline-flex; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 2px solid transparent; }
+.top__nav a.on { color: var(--black); border-bottom-color: var(--orange); }
+.top__nav .badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--orange); color: var(--white); font-size: 11px; font-weight: 600; display: inline-grid; place-items: center; }
+.badge[hidden] { display: none; }
+
+.saved { padding: 36px 0 56px; }
+.saved__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 24px; }
+.eyebrow { font-size: 12px; color: var(--gray-600); margin-bottom: 6px; }
+h1 { font-size: clamp(30px, 4vw, 44px); font-weight: 500; letter-spacing: -.02em; line-height: 1.05; }
+.saved__actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.lines { background: var(--white); border-radius: 14px; padding: 8px 28px; }
+.line { display: grid; grid-template-columns: 120px minmax(0, 1fr) auto; gap: 22px; align-items: center; padding: 22px 0; border-bottom: 1px solid var(--gray-100); }
+.line:last-child { border-bottom: 0; }
+.line__img { display: block; width: 120px; height: 120px; border-radius: 12px; background: var(--gray-50); overflow: hidden; }
+.line__img .pimg { width: 100%; height: 100%; border-radius: 0; }
+.line__store { font-size: 12px; font-weight: 700; letter-spacing: -.02em; }
+.line__name { font-size: 20px; font-weight: 500; margin: 2px 0 8px; } .line__name a:hover { color: var(--orange-deep); }
+.line__opts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; font-size: 13px; color: var(--gray-600); }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--gray-200); }
+.dot.c-black { background: var(--black); } .dot.c-orange { background: var(--orange); } .dot.c-gray { background: var(--gray-400); }
+.line__ctl { display: flex; align-items: center; gap: 18px; margin-top: 14px; }
+.rm { border: 0; background: none; padding: 0; color: var(--gray-600); font-size: 13px; text-decoration: underline; } .rm:hover { color: var(--orange-deep); }
+.line__price { font-size: 20px; font-weight: 500; }
+.empty { background: var(--white); border-radius: 14px; padding: 64px 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+.empty .logo__mark { width: 44px; }
+.empty h2 { font-size: 26px; font-weight: 500; } .empty p { color: var(--gray-600); font-size: 14px; max-width: 360px; }
+.empty .btn { margin-top: 8px; }
+.demo-note { margin-top: 20px; font-size: 12px; color: var(--gray-600); text-align: center; }
+
+@media (max-width: 560px) {
+  .wrap { width: min(1080px, 100% - 32px); }
+  .saved__head { flex-direction: column; align-items: flex-start; }
+  .lines { padding: 4px 16px; }
+  .line { grid-template-columns: 84px minmax(0, 1fr); gap: 14px; }
+  .line__img { width: 84px; height: 84px; }
+  .line__price { grid-column: 2; }
+  .line__name { font-size: 16px; }
+}
+.saved__head h1 { } .stars { color: var(--orange); letter-spacing: 1px; }
+.toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--black); color: var(--white); border-radius: 10px; padding: 12px 18px; font-size: 14px; z-index: 60; }
+.toast[hidden] { display: none; } .toast a { color: var(--orange-soft); text-decoration: underline; }
+.btn--sm:hover { background: var(--orange); border-color: var(--orange); } .btn--ghost.btn--sm:hover { background: var(--white); border-color: var(--black); color: var(--black); }
