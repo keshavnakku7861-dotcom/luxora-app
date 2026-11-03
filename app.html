@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Luxora Assistant</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/palette.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="rail" aria-label="Main">
+    <a href="index.html" class="rail__logo" aria-label="Luxora home"><span data-logo></span></a>
+    <nav class="rail__nav">
+      <button class="rail__btn on" id="navHome" aria-label="New chat" title="New chat"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10"/></svg></button>
+      <button class="rail__btn" id="navSaved" aria-label="Saved items" title="Saved"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg></button>
+      <button class="rail__btn" id="navCart" aria-label="Cart" title="Cart"><svg viewBox="0 0 24 24"><path d="M3 4h2.5l2 11h10l2-8H7M9 20h.01M17 20h.01"/></svg><b class="badge" id="cartBadge" hidden>0</b></button>
+    </nav>
+    <div class="rail__bottom"><span class="avatar" title="You">K</span></div>
+  </aside>
+
+  <main class="chat">
+    <header class="chat__top">
+      <div class="tabs"><span class="tab on">AI Assistant</span><span class="tab">Chat</span></div>
+      <a href="index.html" class="x" aria-label="Close and return to landing page">&#10005;</a>
+    </header>
+    <div class="feed" id="feed" aria-live="polite">
+      <section class="empty" id="empty">
+        <span data-logo class="empty__logo"></span>
+        <h1>What can I help you shop for today?</h1>
+        <p>Ask about any product, price or brand, and Luxora will recommend the best options for your needs.</p>
+        <div class="chips" id="chips">
+          <button class="chip" data-q="Best smart ring under $500 for everyday health"><i>&#9678;</i>Smart rings</button>
+          <button class="chip" data-q="Best smartwatch for fitness and running"><i>&#9719;</i>Smartwatches</button>
+          <button class="chip" data-q="Earbuds for my commute under $200"><i>&#9835;</i>Earbuds</button>
+          <button class="chip" data-q="Noise cancelling headphones for work"><i>&#9790;</i>Headphones</button>
+        </div>
+      </section>
+    </div>
+    <form class="composer" id="composer" autocomplete="off">
+      <label class="sr-only" for="msg">Message</label>
+      <input id="msg" name="message" placeholder="Ask about any product, price, or brand..." maxlength="500">
+      <span class="clip" aria-hidden="true">&#128206;</span>
+      <button class="send" type="submit" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M4 12 20 4l-5 16-3-7-8-1Z"/></svg></button>
+    </form>
+  </main>
+
+  <aside class="panel" id="panel" aria-label="Recommended for you"></aside>
+</div>
+
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer__scrim" data-close></div>
+  <div class="drawer__box" role="dialog" aria-modal="true" aria-label="Cart and saved items">
+    <div class="drawer__head"><div class="tabs"><button class="tab on" data-tab="cart">Cart</button><button class="tab" data-tab="saved">Saved</button></div><button class="x" data-close aria-label="Close">&#10005;</button></div>
+    <div class="drawer__body" id="drawerBody"></div>
+    <div class="drawer__foot" id="drawerFoot"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="js/art.js"></script>
+<script src="js/offline.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
