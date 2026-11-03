@@ -1,0 +1,33 @@
+{
+  "_readme": "Luxora deals feed. SAMPLE DATA ONLY: these are made-up demo deals for a prototype, not real offers. The shop view reads this file to show deal badges and the Deals section; the EMAIL bot reads it to write deal emails. Edit this file (and push) to change the deals. Fields per deal: id, productId (matches products.js / the shop), productName, listPrice, dealPrice (USD), discountPercent, endsAt (ISO 8601 with offset; the deal disappears from the shop after this time), headline, url (deep link to the product in the shop), sample (true = demo deal).",
+  "sample": true,
+  "currency": "USD",
+  "updated": "2026-11-02",
+  "shopUrl": "https://keshavnakku7861-dotcom.github.io/luxora-app/app.html#/shop?cat=deals",
+  "deals": [
+    {
+      "id": "sample-deal-aura-ring-4",
+      "productId": "aura-ring-4",
+      "productName": "Aura Ring 4",
+      "listPrice": 279.30,
+      "dealPrice": 229.00,
+      "discountPercent": 18,
+      "endsAt": "2026-11-30T23:59:00-06:00",
+      "headline": "Sample deal: Aura Ring 4 for $229, our best-selling smart ring",
+      "url": "https://keshavnakku7861-dotcom.github.io/luxora-app/app.html#/shop/p/aura-ring-4",
+      "sample": true
+    },
+    {
+      "id": "sample-deal-echo-buds-pro",
+      "productId": "echo-buds-pro",
+      "productName": "Echo Buds Pro",
+      "listPrice": 189.00,
+      "dealPrice": 149.00,
+      "discountPercent": 21,
+      "endsAt": "2026-12-07T23:59:00-06:00",
+      "headline": "Sample deal: Echo Buds Pro with noise cancelling, now $149",
+      "url": "https://keshavnakku7861-dotcom.github.io/luxora-app/app.html#/shop/p/echo-buds-pro",
+      "sample": true
+    }
+  ]
+}

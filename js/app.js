@@ -117,6 +117,7 @@
   }
   window.LuxoraAssistant = { refresh() { renderPanel(); document.querySelectorAll('.card[data-id]').forEach(c => { const on = S.isSaved(c.dataset.id), hb = c.querySelector('.card__heart'); if (hb) { hb.classList.toggle('on', on); hb.setAttribute('aria-pressed', on); } }); } };
   document.addEventListener('luxora:external', renderPanel);
+  document.addEventListener('luxora:deals', () => window.LuxoraAssistant.refresh());
 
   /* ---------- boot ---------- */
   show(window.LuxoraOffline.products[0]);

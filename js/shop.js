@@ -3,7 +3,9 @@
   const $ = s => document.querySelector(s);
   const S = window.LuxoraStore, money = S.money, esc = S.esc, Art = window.LuxoraArt;
   const products = window.LuxoraOffline.products, byId = Object.fromEntries(products.map(p => [p.id, p]));
-  const CATS = [['all', 'All'], ['smart-rings', 'Smart rings'], ['smartwatches', 'Smartwatches'], ['earbuds', 'Earbuds'], ['headphones', 'Headphones']];
+  const CATS = [['all', 'All'], ['smart-rings', 'Smart rings'], ['smartwatches', 'Smartwatches'], ['earbuds', 'Earbuds'], ['headphones', 'Headphones'], ['deals', 'Deals']];
+  const D = window.LuxoraDeals, inCat = (p, k) => k === 'all' || (k === 'deals' ? !!p.deal : p.category === k), dealsOn = () => D.list.length > 0;
+  const priceHtml = p => p.deal ? `<span class="pr"><strong class="pr__now">${money(p.price)}</strong> <s>${money(p.listPrice)}</s></span>` : `<strong>${money(p.price)}</strong>`;
   const st = { cat: 'all', sort: 'featured', q: '' };
   const heart = '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg>';
   const cname = c => c[0].toUpperCase() + c.slice(1);
@@ -21,7 +23,7 @@
   /* ---------- list ---------- */
   function filtered() {
     const q = st.q.trim().toLowerCase();
-    let list = products.filter(p => (st.cat === 'all' || p.category === st.cat) && (!q || [p.name, p.store, p.category.replace('-', ' '), ...p.tags].join(' ').toLowerCase().includes(q)));
+    let list = products.filter(p => inCat(p, st.cat) && (!q || [p.name, p.store, p.category.replace('-', ' '), ...p.tags].join(' ').toLowerCase().includes(q)));
     if (st.sort === 'price-asc') list.sort((a, b) => a.price - b.price);
     else if (st.sort === 'price-desc') list.sort((a, b) => b.price - a.price);
     else if (st.sort === 'rating') list.sort((a, b) => b.rating - a.rating);
@@ -30,25 +32,41 @@
   function cardHtml(p) {
     const on = S.isSaved(p.id);
     return `<article class="pcard">
-      <a class="pcard__img" href="#/shop/p/${p.id}" aria-label="View ${esc(p.name)}"><span class="a">${Art.product(p, 0)}</span><span class="b">${Art.product(p, 1)}</span></a>
+      <a class="pcard__img" href="#/shop/p/${p.id}" aria-label="View ${esc(p.name)}">${p.deal ? `<span class="dealtag" title="Sample deal">-${p.deal.discountPercent}%</span>` : ''}<span class="a">${Art.product(p, 0)}</span><span class="b">${Art.product(p, 1)}</span></a>
       <button class="pcard__heart ${on ? 'on' : ''}" data-heart="${p.id}" aria-pressed="${on}" aria-label="${on ? 'Remove' : 'Save'} ${esc(p.name)}">${heart}</button>
       <div class="pcard__body"><div class="pcard__store">${esc(p.store)}</div>
         <h3><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h3>
         <div class="rate"><span class="stars">${S.stars(p.rating)}</span> <span>${p.rating.toFixed(1)} (${esc(p.reviews)})</span></div>
-        <div class="pcard__foot"><strong>${money(p.price)}</strong><button class="btn btn--sm" data-add="${p.id}">Add to cart</button></div></div></article>`;
+        <div class="pcard__foot">${priceHtml(p)}<button class="btn btn--sm" data-add="${p.id}">Add to cart</button></div></div></article>`;
   }
+  function renderDeals() {
+    const box = $('#dealsBox'), show = dealsOn() && st.cat === 'all' && !st.q.trim();
+    box.hidden = !show; if (!show) return;
+    box.innerHTML = `<div class="deals__head"><div><h2>Deals</h2><p>Limited-time prices on selected products. <b class="deals__sample">Sample deals for this demo.</b></p></div><button class="btn btn--ghost btn--sm" data-cat="deals">See all deals</button></div>
+      <div class="deals__grid">${D.list.map(d => { const p = byId[d.productId]; return `<article class="dealcard">
+        <a class="dealcard__img" href="#/shop/p/${p.id}" aria-label="View ${esc(p.name)}">${Art.product(p, 0)}<span class="dealtag">-${d.discountPercent}%</span></a>
+        <div class="dealcard__body"><span class="dealcard__flag">Sample deal</span><h3><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h3>
+          <p class="dealcard__head">${esc(d.headline.replace(/^Sample deal:\s*/i, ''))}</p>
+          <div class="dealcard__price"><strong>${money(p.price)}</strong> <s>${money(p.listPrice)}</s> <small>${esc(D.endsText(d.endsAt))}</small></div>
+          <button class="btn btn--sm" data-add="${p.id}">Add to cart</button></div></article>`; }).join('')}</div>`;
+  }
+  document.addEventListener('luxora:deals', () => { if (shown) { if (!$('#listView').hidden) renderList(); else { const m = location.hash.match(/^#\/shop\/p\/([\w-]+)/); if (m && byId[m[1]]) renderDetail(byId[m[1]]); } } renderDrawer(); });
   const leaveDetail = () => { if (/^#\/shop\/p\//.test(location.hash)) location.hash = '#/shop'; };
   function renderList() {
-    $('#cats').innerHTML = CATS.map(([k, label]) => {
-      const n = k === 'all' ? products.length : products.filter(p => p.category === k).length;
+    if (st.cat === 'deals' && !dealsOn()) st.cat = 'all';
+    const cats = CATS.filter(c => c[0] !== 'deals' || dealsOn());
+    $('#cats').innerHTML = cats.map(([k, label]) => {
+      const n = products.filter(p => inCat(p, k)).length;
       return `<button role="tab" class="cat ${st.cat === k ? 'on' : ''}" data-cat="${k}" aria-selected="${st.cat === k}">${label} <small>${n}</small></button>`;
     }).join('');
     const list = filtered();
+    renderDeals();
     $('#listTitle').textContent = st.q ? `Results for "${st.q}"` : (CATS.find(c => c[0] === st.cat)[1] === 'All' ? 'All products' : CATS.find(c => c[0] === st.cat)[1]);
     $('#count').textContent = `${list.length} product${list.length === 1 ? '' : 's'}`;
     $('#grid').innerHTML = list.length ? list.map(cardHtml).join('') : `<div class="none"><h3>No products found</h3><p>Try another search or category.</p><button class="btn btn--sm" data-cat="all" id="reset">Show all products</button></div>`;
   }
   $('#cats').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) { st.cat = b.dataset.cat; renderList(); } });
+  $('#dealsBox').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) { st.cat = b.dataset.cat; renderList(); } });
   $('#sort').addEventListener('change', e => { st.sort = e.target.value; renderList(); });
   $('#shopQ').addEventListener('input', e => { st.q = e.target.value; leaveDetail(); renderList(); });
   $('#searchForm').addEventListener('submit', e => { e.preventDefault(); leaveDetail(); });
@@ -74,7 +92,7 @@
           <div class="info">
             <div class="pcard__store">${esc(p.store)}</div><h1>${esc(p.name)}</h1>
             <div class="rate"><span class="stars">${S.stars(p.rating)}</span> <span>${p.rating.toFixed(1)} (${esc(p.reviews)} reviews)</span></div>
-            <div class="price">${money(p.price)}</div>
+            <div class="price">${priceHtml(p)}</div>${p.deal ? `<div class="dealnote"><span class="dealtag dealtag--inline">-${p.deal.discountPercent}%</span> <b>Sample deal.</b> ${esc(D.endsText(p.deal.endsAt))}. ${esc(p.deal.headline.replace(/^Sample deal:\s*/i, ''))}</div>` : ''}
             <p class="desc">${esc(p.description || '')}</p>
             <div class="opt"><span class="lbl">Size</span><select id="dSize" aria-label="Size">${p.sizes.map(s => `<option ${s === d.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></div>
             <div class="opt"><span class="lbl">Color: <b>${cname(d.color)}</b></span><div class="sw" id="dSw">${p.colors.map(c => `<button type="button" class="c-${c} ${c === d.color ? 'on' : ''}" data-c="${c}" aria-label="${c}" aria-pressed="${c === d.color}">${c === d.color ? '&#10003;' : ''}</button>`).join('')}</div></div>

@@ -23,3 +23,25 @@ h1, h2, h3, p { margin: 0; }
 /* product photos: square studio shots on a light background, shown as rounded tiles */
 .pimg { display: block; height: 100%; width: auto; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px; background: var(--gray-50); }
 [data-art], .card__art, .car__art, .line__img, .line__art { display: flex; justify-content: center; align-items: center; }
+
+/* email sign-up (js/signup.js) */
+.signup { display: grid; gap: 14px; background: var(--gray-50); border-radius: 16px; padding: clamp(20px, 3vw, 32px); }
+.signup h3 { font-size: clamp(20px, 2.4vw, 26px); font-weight: 500; letter-spacing: -.02em; }
+.signup__copy p { color: var(--gray-600); font-size: 14px; margin-top: 4px; }
+.signup__fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto; gap: 12px; align-items: end; }
+.signup__f { display: grid; gap: 6px; font-size: 13px; font-weight: 500; } .signup__f i { font-style: normal; color: var(--gray-400); font-weight: 400; }
+.signup__f input { height: 46px; border: 1px solid var(--gray-200); border-radius: 8px; padding: 0 14px; font-size: 14px; background: var(--white); outline: 0; min-width: 0; }
+.signup__f input:focus { border-color: var(--black); }
+.signup__btn { height: 46px; }
+.signup__btn:disabled { opacity: .6; cursor: progress; transform: none; }
+.signup__hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.signup__opt { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; cursor: pointer; } .signup__opt input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--black); flex: none; }
+.signup__fine { font-size: 12px; color: var(--gray-600); }
+.signup__msg { font-size: 14px; border-radius: 8px; padding: 10px 14px; }
+.signup__msg--err { background: var(--orange-soft); color: var(--orange-deep); }
+.signup__msg[hidden] { display: none; }
+.signup__done { display: flex; align-items: center; gap: 16px; } .signup__done p { color: var(--gray-600); font-size: 14px; margin-top: 2px; }
+.signup__tick { width: 44px; height: 44px; border-radius: 50%; background: var(--orange); color: var(--white); display: grid; place-items: center; font-size: 20px; flex: none; }
+.signup--card { border: 1px solid var(--gray-100); background: var(--white); }
+.signup--card .signup__fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .signup--card .signup__btn { grid-column: 1 / -1; }
+@media (max-width: 760px) { .signup__fields { grid-template-columns: 1fr; } }
