@@ -3,7 +3,7 @@
   const defs = {}, cache = {};
   defs.products = function (module, exports, require) {
 // SAMPLE DATA ONLY - fictional products, stores and prices for the Luxora prototype.
-// `kind` + `tone` tell the front end which SVG illustration to draw (see public/js/art.js).
+// `kind`/`tone` are metadata only; product photos live in public/images/<id>-1..3.webp (see public/js/art.js).
 const products = [
   { id: 'aura-ring-4', name: 'Aura Ring 4', store: 'Brightmart', category: 'smart-rings', kind: 'ring', tone: 'copper',
     price: 279.30, rating: 5.0, reviews: '2K', tags: ['health', 'sleep', 'battery', 'everyday', 'fitness'],

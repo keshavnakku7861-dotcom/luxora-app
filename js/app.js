@@ -25,17 +25,17 @@
 
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  function toast(t) { toastEl.textContent = t; toastEl.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.hidden = true, 2200); }
+  function toast(t, cartLink) { toastEl.textContent = t; if (cartLink) toastEl.insertAdjacentHTML('beforeend', ' &middot; <a href="cart.html">View cart</a>'); toastEl.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.hidden = true, 3500); }
 
   /* ---------- cart ---------- */
   const count = () => cart.reduce((n, i) => n + i.qty, 0);
   function persist() { store.set('cart', cart); store.set('saved', saved); badge.textContent = count(); badge.hidden = count() === 0; }
   function addToCart(p, opts = {}) {
     known[p.id] = p;
-    const line = { id: p.id, size: opts.size || p.sizes[0], color: opts.color || p.colors[0], qty: opts.qty || 1 };
+    const line = { id: p.id, name: p.name, store: p.store, price: p.price, size: opts.size || p.sizes[0], color: opts.color || p.colors[0], qty: opts.qty || 1 };
     const hit = cart.find(i => i.id === line.id && i.size === line.size && i.color === line.color);
     if (hit) hit.qty += line.qty; else cart.push(line);
-    persist(); toast(`Added ${line.qty} × ${p.name} to cart`);
+    persist(); toast(`Added ${line.qty} × ${p.name} to cart`, true);
   }
 
   /* ---------- chat ---------- */
@@ -116,12 +116,12 @@
   const chosen = () => ({ size: sel.size || (sel.kit ? 'Free sizing kit' : current.sizes[0]), color: sel.color, qty: sel.qty });
   function confirmOrder() {
     if (!current) return;
-    if (!cart.length) addToCart(current, chosen());
-    const total = cart.reduce((s, i) => s + (known[i.id]?.price || 0) * i.qty, 0), n = count();
-    const names = [...new Set(cart.map(i => known[i.id]?.name).filter(Boolean))].join(', ');
-    cart = []; persist();
+    const had = cart.some(i => i.id === current.id);
+    if (!had) addToCart(current, chosen());
+    const total = cart.reduce((s, i) => s + (i.price ?? known[i.id]?.price ?? 0) * i.qty, 0), n = count();
     $('#empty')?.remove();
-    botMsg({ reply: `Done. I've confirmed ${n} item${n > 1 ? 's' : ''} (${names}) for ${money(total)} and I'll guide it through to delivery. This is a prototype with sample data, so nothing was actually ordered or charged.`, products: [] });
+    botMsg({ reply: `Great choice. Your cart now has ${n} item${n > 1 ? 's' : ''} (${money(total)}). Open the cart to review shipping and check out. This is a prototype with sample data, so nothing is actually ordered or charged.`, products: [] });
+    const last = feed.lastElementChild; if (last) { const a = el('a', 'btn btn--sm cart-link', 'Review cart'); a.href = 'cart.html'; a.style.alignSelf = 'flex-start'; last.append(a); scroll(); }
   }
 
   /* ---------- drawer ---------- */
@@ -149,7 +149,6 @@
     if (e.target.id === 'dConfirm') { drawer.hidden = true; confirmOrder(); }
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') drawer.hidden = true; });
-  $('#navCart').onclick = () => openDrawer('cart');
   $('#navSaved').onclick = () => openDrawer('saved');
   $('#navHome').onclick = () => location.reload();
 

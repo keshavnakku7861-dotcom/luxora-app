@@ -94,9 +94,9 @@ h2 { font-size: clamp(28px, 3.4vw, 40px); line-height: 1.1; letter-spacing: -.02
 .g-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .g-cards--2 { grid-template-columns: 1fr 1fr; }
 .g-cards > div { border: 1px solid var(--gray-100); border-radius: 6px; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
-.g-cards > div > span { height: 54px; display: block; } .g-cards em { font-style: normal; color: var(--gray-600); }
+.g-cards > div > span { height: 54px; display: flex; } .g-cards em { font-style: normal; color: var(--gray-600); }
 .guided__rec { border-left: 1px solid var(--gray-100); padding-left: 14px; display: flex; flex-direction: column; gap: 4px; }
-.guided__rec > span { height: 100px; } .guided__rec em { font-style: normal; color: var(--gray-600); }
+.guided__rec > span { height: 110px; display: flex; } .guided__rec em { font-style: normal; color: var(--gray-600); }
 .showcase__grid--guided .phone__screen { gap: 8px; }
 
 /* pricing */
