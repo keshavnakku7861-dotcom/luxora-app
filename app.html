@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Luxora Assistant</title>
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/palette.css">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/app.css">
-  <link rel="stylesheet" href="css/views.css">
+  <script src="js/theme.js?v=ddf3db6fc6"></script>
+  <link rel="stylesheet" href="css/palette.css?v=ddf3db6fc6">
+  <link rel="stylesheet" href="css/base.css?v=ddf3db6fc6">
+  <link rel="stylesheet" href="css/app.css?v=ddf3db6fc6">
+  <link rel="stylesheet" href="css/views.css?v=ddf3db6fc6">
 </head>
 <body>
 <div class="shell">
@@ -31,7 +32,6 @@
       <div class="chat__tools">
         <span class="hello" data-auth-name hidden></span>
         <button type="button" class="newchat" id="newChat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>New chat</span></button>
-        <a href="index.html" class="x" aria-label="Close and return to landing page">&#10005;</a>
       </div>
     </header>
     <div class="feed" id="feed" aria-live="polite">
@@ -49,7 +49,8 @@
     <form class="composer" id="composer" autocomplete="off">
       <label class="sr-only" for="msg">Message</label>
       <div class="composer__file" id="attached" hidden></div>
-      <input id="msg" name="message" placeholder="Ask about any product, price, or brand..." maxlength="500">
+      <input id="msg" name="message" placeholder="Ask about any product, price, or brand..." aria-describedby="msgCount" autocomplete="off">
+      <span class="msgcount" id="msgCount" aria-live="polite" hidden></span>
       <input type="file" id="file" accept="image/*" hidden tabindex="-1">
       <button class="attach" id="attachBtn" type="button" aria-label="Add attachment"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 11-8.2 8.2a5 5 0 0 1-7-7L13.4 3.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg><span>Add attachment</span></button>
       <button class="send" type="submit" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-5 16-3-7-8-1Z"/></svg></button>
@@ -97,17 +98,15 @@
       <section id="detailView" hidden></section>
     </div>
     <div class="vsignup" data-signup="app-shop" data-compact data-title="Never miss a deal" data-text="Get Luxora deals and updates by email. Opt-in only."></div>
-    <footer class="vfoot">Prototype with sample products and prices. Checkout is a demonstration only; no payment is taken and no order is placed.</footer>
+    <footer class="vfoot">Prototype with sample products and prices. Checkout is a demonstration only; no payment is taken and no order is placed.<span id="regionNote"></span></footer>
   </section>
 
   <!-- settings view -->
   <section class="view view--page" id="viewSettings" aria-label="Settings" hidden>
     <div class="settings">
-      <div class="vhead"><div><p class="eyebrow">Your account</p><h1>Settings</h1></div></div>
-      <section class="sset" aria-labelledby="setProfile">
-        <h2 id="setProfile">Profile</h2>
-        <div id="profileBody"></div>
-      </section>
+      <div class="vhead"><div><p class="eyebrow">Your account</p><h1>Settings</h1></div><p class="sset__saved" id="savedNote" role="status" aria-live="polite"></p></div>
+      <nav class="sjump" id="sjump" aria-label="Settings sections"></nav>
+      <div id="settingsRoot"></div>
     </div>
   </section>
 
@@ -131,16 +130,16 @@
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="js/art.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/offline.js"></script>
-<script src="js/store.js"></script>
-<script src="js/deals.js"></script>
-<script src="js/signup.js"></script>
-<script src="js/app.js"></script>
-<script src="js/shop.js"></script>
-<script src="js/saved.js"></script>
-<script src="js/settings.js"></script>
-<script src="js/router.js"></script>
+<script src="js/art.js?v=ddf3db6fc6"></script>
+<script src="js/auth.js?v=ddf3db6fc6"></script>
+<script src="js/offline.js?v=ddf3db6fc6"></script>
+<script src="js/store.js?v=ddf3db6fc6"></script>
+<script src="js/deals.js?v=ddf3db6fc6"></script>
+<script src="js/signup.js?v=ddf3db6fc6"></script>
+<script src="js/app.js?v=ddf3db6fc6"></script>
+<script src="js/shop.js?v=ddf3db6fc6"></script>
+<script src="js/saved.js?v=ddf3db6fc6"></script>
+<script src="js/settings.js?v=ddf3db6fc6"></script>
+<script src="js/router.js?v=ddf3db6fc6"></script>
 </body>
 </html>

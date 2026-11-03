@@ -18,24 +18,25 @@
     }
     box.className = 'lines';
     box.innerHTML = items.map(x => {
-      const p = byId[x.id], size = x.size || p.sizes[0], color = x.color || p.colors[0];
+      const p = byId[x.id], size = x.size || (S.needsSize(p) ? 'not chosen yet' : p.sizes[0]), color = x.color || p.colors[0];
       return `<article class="line">
         <a class="line__img" href="#/shop/p/${p.id}" aria-label="View ${esc(p.name)}">${LuxoraArt.product(p)}</a>
         <div><div class="line__store">${esc(p.store)}</div><h2 class="line__name"><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h2>
           <div class="line__opts"><span>Size: ${esc(size)}</span><span><i class="dot c-${esc(color)}"></i>${cname(color)}</span><span class="stars">${S.stars(p.rating)}</span></div>
-          <div class="line__ctl"><button class="btn btn--sm" data-move="${p.id}">Move to cart</button><button class="rm" data-unsave="${p.id}">Remove</button></div></div>
+          <div class="line__ctl"><button class="btn btn--sm" data-move="${p.id}">${S.needsSize(p) && !x.size ? 'Choose size' : 'Move to cart'}</button><button class="rm" data-unsave="${p.id}">Remove</button></div></div>
         <div class="line__price">${money(p.price)}</div></article>`;
     }).join('');
   }
   function move(id) {
     const x = S.saved().find(s => s.id === id), p = byId[id]; if (!x || !p) return;
+    if (S.needsSize(p) && !x.size) return { needSize: p };
     S.addToCart(p, { size: x.size, color: x.color }); S.removeSaved(id); return p;
   }
   document.addEventListener('click', e => {
     const m = e.target.closest('[data-move]'), r = e.target.closest('[data-unsave]');
-    if (m) { const p = move(m.dataset.move); if (p) toast(`Moved ${p.name} to cart`, ['View cart', '#/cart']); }
+    if (m) { const p = move(m.dataset.move); if (p && p.needSize) { location.hash = '#/shop/p/' + p.needSize.id; toast(`Choose a size for ${p.needSize.name} first`); } else if (p) toast(`Moved ${p.name} to cart`, ['View cart', '#/cart']); }
     else if (r) { S.removeSaved(r.dataset.unsave); toast('Removed from saved'); }
-    else if (e.target.id === 'moveAll') { const ids = S.saved().map(s => s.id); ids.forEach(move); toast(`Moved ${ids.length} items to cart`, ['View cart', '#/cart']); }
+    else if (e.target.id === 'moveAll') { const res = S.saved().map(s => move(s.id)), done = res.filter(r => r && !r.needSize).length, skipped = res.filter(r => r && r.needSize).length; toast(`Moved ${done} item${done === 1 ? '' : 's'} to cart${skipped ? `; ${skipped} still need a size` : ''}`, ['View cart', '#/cart']); }
   });
   document.addEventListener('luxora:change', render); document.addEventListener('luxora:external', render);
   render();

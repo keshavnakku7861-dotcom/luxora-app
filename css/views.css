@@ -258,14 +258,54 @@
 @media (max-width: 760px) { #viewShop .deals__grid { grid-template-columns: 1fr; } #viewShop .dealcard { grid-template-columns: 96px minmax(0, 1fr); } #viewShop .dealcard h3 { font-size: 16px; } }
 
 /* settings */
-#viewSettings .settings { max-width: 720px; padding-bottom: 40px; }
-#viewSettings .sset { border: 1px solid var(--gray-100); border-radius: 14px; padding: 24px; margin-top: 8px; }
-#viewSettings .sset h2 { font-size: 20px; font-weight: 500; margin-bottom: 16px; }
-#viewSettings .sset__who { display: flex; align-items: center; gap: 18px; }
-#viewSettings .sset__who .auth__avatar { margin: 0; flex: none; }
-#viewSettings dl { margin: 0; display: grid; gap: 10px; min-width: 0; }
-#viewSettings dt { font-size: 12px; color: var(--gray-600); } #viewSettings dd { margin: 2px 0 0; font-size: 15px; overflow-wrap: anywhere; }
-#viewSettings .sset__note { margin-top: 16px; font-size: 13px; color: var(--gray-600); }
-#viewSettings .sset__foot { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--gray-100); display: flex; justify-content: flex-start; }
-#viewSettings .sset__logout { min-width: 140px; }
+#viewSettings .settings { max-width: 780px; padding-bottom: 56px; }
+#viewSettings .vhead { align-items: flex-end; }
 #viewSettings .eyebrow { font-size: 12px; color: var(--gray-600); margin-bottom: 6px; }
+.sset__saved { font-size: 13px; color: var(--orange-deep); min-height: 1.2em; }
+.sjump { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.sjump button { border: 1px solid var(--gray-200); background: var(--white); border-radius: 999px; padding: 6px 14px; font-size: 13px; }
+.sjump button:hover { border-color: var(--black); }
+#viewSettings .sset { border: 1px solid var(--gray-100); border-radius: 14px; padding: 24px; margin-top: 16px; scroll-margin-top: 12px; }
+#viewSettings .sset h2 { font-size: 20px; font-weight: 500; margin-bottom: 14px; }
+#viewSettings .sset h3 { font-size: 15px; font-weight: 600; margin: 16px 0 6px; }
+.srow { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 14px 0; border-top: 1px solid var(--gray-100); }
+.sset h2 + .srow { border-top: 0; padding-top: 4px; }
+.srow b { font-size: 15px; font-weight: 500; } .srow p { font-size: 13px; color: var(--gray-600); margin-top: 2px; }
+.srow--col { flex-direction: column; align-items: flex-start; gap: 10px; }
+.switch { flex: none; width: 46px; height: 28px; border-radius: 999px; border: 0; background: var(--gray-200); position: relative; padding: 0; transition: background .15s; }
+.switch span { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--white); box-shadow: 0 1px 3px var(--shadow); transition: transform .15s; }
+.switch[aria-checked=true] { background: var(--orange); } .switch[aria-checked=true] span { transform: translateX(18px); }
+.seg { display: inline-flex; border: 1px solid var(--gray-200); border-radius: 10px; padding: 3px; gap: 2px; background: var(--gray-50); flex-wrap: wrap; }
+.seg button { border: 0; background: none; border-radius: 8px; padding: 8px 16px; font-size: 14px; color: var(--gray-600); }
+.seg button[aria-checked=true] { background: var(--black); color: var(--white); }
+.schips { display: flex; flex-wrap: wrap; gap: 8px; }
+.schip { border: 1px solid var(--gray-200); background: var(--white); border-radius: 999px; padding: 7px 14px; font-size: 14px; }
+.schip[aria-pressed=true] { background: var(--black); color: var(--white); border-color: var(--black); }
+.sgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-top: 14px; }
+.sfield { display: grid; gap: 6px; font-size: 13px; font-weight: 500; }
+.sfield input, .sfield select { height: 44px; border: 1px solid var(--gray-200); border-radius: 8px; padding: 0 12px; font-size: 14px; background: var(--white); color: var(--black); min-width: 0; width: 100%; }
+.sfield input:focus, .sfield select:focus { border-color: var(--black); outline: 0; }
+.sset__who { display: flex; align-items: flex-start; gap: 18px; }
+.auth__avatar--lg { width: 64px; height: 64px; font-size: 26px; margin: 0; flex: none; }
+.sset__fields { display: grid; gap: 12px; flex: 1; min-width: 0; }
+.sset__err { color: var(--orange-deep); font-size: 13px; } .sset__err[hidden] { display: none; }
+.sset__note { margin-top: 14px; font-size: 13px; color: var(--gray-600); } .sset__note--top { margin-top: 0; }
+.sset__txt { font-size: 14px; color: var(--gray-600); line-height: 1.55; max-width: 62ch; }
+.sset__foot { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--gray-100); display: flex; gap: 10px; flex-wrap: wrap; }
+.sset__logout { min-width: 140px; }
+.clears { list-style: none; margin: 8px 0 0; padding: 0; }
+.clears li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 0; border-top: 1px solid var(--gray-100); }
+.clears b { font-size: 15px; font-weight: 500; } .clears p { font-size: 13px; color: var(--gray-600); margin-top: 2px; }
+.clears .btn { flex: none; }
+.btn--danger { background: var(--orange-deep); border-color: var(--orange-deep); color: var(--white); }
+.faq details { border-top: 1px solid var(--gray-100); padding: 12px 0; } .faq summary { cursor: pointer; font-size: 15px; font-weight: 500; }
+.faq details p { margin-top: 8px; font-size: 14px; color: var(--gray-600); line-height: 1.5; }
+.about { margin: 14px 0 0; } .about div { display: flex; gap: 14px; } .about dt { color: var(--gray-600); font-size: 14px; } .about dd { margin: 0; font-size: 14px; }
+.sset__links { display: flex; gap: 18px; margin-top: 14px; font-size: 14px; } .sset__links a { text-decoration: underline; text-underline-offset: 3px; }
+#dealsJoin { margin-top: 6px; }
+.overtag { font-weight: 500; font-size: 11px; color: var(--orange-deep); background: var(--orange-soft); border-radius: 4px; padding: 1px 6px; margin-left: 6px; letter-spacing: 0; }
+@media (max-width: 560px) { .srow:not(.srow--col) { gap: 12px; } .clears li { flex-direction: column; align-items: flex-start; } .sset__who { flex-direction: column; } #viewSettings .sset { padding: 18px; } }
+
+/* text size (Settings > Appearance): zoom the scrolling content, not the fixed-height frames */
+:root[data-text="small"] :is(.feed > *, .panel > *, .settings, .shop, .saved, .shopbar, main) { zoom: .92; }
+:root[data-text="large"] :is(.feed > *, .panel > *, .settings, .shop, .saved, .shopbar, main) { zoom: 1.14; }

@@ -88,5 +88,5 @@
   window.addEventListener('storage', e => { if (e.key === KEY) { mem = null; paint(); } });
   const init = () => paint();
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
-  window.LuxoraAuth = { profile: get, open, logOut() { mem = null; write(null); paint(); } };
+  window.LuxoraAuth = { profile: get, open, EMAIL, update(p) { mem = p; write(p); paint(); }, logOut() { mem = null; write(null); paint(); } };
 })();

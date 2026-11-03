@@ -8,14 +8,16 @@
   // Static hosting (GitHub Pages) has no backend: answer in the browser via js/offline.js. Anywhere else, try the server first
   // and fall back to the same offline responder if /api/chat is unreachable. Relative URLs so it works under /<repo>/.
   const STATIC = window.LUXORA_STATIC || /\.github\.io$/.test(location.hostname);
+  const lastIds = () => { for (let i = hist.length - 1; i >= 0; i--) if (hist[i].r === 'b' && hist[i].ids && hist[i].ids.length) return hist[i].ids; return []; };
   async function chat(message) {
+    const last = lastIds();
     if (!STATIC) {
       try {
-        const res = await fetch('api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message }) });
+        const res = await fetch('api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message, last }) });
         if (res.ok) return await res.json();
       } catch (e) { /* fall through to offline */ }
     }
-    return window.LuxoraOffline.respond(message);
+    return window.LuxoraOffline.respond(message, { last });
   }
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   function toast(t, link) {
@@ -23,25 +25,48 @@
     if (link) toastEl.insertAdjacentHTML('beforeend', ` &middot; <a href="${link[1]}">${link[0]}</a>`);
     toastEl.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.hidden = true, 3500);
   }
-  const addToCart = (p, o) => { const l = S.addToCart(p, o); toast(`Added ${l.qty} × ${p.name} to cart`, ['View cart', '#/cart']); };
+  const addToCart = (p, o) => { const l = S.addToCart(p, o); if (!l) return null; toast(`Added ${l.qty} × ${p.name} to cart`, ['View cart', '#/cart']); };
   const heartSvg = '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg>';
   function toggleSave(p, o) { const on = S.toggleSaved(p, o); toast(on ? `Saved ${p.name}` : `Removed ${p.name} from saved`, on ? ['View saved', '#/saved'] : null); return on; }
 
   /* ---------- chat ---------- */
   const view = $('#viewAssistant');
+  /* chat history: kept in localStorage ("luxora.chat", last 40 messages) so Settings can clear it */
+  const HK = 'luxora.chat'; let hist = []; let restoring = false;
+  try { const v = JSON.parse(localStorage.getItem(HK)); if (Array.isArray(v)) hist = v.slice(-40); } catch {}
+  if (!LuxoraPrefs.get().rememberChat) { hist = []; try { localStorage.removeItem(HK); } catch {} }
+  const saveHist = () => { try { hist.length && LuxoraPrefs.get().rememberChat ? localStorage.setItem(HK, JSON.stringify(hist.slice(-40))) : localStorage.removeItem(HK); } catch {} };
+  const emptyHTML = $('#empty').outerHTML;
   function userMsg(text, file) {
     $('#empty')?.remove(); view.classList.remove('is-empty');
     const m = el('div', 'msg--user'); m.textContent = text;
     if (file) { const f = el('small', 'msg__file'); f.textContent = 'Attached: ' + file; m.append(f); }
     feed.append(m); scroll();
+    if (!restoring) { hist.push({ r: 'u', t: text, f: file || '' }); saveHist(); }
   }
   /* assistant message = small logo + body column */
   function botWrap(inner) { const m = el('div', 'msg--bot'), av = el('span', 'msg__av'); av.setAttribute('aria-hidden', 'true'); av.innerHTML = LuxoraArt.logo(); const body = el('div', 'msg__body'); if (inner) body.innerHTML = inner; m.append(av, body); return [m, body]; }
   const scroll = () => requestAnimationFrame(() => { feed.scrollTop = feed.scrollHeight; });
-  function botMsg(data) {
+  /* Settings > AI assistant / Region: shape a reply for display (length, currency). Stored history keeps the raw reply. */
+  const conv = t => !t || LuxoraPrefs.get().currency === 'USD' ? t : t.replace(/\$(\d[\d,]*(?:\.\d+)?)/g, (m, n) => LuxoraPrefs.fmt(parseFloat(n.replace(/,/g, ''))));
+  function shape(d, P) {
+    let reply = d.reply || '';
+    if (P.replyLength === 'short') { const m = reply.match(/^.*?[.!?](?=\s|$)/); if (m) reply = m[0]; }
+    else if (P.replyLength === 'detailed' && d.products && d.products[0] && d.products[0].description) reply += ' ' + d.products[0].description;
+    return { ...d, reply: conv(reply), title: conv(d.title), followUp: conv(d.followUp) };
+  }
+  /* saved budget limit (USD sample prices) is applied when the question doesn't name a budget */
+  function outgoing(text) {
+    const b = parseFloat(LuxoraPrefs.get().budget);
+    if (!b || /\$\s*\d|under|below|less than|max|up to|<\s*\d/i.test(text) || /^(hi|hello|hey|yo|thanks|thank)\b/i.test(text.trim())) return text;
+    return text + ' under $' + b;
+  }
+  function botMsg(raw) {
+    const P = LuxoraPrefs.get(), data = shape(raw, P);
     const [wrap, m] = botWrap();
     const p = el('p'); p.textContent = data.reply; m.append(p);
-    if (data.products && data.products.length) {
+    if (data.products && data.products.length && !P.showCards) { show(data.products[0]); p.textContent += ' Top picks: ' + data.products.map(x => x.name).join(', ') + '.'; }
+    if (data.products && data.products.length && P.showCards) {
       const h = el('h3'); h.textContent = data.title || 'Top suggested'; m.append(h);
       const cards = el('div', 'cards');
       data.products.forEach(pr => {
@@ -50,7 +75,7 @@
         const heart = el('button', 'card__heart' + (S.isSaved(pr.id) ? ' on' : ''), heartSvg); heart.type = 'button'; heart.setAttribute('aria-label', `Save ${pr.name}`); heart.setAttribute('aria-pressed', S.isSaved(pr.id));
         heart.addEventListener('click', e => { e.stopPropagation(); const on = toggleSave(pr); heart.classList.toggle('on', on); heart.setAttribute('aria-pressed', on); if (current && current.id === pr.id) renderPanel(); });
         const add = el('button', 'card__add', '+'); add.setAttribute('aria-label', `Add ${pr.name} to cart`); add.type = 'button';
-        add.addEventListener('click', e => { e.stopPropagation(); addToCart(pr); });
+        add.addEventListener('click', e => { e.stopPropagation(); if (S.needsSize(pr)) { open(); sel.sizeErr = true; renderPanel(); toast(`Choose a size for ${pr.name} first`); const sz = $('#size'); if (sz) sz.focus(); } else addToCart(pr); });
         c.append(heart, add);
         const open = () => { show(pr); view.classList.add('panel-open'); cards.querySelectorAll('.card').forEach(x => x.classList.toggle('sel', x === c)); };
         c.addEventListener('click', open); c.addEventListener('keydown', e => { if (e.key === 'Enter') open(); });
@@ -61,12 +86,13 @@
       show(data.products[0]); cards.firstChild.classList.add('sel');
     }
     feed.append(wrap); scroll();
+    if (!restoring) { hist.push({ r: 'b', reply: raw.reply, title: raw.title || '', followUp: raw.followUp || '', ids: (raw.products || []).map(x => x.id), link: !!raw.cartLink }); saveHist(); }
   }
   async function send(text, file) {
     text = text.trim(); if (!text) return;
     userMsg(text, file);
     const [t] = botWrap('<span class="typing" role="status" aria-label="Luxora is typing"><i></i><i></i><i></i></span>'); feed.append(t); scroll();
-    try { const data = await chat(text); t.remove(); botMsg(data); }
+    try { const data = await chat(outgoing(text)); t.remove(); botMsg(data); }
     catch (e) { t.remove(); botMsg({ reply: "Sorry, I couldn't reach the assistant just now. Please try again.", products: [] }); }
   }
   /* attachment: a prototype nicety - the file stays in the browser; only its name is shown in the chat */
@@ -74,13 +100,24 @@
   const setFile = n => { attName = n; attached.hidden = !n; attached.innerHTML = ''; if (n) { const t = el('span'); t.textContent = n; const x = el('button', null, '&#10005;'); x.type = 'button'; x.setAttribute('aria-label', 'Remove attachment'); x.onclick = () => { fileIn.value = ''; setFile(''); $('#msg').focus(); }; attached.append(t, x); } };
   $('#attachBtn').addEventListener('click', () => fileIn.click());
   fileIn.addEventListener('change', () => { const f = fileIn.files[0]; setFile(f ? f.name.slice(0, 40) : ''); if (f) $('#msg').focus(); });
-  $('#composer').addEventListener('submit', e => { e.preventDefault(); const i = $('#msg'); const v = i.value; if (!v.trim()) { i.focus(); return; } i.value = ''; const n = attName; fileIn.value = ''; setFile(''); send(v, n); });
-  $('#newChat').addEventListener('click', () => { history.replaceState(null, '', location.pathname + '#/assistant'); location.reload(); });
-  $('#chips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) send(b.dataset.q); });
+  /* message length: nothing is silently cut off. Counter appears near the limit; over the limit, sending is blocked with a warning. */
+  const MAX = 1000, msgIn = $('#msg'), cnt = $('#msgCount'), comp = $('#composer'), sendBtn = $('.send');
+  function counter() {
+    const n = msgIn.value.length, over = n > MAX;
+    cnt.hidden = n < MAX * 0.8; cnt.classList.toggle('over', over); comp.classList.toggle('is-over', over);
+    cnt.textContent = over ? `${n.toLocaleString()} / ${MAX.toLocaleString()} - too long, please shorten your message to send` : `${n.toLocaleString()} / ${MAX.toLocaleString()}`;
+    sendBtn.setAttribute('aria-disabled', over); msgIn.setAttribute('aria-invalid', over);
+  }
+  msgIn.addEventListener('input', counter);
+  $('#composer').addEventListener('submit', e => { e.preventDefault(); const i = $('#msg'); const v = i.value; if (!v.trim()) { i.focus(); return; } if (v.length > MAX) { counter(); i.focus(); return; } i.value = ''; counter(); const n = attName; fileIn.value = ''; setFile(''); send(v, n); });
+  $('#newChat').addEventListener('click', () => { history.replaceState(null, '', location.pathname + '#/assistant'); document.dispatchEvent(new Event('luxora:clear-chat')); $('#msg').focus(); });
+  feed.addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) send(b.dataset.q); });
 
   /* ---------- recommended panel ---------- */
-  function show(p) { current = p; sel = { size: '', kit: true, color: p.colors[0], qty: 1, view: 0 }; renderPanel(); }
-  const chosen = () => ({ size: sel.size || (sel.kit ? 'Free sizing kit' : current.sizes[0]), color: sel.color, qty: sel.qty });
+  function show(p) { current = p; sel = { size: '', kit: false, sizeErr: false, color: p.colors[0], qty: 1, view: 0 }; renderPanel(); }
+  const chosen = () => ({ size: sel.size || (sel.kit ? 'Free sizing kit' : (S.needsSize(current) ? '' : current.sizes[0])), color: sel.color, qty: sel.qty });
+  /* a size must be picked before anything is added: show the error and focus the select */
+  function needSize() { if (!S.needsSize(current) || chosen().size) return false; sel.sizeErr = true; renderPanel(); const s = $('#size'); if (s) s.focus(); return true; }
   function renderPanel() {
     const p = current; if (!p) return;
     const views = LuxoraArt.VIEWS, isOn = S.isSaved(p.id), hasKit = p.sizes.includes('Free sizing kit');
@@ -95,12 +132,13 @@
       <div class="prod__top">
         <div class="prod__id"><div class="store">${esc(p.store)}</div><div class="prod__name">${esc(p.name)}</div>
           <div class="stars">${S.stars(p.rating)}<span>${p.rating.toFixed(1)} (${esc(p.reviews)} Reviews)</span></div></div>
-        <div class="prod__price"><sup>$</sup>${p.price.toFixed(2)}</div>
+        <div class="prod__price">${money(p.price)}</div>
       </div>
       <div class="opts">
-        <div class="field"><span class="lbl">Size</span>
+        ${S.needsSize(p) ? `<div class="field"><span class="lbl" id="sizeLbl">Size <small class="req">(required)</small></span>
           ${hasKit ? `<button class="kit" id="kit" type="button" aria-pressed="${sel.kit}"><span>Free sizing kit</span><span class="tick ${sel.kit ? '' : 'off'}">&#10003;</span></button>` : ''}
-          <select id="size" aria-label="Select your size"><option value="">Select your size</option>${p.sizes.filter(s => s !== 'Free sizing kit').map(s => `<option ${s === sel.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></div>
+          <select id="size" aria-label="Select your size" aria-required="true" aria-describedby="sizeErr" ${sel.sizeErr ? 'aria-invalid="true"' : ''}><option value="">Select your size</option>${p.sizes.filter(s => s !== 'Free sizing kit').map(s => `<option ${s === sel.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>
+          <p class="sizeerr" id="sizeErr" role="alert" ${sel.sizeErr ? '' : 'hidden'}>Please select a size before adding this to your cart.</p></div>` : ''}
         <div class="field"><span class="lbl">Select color</span><div class="sw" id="sw">${p.colors.map(c => `<button type="button" class="c-${c} ${c === sel.color ? 'on' : ''}" data-c="${c}" aria-label="${c}" aria-pressed="${c === sel.color}">${c === sel.color ? '&#10003;' : ''}</button>`).join('')}</div></div>
       </div>
       <div class="buy">
@@ -112,30 +150,51 @@
     const go = d => { sel.view = (sel.view + d + views) % views; $('#art').innerHTML = LuxoraArt.product(p, sel.view); $('#dots').querySelectorAll('i').forEach((x, i) => x.classList.toggle('on', i === sel.view)); };
     $('#prev').onclick = () => go(-1); $('#next').onclick = () => go(1);
     $('#dots').onclick = e => { const i = e.target.dataset.i; if (i != null) go(Number(i) - sel.view); };
-    if ($('#kit')) $('#kit').onclick = () => { sel.kit = !sel.kit; renderPanel(); };
-    $('#size').onchange = e => { sel.size = e.target.value; };
+    if ($('#kit')) $('#kit').onclick = () => { sel.kit = !sel.kit; if (sel.kit) sel.size = ''; sel.sizeErr = false; renderPanel(); };
+    if ($('#size')) $('#size').onchange = e => { sel.size = e.target.value; if (sel.size) sel.kit = false; sel.sizeErr = false; renderPanel(); };
     $('#sw').onclick = e => { const b = e.target.closest('button'); if (b) { sel.color = b.dataset.c; renderPanel(); } };
     $('#minus').onclick = () => { sel.qty = Math.max(1, sel.qty - 1); $('#q').textContent = sel.qty; };
     $('#plus').onclick = () => { sel.qty = Math.min(9, sel.qty + 1); $('#q').textContent = sel.qty; };
-    $('#add').onclick = () => addToCart(p, chosen());
+    $('#add').onclick = () => { if (!needSize()) addToCart(p, chosen()); };
     $('#heart').onclick = () => { toggleSave(p, chosen()); renderPanel(); document.querySelectorAll('.card').forEach(c => { const hb = c.querySelector('.card__heart'); if (hb && c.getAttribute('aria-label') === `View ${p.name}`) { hb.classList.toggle('on', S.isSaved(p.id)); hb.setAttribute('aria-pressed', S.isSaved(p.id)); } }); };
     $('#confirm').onclick = confirmOrder;
     $('#pback').onclick = $('#pclose').onclick = () => view.classList.remove('panel-open');
   }
   function confirmOrder() {
-    if (!current) return;
+    if (!current || needSize()) return;
     const c = chosen();
     if (!S.cart().some(i => i.id === current.id && i.size === c.size && i.color === c.color)) S.addToCart(current, c);
     const n = S.count(), total = S.subtotal();
     $('#empty')?.remove(); view.classList.remove('is-empty', 'panel-open');
-    botMsg({ reply: `Great choice. Your cart now has ${n} item${n > 1 ? 's' : ''} (${money(total)}). Open the shop to review your cart and check out. This is a prototype with sample data, so nothing is actually ordered or charged.`, products: [] });
+    botMsg({ cartLink: true, reply: `Great choice. Your cart now has ${n} item${n > 1 ? 's' : ''} (${money(total)}). Open the shop to review your cart and check out. This is a prototype with sample data, so nothing is actually ordered or charged.`, products: [] });
     const last = feed.lastElementChild?.querySelector('.msg__body'); if (last) { const a = el('a', 'btn btn--sm cart-link', 'Go to cart'); a.href = '#/cart'; a.style.alignSelf = 'flex-start'; last.append(a); scroll(); }
   }
   window.LuxoraAssistant = { refresh() { renderPanel(); document.querySelectorAll('.card[data-id]').forEach(c => { const on = S.isSaved(c.dataset.id), hb = c.querySelector('.card__heart'); if (hb) { hb.classList.toggle('on', on); hb.setAttribute('aria-pressed', on); } }); } };
   document.addEventListener('luxora:external', renderPanel);
+  document.addEventListener('luxora:prefs', () => { if (current) renderPanel(); });
   document.addEventListener('luxora:deals', () => window.LuxoraAssistant.refresh());
+
+  /* Settings > Your data > Clear chat history */
+  document.addEventListener('luxora:clear-chat', () => {
+    hist = []; saveHist(); feed.innerHTML = emptyHTML; LuxoraArt.hydrate(feed); view.classList.add('is-empty'); view.classList.remove('panel-open');
+    current = null; show(window.LuxoraOffline.products[0]);
+  });
 
   /* ---------- boot ---------- */
   show(window.LuxoraOffline.products[0]);
+  if (hist.length) {
+    restoring = true;
+    const byId = Object.fromEntries(window.LuxoraOffline.products.map(p => [p.id, p]));
+    const items = hist.slice();
+    $('#empty')?.remove(); view.classList.remove('is-empty');
+    items.forEach(h => {
+      if (h.r === 'u') userMsg(h.t, h.f);
+      else {
+        botMsg({ reply: h.reply, title: h.title, followUp: h.followUp, products: (h.ids || []).map(i => byId[i]).filter(Boolean) });
+        if (h.link) { const last = feed.lastElementChild?.querySelector('.msg__body'); if (last) { const l = el('a', 'btn btn--sm cart-link', 'Go to cart'); l.href = '#/cart'; l.style.alignSelf = 'flex-start'; last.append(l); } }
+      }
+    });
+    restoring = false; feed.scrollTop = feed.scrollHeight;
+  }
   const q = new URLSearchParams(location.search).get('q'); if (q) send(q);
 })();

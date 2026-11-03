@@ -142,3 +142,4 @@ h2 { font-size: clamp(28px, 3.4vw, 40px); line-height: 1.1; letter-spacing: -.02
 .built__go { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--gray-200); display: grid; place-items: center; font-size: 16px; transition: background .15s, color .15s; }
 .built__go:hover { background: var(--black); color: var(--white); border-color: var(--black); }
 @media (max-width: 720px) { .nav__links button.nav__signin--m { border: 0; border-bottom: 1px solid var(--gray-100); width: 100%; } }
+.foot__links { display: flex; gap: 18px; font-size: 13px; color: var(--gray-600); } .foot__links a { text-decoration: underline; text-underline-offset: 3px; }

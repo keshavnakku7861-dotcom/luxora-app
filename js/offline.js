@@ -64,13 +64,56 @@ function detectCategories(text) {
     .map(([key]) => key);
 }
 
+/* products named in the text, in the order they appear ("Aura Ring", "nova", "Ring Pro"...) */
+function namedProducts(lower) {
+  const esc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const hits = [];
+  products.forEach(p => {
+    const n = p.name.toLowerCase(), first = n.split(' ')[0], toks = [n, n.replace(/\s+\d+$/, '')];
+    if (first !== 'ring') toks.push(first);
+    let idx = -1;
+    for (const t of toks) { const m = lower.match(new RegExp('\\b' + esc(t) + '\\b')); if (m && (idx < 0 || m.index < idx)) idx = m.index; }
+    if (idx >= 0) hits.push([idx, p]);
+  });
+  return hits.sort((a, b) => a[0] - b[0]).map(h => h[1]);
+}
+
+function sideBySide(a, b) {
+  return { title: 'Side by side', reply: `${a.name} (${money(a.price)}, ${a.rating} stars) vs ${b.name} (${money(b.price)}, ${b.rating} stars). ${a.price < b.price ? a.name : b.name} is the better value; ${a.rating >= b.rating ? a.name : b.name} is rated higher.`, products: [a, b], followUp: 'Want me to add one of them to your cart?' };
+}
+
+/* follow-up questions about the products shown last ("which one is cheaper?", "tell me more about the first one") */
+function followUp(lower, last, cats, named) {
+  if (!last.length || cats.length || named.length >= 2) return null;
+  const pick = (p, reply, extra) => ({ title: 'Your pick', reply, products: [p], followUp: extra || 'Want me to add it to your cart?' });
+  const ord = /\b(first|1st)\b/.test(lower) ? 0 : /\b(second|2nd)\b/.test(lower) ? 1 : /\b(third|3rd)\b/.test(lower) ? 2 : -1;
+  if (/\b(compare|difference|differ)\b.*\b(them|these|those|both|two)\b|\b(them|these|those|both)\b.*\b(compare|differ)/.test(lower) && last.length >= 2) return sideBySide(last[0], last[1]);
+  if (/\b(cheaper|cheapest|less expensive|lowest price|least expensive|most affordable|budget[- ]friendly)\b/.test(lower)) {
+    const p = [...last].sort((a, b) => a.price - b.price)[0];
+    return pick(p, last.length > 1 ? `${p.name} is the cheaper one at ${money(p.price)}, versus ${last.filter(x => x !== p).map(x => `${x.name} at ${money(x.price)}`).join(' and ')}.` : `${p.name} is the only one I showed, at ${money(p.price)}.`);
+  }
+  if (/\b(pricier|more expensive|most expensive|priciest|costs? more|highest price)\b/.test(lower)) {
+    const p = [...last].sort((a, b) => b.price - a.price)[0];
+    return pick(p, `${p.name} is the priciest at ${money(p.price)}.`);
+  }
+  if (/\b(better|best|top rated|highest rated|best rated|higher rated|worth it|should i (get|buy|pick|choose)|recommend)\b/.test(lower) && last.length) {
+    const p = [...last].sort((a, b) => b.rating - a.rating || a.price - b.price)[0];
+    return pick(p, last.length > 1 ? `Of the ones I showed, ${p.name} is rated highest at ${p.rating.toFixed(1)} stars from ${p.reviews} reviews, at ${money(p.price)}.` : `${p.name} is a strong choice at ${p.rating.toFixed(1)} stars from ${p.reviews} reviews.`);
+  }
+  if (/\b(tell me more|more about|more info|details?|describe|what about)\b/.test(lower) || ord >= 0) {
+    const p = last[ord >= 0 && ord < last.length ? ord : 0];
+    return pick(p, `${p.name} (${p.store}) is ${money(p.price)}, rated ${p.rating.toFixed(1)} stars from ${p.reviews} reviews. ${p.description || ''}`.trim());
+  }
+  return null;
+}
+
 function score(p, words) {
   let s = p.rating;
   for (const w of words) if (p.tags.includes(w)) s += 1.5;
   return s;
 }
 
-async function respond(message) {
+async function respond(message, ctx = {}) {
   const text = String(message || '').trim();
   const lower = text.toLowerCase();
   const budget = parseBudget(text);
@@ -87,13 +130,13 @@ async function respond(message) {
   if (/\b(track|where is|delivery|shipping|order status)\b/.test(lower)) {
     return { reply: "I can guide you from confirmation to delivery. Once you confirm an order I'll keep you posted on shipping. (This is a prototype with sample data, so no real orders are placed.)", products: [] };
   }
-  if (/\b(compare|vs|versus|difference)\b/.test(lower)) {
-    const named = products.filter(p => lower.includes(p.name.toLowerCase().split(' ')[0]));
-    if (named.length >= 2) {
-      const [a, b] = named;
-      return { title: 'Side by side', reply: `${a.name} (${money(a.price)}, ${a.rating} stars) vs ${b.name} (${money(b.price)}, ${b.rating} stars). ${a.price < b.price ? a.name : b.name} is the better value; ${a.rating >= b.rating ? a.name : b.name} is rated higher.`, products: [a, b], followUp: 'Want me to add one of them to your cart?' };
-    }
-  }
+  const named = namedProducts(lower);
+  const last = (ctx && Array.isArray(ctx.last) ? ctx.last : []).map(id => products.find(p => p.id === id)).filter(Boolean);
+  const comparing = /\b(compare|vs|versus|difference|differ)\b/.test(lower) || /\bwhich\b.*\b(better|best|cheaper|cheapest|worth|pricier|higher rated)\b/.test(lower) || (named.length >= 2 && /\b(better|cheaper|prefer|choose|pick|or)\b/.test(lower) && /\b(which|better|cheaper|prefer|should|choose|pick)\b/.test(lower));
+  if (comparing && named.length >= 2) return sideBySide(named[0], named[1]);
+  const fu = followUp(lower, last, cats, named);
+  if (fu) return fu;
+  if (comparing && named.length === 1 && last.length) return sideBySide(named[0], last.find(p => p !== named[0]) || named[0]);
 
   let pool = products.filter(p => cats.length === 0 || cats.includes(p.category));
   const noCategory = cats.length === 0;
@@ -181,6 +224,9 @@ async function respond(message, ctx = {}) {
       : `${cheaper.name} saves you some cash at ${money(cheaper.price)}, while ${better.name} is the reviewers' favorite at ${better.rating} stars. Depends whether price or polish matters more to you.`;
     return { ...out, reply, followUp: 'Want me to add one to your cart?' };
   }
+  if (out.title === 'Your pick') {
+    return { ...out, reply: `${pick(['Easy one!', 'Good question.', 'Sure thing.'])} ${out.reply}` };
+  }
   if (out.title === 'Closest match') {
     const c = p[0];
     return { ...out, reply: `Hmm, nothing quite fits that budget, sorry! The closest I've got is ${c.name} at ${money(c.price)}.`, followUp: 'Want me to see what a little more stretch gets you?' };
@@ -209,6 +255,6 @@ module.exports = { respond };
   window.LuxoraOffline = {
     products: products.products,
     // Same contract as POST /api/chat: { reply, products, title?, followUp? } (SENDER's warm voice on top of the rules)
-    respond: async message => sender.respond(message, {})
+    respond: async (message, ctx) => sender.respond(message, ctx || {})
   };
 })();

@@ -1,5 +1,5 @@
 html, body { height: 100%; }
-body { background: var(--gray-50); overflow: hidden; }
+body { background: var(--page); overflow: hidden; }
 [data-logo] { display: inline-flex; } [data-logo] svg { width: 100%; height: auto; }
 .shell { height: 100vh; height: 100dvh; display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 16px; padding: 16px; }
 .stage { position: relative; min-width: 0; min-height: 0; height: 100%; }
@@ -131,8 +131,6 @@ body { background: var(--gray-50); overflow: hidden; }
 .newchat { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid var(--gray-200); background: var(--white); border-radius: 8px; font-size: 13px; }
 .newchat svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .newchat:hover { border-color: var(--black); }
-.chat__top .x { width: 32px; height: 32px; border: 1px solid var(--gray-200); background: var(--white); border-radius: 8px; display: grid; place-items: center; font-size: 12px; }
-.chat__top .x:hover { border-color: var(--black); }
 
 .feed { flex: 1; min-height: 0; overflow-y: auto; padding: 22px 2px 16px; display: flex; flex-direction: column; gap: 22px; scroll-behavior: smooth; }
 .empty { margin: auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; width: min(640px, 100%); padding: 12px 0; }
@@ -165,7 +163,7 @@ body { background: var(--gray-50); overflow: hidden; }
 .card__add:hover { background: var(--orange); }
 
 /* composer */
-.composer { flex: none; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "file file file" "msg msg msg" "att . send"; gap: 10px 8px; align-items: center; border: 1px solid var(--gray-200); border-radius: 14px; padding: 14px 14px 12px 18px; background: var(--white); }
+.composer { position: relative; flex: none; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "file file file" "msg msg msg" "att . send"; gap: 10px 8px; align-items: center; border: 1px solid var(--gray-200); border-radius: 14px; padding: 14px 14px 12px 18px; background: var(--white); }
 .composer:focus-within { border-color: var(--black); }
 .composer input#msg { grid-area: msg; border: 0; outline: 0; background: none; font-size: 14px; min-width: 0; padding: 4px 0 14px; }
 .composer input#msg::placeholder { color: var(--gray-400); }
@@ -187,8 +185,9 @@ body { background: var(--gray-50); overflow: hidden; }
 
 /* phone layout: chat fills the screen, product details open as a full-screen sheet */
 @media (max-width: 980px) {
-  .shell { padding: 8px 8px 76px; gap: 8px; }
-  .view--assistant { height: calc(100dvh - 84px); min-height: 480px; display: block; }
+  .shell { padding: 8px 8px calc(76px + env(safe-area-inset-bottom, 0px)); gap: 8px; }
+  .view--assistant { height: calc(100dvh - 84px - env(safe-area-inset-bottom, 0px)); display: block; }
+  .rail { bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important; }
   .chat { height: 100%; min-height: 0; padding: 0 14px 12px; }
   .chat__top { height: 52px; margin: 0 -14px; padding: 0 14px; }
   .feed { min-height: 0; padding-top: 16px; }
@@ -212,3 +211,12 @@ body { background: var(--gray-50); overflow: hidden; }
   .composer input#msg { padding: 4px 0; }
   .attach { width: 36px; height: 36px; padding: 0; justify-content: center; border: 0; } .attach span { display: none; }
 }
+
+/* message length counter */
+.msgcount { position: absolute; right: 12px; top: -22px; font-size: 12px; color: var(--gray-600); background: var(--white); padding: 0 6px; border-radius: 4px; }
+.msgcount.over { color: var(--orange-deep); font-weight: 500; }
+.composer.is-over { border-color: var(--orange-deep); }
+.send[aria-disabled=true] { opacity: .45; cursor: not-allowed; }
+.sizeerr { font-size: 13px; color: var(--orange-deep); margin-top: 6px; }
+select[aria-invalid=true] { border-color: var(--orange-deep) !important; }
+.req { font-weight: 400; color: var(--gray-600); font-size: 12px; }

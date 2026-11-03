@@ -15,8 +15,11 @@
     isSaved: id => Store.saved().some(s => s.id === id),
     info(item) { const c = catalog()[item.id] || {}; return { id: item.id, name: item.name || c.name || 'Product', store: item.store || c.store || 'Luxora', price: item.price ?? c.price ?? 0 }; },
     defaults(p) { return { size: p.sizes[0], color: p.colors[0] }; },
+    /* sizes the shopper must pick (rings, watches...). "One size" products need no choice. */
+    needsSize: p => (p.sizes || []).some(x => x !== 'One size'),
     addToCart(p, opts = {}) {
-      const cart = Store.cart(), line = { id: p.id, name: p.name, store: p.store, price: p.price, size: opts.size || p.sizes[0], color: opts.color || p.colors[0], qty: opts.qty || 1 };
+      if (Store.needsSize(p) && !opts.size) return null;   // a size must be chosen first
+      const cart = Store.cart(), line = { id: p.id, name: p.name, store: p.store, price: p.price, size: opts.size || (Store.needsSize(p) ? '' : p.sizes[0]), color: opts.color || p.colors[0], qty: opts.qty || 1 };
       const hit = cart.find(i => i.id === line.id && i.size === line.size && i.color === line.color);
       if (hit) hit.qty = Math.min(9, hit.qty + line.qty); else cart.push(line);
       write(KC, cart); return line;
@@ -27,13 +30,14 @@
     clearCart() { write(KC, []); },
     toggleSaved(p, opts = {}) {
       let s = Store.saved(); const on = s.some(x => x.id === p.id);
-      s = on ? s.filter(x => x.id !== p.id) : [...s, { id: p.id, size: opts.size || p.sizes[0], color: opts.color || p.colors[0] }];
+      s = on ? s.filter(x => x.id !== p.id) : [...s, { id: p.id, size: opts.size || (Store.needsSize(p) ? '' : p.sizes[0]), color: opts.color || p.colors[0] }];
       write(KS, s); return !on;
     },
+    clearSaved() { write(KS, []); },
     removeSaved(id) { write(KS, Store.saved().filter(x => x.id !== id)); },
     subtotal: () => Store.cart().reduce((s, i) => s + Store.info(i).price * i.qty, 0),
     shipping(method = 'standard') { const sub = Store.subtotal(); if (!sub) return 0; return method === 'express' ? EXPRESS : (sub >= FREE_OVER ? 0 : STANDARD); },
-    money: n => '$' + Number(n).toFixed(2),
+    money: n => window.LuxoraPrefs ? LuxoraPrefs.fmt(n) : '$' + Number(n).toFixed(2),
     esc: s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])),
     stars: r => '★'.repeat(Math.round(r)) + '☆'.repeat(5 - Math.round(r)),
     bind() {
