@@ -4,11 +4,12 @@
   const S = window.LuxoraStore, money = S.money, esc = S.esc, Art = window.LuxoraArt;
   const products = window.LuxoraOffline.products, byId = Object.fromEntries(products.map(p => [p.id, p]));
   const CATS = [['all', 'All'], ['smart-rings', 'Smart rings'], ['smartwatches', 'Smartwatches'], ['earbuds', 'Earbuds'], ['headphones', 'Headphones']];
-  const params = new URLSearchParams(location.search);
-  const st = { cat: CATS.some(c => c[0] === params.get('cat')) ? params.get('cat') : 'all', sort: 'featured', q: '' };
+  const st = { cat: 'all', sort: 'featured', q: '' };
   const heart = '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg>';
   const cname = c => c[0].toUpperCase() + c.slice(1);
   S.bind();
+  const goSaved = () => { location.hash = '#/saved'; };
+  let returnTo = '#/shop';
 
   function toast(t, link) {
     const el = $('#toast'); el.textContent = t;
@@ -29,13 +30,14 @@
   function cardHtml(p) {
     const on = S.isSaved(p.id);
     return `<article class="pcard">
-      <a class="pcard__img" href="#/p/${p.id}" aria-label="View ${esc(p.name)}"><span class="a">${Art.product(p, 0)}</span><span class="b">${Art.product(p, 1)}</span></a>
+      <a class="pcard__img" href="#/shop/p/${p.id}" aria-label="View ${esc(p.name)}"><span class="a">${Art.product(p, 0)}</span><span class="b">${Art.product(p, 1)}</span></a>
       <button class="pcard__heart ${on ? 'on' : ''}" data-heart="${p.id}" aria-pressed="${on}" aria-label="${on ? 'Remove' : 'Save'} ${esc(p.name)}">${heart}</button>
       <div class="pcard__body"><div class="pcard__store">${esc(p.store)}</div>
-        <h3><a href="#/p/${p.id}">${esc(p.name)}</a></h3>
+        <h3><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h3>
         <div class="rate"><span class="stars">${S.stars(p.rating)}</span> <span>${p.rating.toFixed(1)} (${esc(p.reviews)})</span></div>
         <div class="pcard__foot"><strong>${money(p.price)}</strong><button class="btn btn--sm" data-add="${p.id}">Add to cart</button></div></div></article>`;
   }
+  const leaveDetail = () => { if (/^#\/shop\/p\//.test(location.hash)) location.hash = '#/shop'; };
   function renderList() {
     $('#cats').innerHTML = CATS.map(([k, label]) => {
       const n = k === 'all' ? products.length : products.filter(p => p.category === k).length;
@@ -48,13 +50,13 @@
   }
   $('#cats').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) { st.cat = b.dataset.cat; renderList(); } });
   $('#sort').addEventListener('change', e => { st.sort = e.target.value; renderList(); });
-  $('#q').addEventListener('input', e => { st.q = e.target.value; if (location.hash) location.hash = ''; renderList(); });
-  $('#searchForm').addEventListener('submit', e => { e.preventDefault(); if (location.hash) location.hash = ''; });
+  $('#shopQ').addEventListener('input', e => { st.q = e.target.value; leaveDetail(); renderList(); });
+  $('#searchForm').addEventListener('submit', e => { e.preventDefault(); leaveDetail(); });
   document.addEventListener('click', e => {
     const a = e.target.closest('[data-add]'); if (a) { addToCart(byId[a.dataset.add]); return; }
     const h = e.target.closest('[data-heart]'); if (h) {
       const p = byId[h.dataset.heart], on = S.toggleSaved(p); h.classList.toggle('on', on); h.setAttribute('aria-pressed', on);
-      toast(on ? `Saved ${p.name}` : `Removed ${p.name} from saved`, on ? ['View saved', () => location.href = 'saved.html'] : null);
+      toast(on ? `Saved ${p.name}` : `Removed ${p.name} from saved`, on ? ['View saved', goSaved] : null);
     }
   });
 
@@ -65,7 +67,7 @@
     const draw = () => {
       const on = S.isSaved(p.id), related = products.filter(x => x.category === p.category && x.id !== p.id).concat(products.filter(x => x.category !== p.category)).slice(0, 4);
       root.innerHTML = `
-        <nav class="crumbs" aria-label="Breadcrumb"><a href="#/">Shop</a> / <a href="shop.html?cat=${p.category}">${CATS.find(c => c[0] === p.category)[1]}</a> / <span>${esc(p.name)}</span></nav>
+        <nav class="crumbs" aria-label="Breadcrumb"><a href="#/shop">Shop</a> / <a href="#/shop?cat=${p.category}">${CATS.find(c => c[0] === p.category)[1]}</a> / <span>${esc(p.name)}</span></nav>
         <div class="detail">
           <div class="gallery"><div class="gallery__main">${Art.product(p, d.view)}</div>
             <div class="gallery__thumbs">${Array.from({ length: Art.VIEWS }, (_, i) => `<button class="${i === d.view ? 'on' : ''}" data-view="${i}" aria-label="Photo ${i + 1}">${Art.product(p, i)}</button>`).join('')}</div></div>
@@ -91,29 +93,33 @@
       if (e.target.closest('#dPlus')) { d.qty = Math.min(9, d.qty + 1); $('#dQ').textContent = d.qty; }
       if (e.target.closest('#dAdd')) addToCart(p, { size: $('#dSize').value, color: d.color, qty: d.qty });
       if (e.target.closest('#dBuy')) { S.addToCart(p, { size: $('#dSize').value, color: d.color, qty: d.qty }); openDrawer(); }
-      if (e.target.closest('#dHeart')) { const on = S.toggleSaved(p, { size: $('#dSize').value, color: d.color }); const b = $('#dHeart'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); toast(on ? `Saved ${p.name}` : `Removed ${p.name} from saved`, on ? ['View saved', () => location.href = 'saved.html'] : null); }
+      if (e.target.closest('#dHeart')) { const on = S.toggleSaved(p, { size: $('#dSize').value, color: d.color }); const b = $('#dHeart'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); toast(on ? `Saved ${p.name}` : `Removed ${p.name} from saved`, on ? ['View saved', goSaved] : null); }
     };
   }
 
-  /* ---------- router ---------- */
-  function route() {
-    const m = location.hash.match(/^#\/p\/([\w-]+)/), p = m && byId[m[1]];
-    if (p) { $('#listView').hidden = true; $('#detailView').hidden = false; renderDetail(p); document.title = `${p.name} - Luxora`; window.scrollTo(0, 0); }
+  /* ---------- views (the app router in router.js calls these) ---------- */
+  let shown = false;
+  function show(pid, query = {}) {
+    shown = true;
+    if (query.cat && CATS.some(c => c[0] === query.cat)) { st.cat = query.cat; st.q = ''; $('#shopQ').value = ''; }
+    const p = pid && byId[pid], box = $('#viewShop');
+    if (p) { $('#listView').hidden = true; $('#detailView').hidden = false; renderDetail(p); document.title = `${p.name} - Luxora`; box.scrollTop = 0; }
     else { $('#detailView').hidden = true; $('#listView').hidden = false; document.title = 'Shop - Luxora'; renderList(); }
   }
-  window.addEventListener('hashchange', route);
+  const drawer = $('#drawer');
+  function setDrawer(open) { if (open === !drawer.hidden) return; drawer.hidden = !open; if (open) { renderDrawer(); drawer.querySelector('.x').focus(); } }
+  window.LuxoraShop = { show, setDrawer, isShown: () => shown, setReturn: h => { returnTo = h; }, checkout: () => openCheckout() };
 
   /* ---------- cart drawer ---------- */
-  const drawer = $('#drawer');
-  function openDrawer() { drawer.hidden = false; renderDrawer(); $('#drawer .x').focus(); }
-  const closeDrawer = () => { drawer.hidden = true; };
+  const openDrawer = () => { if (location.hash !== '#/cart') location.hash = '#/cart'; else setDrawer(true); };
+  const closeDrawer = () => { if (location.hash === '#/cart') location.hash = returnTo; else setDrawer(false); };
   function renderDrawer() {
     const cart = S.cart(), body = $('#drawerBody'), foot = $('#drawerFoot');
     $('#drawerCount').textContent = cart.length ? `(${S.count()})` : '';
     if (!cart.length) { body.innerHTML = `<div class="none"><h3>Your cart is empty</h3><p>Add something you like from the store.</p><button class="btn btn--sm" data-close-drawer>Continue shopping</button></div>`; foot.innerHTML = ''; return; }
     body.innerHTML = cart.map((i, idx) => {
       const f = S.info(i);
-      return `<article class="line"><a class="line__img" href="#/p/${f.id}" data-close-drawer>${Art.product({ id: f.id, name: f.name })}</a>
+      return `<article class="line"><a class="line__img" href="#/shop/p/${f.id}" data-close-drawer>${Art.product({ id: f.id, name: f.name })}</a>
         <div><div class="pcard__store">${esc(f.store)}</div><div class="line__name">${esc(f.name)}</div>
           <div class="line__opts">${esc(i.size)} &middot; <i class="dot c-${esc(i.color)}"></i>${cname(i.color)}</div>
           <div class="line__ctl"><div class="qty"><button data-dec="${idx}" aria-label="Decrease quantity of ${esc(f.name)}">&minus;</button><span>${i.qty}</span><button data-inc="${idx}" aria-label="Increase quantity of ${esc(f.name)}">+</button></div><button class="rm" data-rm="${idx}">Remove</button></div></div>
@@ -127,19 +133,18 @@
       <button class="btn btn--lg" id="goCheckout">Checkout (demo)</button>
       <button class="btn btn--lg btn--ghost" data-close-drawer>Continue shopping</button>`;
   }
-  $('#openCart').addEventListener('click', openDrawer);
   drawer.addEventListener('click', e => {
     const t = e.target, q = a => t.closest(`[${a}]`);
-    if (q('data-close-drawer')) closeDrawer();
+    if (q('data-close-drawer') && !t.closest('a')) closeDrawer();
     let b;
     if ((b = q('data-inc'))) { const i = +b.dataset.inc; S.setQty(i, S.cart()[i].qty + 1); }
     else if ((b = q('data-dec'))) { const i = +b.dataset.dec; S.setQty(i, S.cart()[i].qty - 1); }
     else if ((b = q('data-rm'))) S.removeLine(+b.dataset.rm);
-    else if (t.id === 'goCheckout') { closeDrawer(); openCheckout(); }
+    else if (t.id === 'goCheckout') openCheckout();
   });
   document.addEventListener('luxora:change', () => { if (!drawer.hidden) renderDrawer(); });
   document.addEventListener('luxora:external', () => { if (!drawer.hidden) renderDrawer(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !drawer.hidden && !dlg.open) closeDrawer(); });
 
   /* ---------- demo checkout (nothing is stored or sent anywhere) ---------- */
   const dlg = $('#checkout');
@@ -166,19 +171,15 @@
       </form>`;
     $('#coForm').onsubmit = e => { e.preventDefault(); placeOrder(); };
     $('#coForm').onchange = e => { if (e.target.name === 'm') { method = e.target.value; $('#coSum').innerHTML = summary(); } };
-    $('#coCancel').onclick = () => { dlg.close(); openDrawer(); };
+    $('#coCancel').onclick = () => dlg.close();
   }
   function placeOrder() {
     const html = summary(), ref = 'DEMO-' + Math.floor(100000 + Math.random() * 900000);
     S.clearCart();
     $('#coBody').innerHTML = `<h2 id="coTitle">Demo order placed</h2><p class="ref">Reference ${ref} &mdash; <b>not a real order</b></p>${html}
       <p class="fine"><b>No payment was taken and nothing will be shipped.</b> This confirmation only demonstrates the Luxora checkout flow with sample data.</p>
-      <div class="demo__btns"><button class="btn btn--lg" id="coDone">Continue shopping</button><a class="btn btn--lg btn--ghost" href="saved.html">View saved items</a></div>`;
-    $('#coDone').onclick = () => dlg.close();
+      <div class="demo__btns"><button class="btn btn--lg" id="coDone">Continue shopping</button><a class="btn btn--lg btn--ghost" href="#/saved" id="coSaved">View saved items</a></div>`;
+    $('#coDone').onclick = () => { dlg.close(); closeDrawer(); }; $('#coSaved').onclick = () => dlg.close();
   }
 
-  /* ---------- boot ---------- */
-  route();
-  if (location.hash === '#cart') { history.replaceState(null, '', location.pathname + location.search); openDrawer(); }
-  if (location.hash === '#checkout') { history.replaceState(null, '', location.pathname + location.search); openCheckout(); }
 })();

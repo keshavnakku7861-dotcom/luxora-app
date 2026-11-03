@@ -12,18 +12,18 @@
     const items = S.saved().filter(x => byId[x.id]), box = $('#lines');
     $('#moveAll').hidden = items.length < 2;
     if (!items.length) {
-      box.className = 'empty';
-      box.innerHTML = `<span data-logo class="logo__mark"></span><h2>No saved items yet</h2><p>Tap the heart on any product to keep it here for later.</p><a class="btn" href="shop.html">Browse the shop</a>`;
+      box.className = 'sempty';
+      box.innerHTML = `<span data-logo class="logo__mark"></span><h2>No saved items yet</h2><p>Tap the heart on any product to keep it here for later.</p><a class="btn" href="#/shop">Browse the shop</a>`;
       LuxoraArt.hydrate(box); return;
     }
     box.className = 'lines';
     box.innerHTML = items.map(x => {
       const p = byId[x.id], size = x.size || p.sizes[0], color = x.color || p.colors[0];
       return `<article class="line">
-        <a class="line__img" href="shop.html#/p/${p.id}" aria-label="View ${esc(p.name)}">${LuxoraArt.product(p)}</a>
-        <div><div class="line__store">${esc(p.store)}</div><h2 class="line__name"><a href="shop.html#/p/${p.id}">${esc(p.name)}</a></h2>
+        <a class="line__img" href="#/shop/p/${p.id}" aria-label="View ${esc(p.name)}">${LuxoraArt.product(p)}</a>
+        <div><div class="line__store">${esc(p.store)}</div><h2 class="line__name"><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h2>
           <div class="line__opts"><span>Size: ${esc(size)}</span><span><i class="dot c-${esc(color)}"></i>${cname(color)}</span><span class="stars">${S.stars(p.rating)}</span></div>
-          <div class="line__ctl"><button class="btn btn--sm" data-move="${p.id}">Move to cart</button><button class="rm" data-rm="${p.id}">Remove</button></div></div>
+          <div class="line__ctl"><button class="btn btn--sm" data-move="${p.id}">Move to cart</button><button class="rm" data-unsave="${p.id}">Remove</button></div></div>
         <div class="line__price">${money(p.price)}</div></article>`;
     }).join('');
   }
@@ -32,10 +32,10 @@
     S.addToCart(p, { size: x.size, color: x.color }); S.removeSaved(id); return p;
   }
   document.addEventListener('click', e => {
-    const m = e.target.closest('[data-move]'), r = e.target.closest('[data-rm]');
-    if (m) { const p = move(m.dataset.move); if (p) toast(`Moved ${p.name} to cart`, ['View cart', 'shop.html#cart']); }
-    else if (r) { S.removeSaved(r.dataset.rm); toast('Removed from saved'); }
-    else if (e.target.id === 'moveAll') { const ids = S.saved().map(s => s.id); ids.forEach(move); toast(`Moved ${ids.length} items to cart`, ['View cart', 'shop.html#cart']); }
+    const m = e.target.closest('[data-move]'), r = e.target.closest('[data-unsave]');
+    if (m) { const p = move(m.dataset.move); if (p) toast(`Moved ${p.name} to cart`, ['View cart', '#/cart']); }
+    else if (r) { S.removeSaved(r.dataset.unsave); toast('Removed from saved'); }
+    else if (e.target.id === 'moveAll') { const ids = S.saved().map(s => s.id); ids.forEach(move); toast(`Moved ${ids.length} items to cart`, ['View cart', '#/cart']); }
   });
   document.addEventListener('luxora:change', render); document.addEventListener('luxora:external', render);
   render();

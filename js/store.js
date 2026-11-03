@@ -37,6 +37,7 @@
     esc: s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])),
     stars: r => '★'.repeat(Math.round(r)) + '☆'.repeat(5 - Math.round(r)),
     bind() {
+      if (Store._bound) return; Store._bound = true;
       const set = (sel, n) => document.querySelectorAll(sel).forEach(b => { b.textContent = n; b.hidden = n === 0; });
       const upd = () => { set('[data-cart-badge]', Store.count()); set('[data-saved-badge]', Store.savedCount()); };
       upd(); document.addEventListener('luxora:change', upd); window.addEventListener('storage', e => { if (e.key === KC || e.key === KS) { upd(); document.dispatchEvent(new Event('luxora:external')); } });

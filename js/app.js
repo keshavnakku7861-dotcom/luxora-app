@@ -23,9 +23,9 @@
     if (link) toastEl.insertAdjacentHTML('beforeend', ` &middot; <a href="${link[1]}">${link[0]}</a>`);
     toastEl.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.hidden = true, 3500);
   }
-  const addToCart = (p, o) => { const l = S.addToCart(p, o); toast(`Added ${l.qty} × ${p.name} to cart`, ['View cart', 'shop.html#cart']); };
+  const addToCart = (p, o) => { const l = S.addToCart(p, o); toast(`Added ${l.qty} × ${p.name} to cart`, ['View cart', '#/cart']); };
   const heartSvg = '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg>';
-  function toggleSave(p, o) { const on = S.toggleSaved(p, o); toast(on ? `Saved ${p.name}` : `Removed ${p.name} from saved`, on ? ['View saved', 'saved.html'] : null); return on; }
+  function toggleSave(p, o) { const on = S.toggleSaved(p, o); toast(on ? `Saved ${p.name}` : `Removed ${p.name} from saved`, on ? ['View saved', '#/saved'] : null); return on; }
 
   /* ---------- chat ---------- */
   function userMsg(text) { $('#empty')?.remove(); const m = el('div', 'msg--user'); m.textContent = text; feed.append(m); scroll(); }
@@ -37,7 +37,7 @@
       const h = el('h3'); h.textContent = data.title || 'Top suggested'; m.append(h);
       const cards = el('div', 'cards');
       data.products.forEach(pr => {
-        const c = el('div', 'card'); c.tabIndex = 0; c.setAttribute('role', 'button'); c.setAttribute('aria-label', `View ${pr.name}`);
+        const c = el('div', 'card'); c.dataset.id = pr.id; c.tabIndex = 0; c.setAttribute('role', 'button'); c.setAttribute('aria-label', `View ${pr.name}`);
         c.innerHTML = `<div class="card__art">${LuxoraArt.product(pr)}</div><div class="card__name">${esc(pr.name)}</div><div class="card__price">${money(pr.price)}</div>`;
         const heart = el('button', 'card__heart' + (S.isSaved(pr.id) ? ' on' : ''), heartSvg); heart.type = 'button'; heart.setAttribute('aria-label', `Save ${pr.name}`); heart.setAttribute('aria-pressed', S.isSaved(pr.id));
         heart.addEventListener('click', e => { e.stopPropagation(); const on = toggleSave(pr); heart.classList.toggle('on', on); heart.setAttribute('aria-pressed', on); if (current && current.id === pr.id) renderPanel(); });
@@ -113,9 +113,9 @@
     const n = S.count(), total = S.subtotal();
     $('#empty')?.remove();
     botMsg({ reply: `Great choice. Your cart now has ${n} item${n > 1 ? 's' : ''} (${money(total)}). Open the shop to review your cart and check out. This is a prototype with sample data, so nothing is actually ordered or charged.`, products: [] });
-    const last = feed.lastElementChild; if (last) { const a = el('a', 'btn btn--sm cart-link', 'Go to cart'); a.href = 'shop.html#cart'; a.style.alignSelf = 'flex-start'; last.append(a); scroll(); }
+    const last = feed.lastElementChild; if (last) { const a = el('a', 'btn btn--sm cart-link', 'Go to cart'); a.href = '#/cart'; a.style.alignSelf = 'flex-start'; last.append(a); scroll(); }
   }
-  $('#navHome').onclick = () => location.reload();
+  window.LuxoraAssistant = { refresh() { renderPanel(); document.querySelectorAll('.card[data-id]').forEach(c => { const on = S.isSaved(c.dataset.id), hb = c.querySelector('.card__heart'); if (hb) { hb.classList.toggle('on', on); hb.setAttribute('aria-pressed', on); } }); } };
   document.addEventListener('luxora:external', renderPanel);
 
   /* ---------- boot ---------- */
