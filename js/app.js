@@ -109,7 +109,8 @@
   }
   function confirmOrder() {
     if (!current) return;
-    if (!S.cart().some(i => i.id === current.id)) S.addToCart(current, chosen());
+    const c = chosen();
+    if (!S.cart().some(i => i.id === current.id && i.size === c.size && i.color === c.color)) S.addToCart(current, c);
     const n = S.count(), total = S.subtotal();
     $('#empty')?.remove();
     botMsg({ reply: `Great choice. Your cart now has ${n} item${n > 1 ? 's' : ''} (${money(total)}). Open the shop to review your cart and check out. This is a prototype with sample data, so nothing is actually ordered or charged.`, products: [] });

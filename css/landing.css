@@ -146,3 +146,6 @@ dialog p { margin: 8px 0 18px; color: var(--gray-600); font-size: 14px; }
 .sec-icon .sparkle { color: var(--white); }
 
 .signup-sec { padding: 24px 0 64px; }
+
+.was { color: var(--gray-400); font-weight: 400; font-size: .8em; margin-right: 4px; }
+.is-deal { color: var(--orange-deep); }

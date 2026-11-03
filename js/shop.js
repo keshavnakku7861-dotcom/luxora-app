@@ -40,10 +40,11 @@
         <div class="pcard__foot">${priceHtml(p)}<button class="btn btn--sm" data-add="${p.id}">Add to cart</button></div></div></article>`;
   }
   function renderDeals() {
-    const box = $('#dealsBox'), show = dealsOn() && st.cat === 'all' && !st.q.trim();
-    box.hidden = !show; if (!show) return;
+    const box = $('#dealsBox'), q = st.q.trim().toLowerCase();
+    const items = dealsOn() && st.cat !== 'deals' ? D.list.filter(d => { const p = byId[d.productId]; return p && inCat(p, st.cat) && (!q || [p.name, p.store, p.category.replace('-', ' '), ...p.tags].join(' ').toLowerCase().includes(q)); }) : [];
+    box.hidden = !items.length; if (!items.length) { box.innerHTML = ''; return; }
     box.innerHTML = `<div class="deals__head"><div><h2>Deals</h2><p>Limited-time prices on selected products. <b class="deals__sample">Sample deals for this demo.</b></p></div><button class="btn btn--ghost btn--sm" data-cat="deals">See all deals</button></div>
-      <div class="deals__grid">${D.list.map(d => { const p = byId[d.productId]; return `<article class="dealcard">
+      <div class="deals__grid">${items.map(d => { const p = byId[d.productId]; return `<article class="dealcard">
         <a class="dealcard__img" href="#/shop/p/${p.id}" aria-label="View ${esc(p.name)}">${Art.product(p, 0)}<span class="dealtag">-${d.discountPercent}%</span></a>
         <div class="dealcard__body"><span class="dealcard__flag">Sample deal</span><h3><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h3>
           <p class="dealcard__head">${esc(d.headline.replace(/^Sample deal:\s*/i, ''))}</p>
@@ -193,7 +194,7 @@
   }
   function placeOrder() {
     const html = summary(), ref = 'DEMO-' + Math.floor(100000 + Math.random() * 900000);
-    S.clearCart();
+    S.clearCart(); closeDrawer();
     $('#coBody').innerHTML = `<h2 id="coTitle">Demo order placed</h2><p class="ref">Reference ${ref} &mdash; <b>not a real order</b></p>${html}
       <p class="fine"><b>No payment was taken and nothing will be shipped.</b> This confirmation only demonstrates the Luxora checkout flow with sample data.</p>
       <div class="demo__btns"><button class="btn btn--lg" id="coDone">Continue shopping</button><a class="btn btn--lg btn--ghost" href="#/saved" id="coSaved">View saved items</a></div>`;
