@@ -3,7 +3,7 @@
   const $ = s => document.querySelector(s);
   const S = window.LuxoraStore, money = S.money, esc = S.esc, Art = window.LuxoraArt;
   const products = window.LuxoraOffline.products, byId = Object.fromEntries(products.map(p => [p.id, p]));
-  const CATS = [['all', 'All'], ['smart-rings', 'Smart rings'], ['smartwatches', 'Smartwatches'], ['earbuds', 'Earbuds'], ['headphones', 'Headphones'], ['deals', 'Deals']];
+  const CATS = [['all', 'All'], ['smart-rings', 'Smart rings'], ['smartwatches', 'Smartwatches'], ['earbuds', 'Earbuds'], ['headphones', 'Headphones'], ['tablets', 'Tablets'], ['e-readers', 'E-readers'], ['smart-home', 'Smart home'], ['deals', 'Deals']];
   const D = window.LuxoraDeals, dealKey = p => Object.keys(p.variants || {}).find(k => p.variants[k].deal), inCat = (p, k) => k === 'all' || (k === 'deals' ? !!(p.deal || dealKey(p)) : p.category === k), dealsOn = () => D.list.length > 0;
   const priceHtml = p => p.deal && P().priceDrops ? `<span class="pr"><strong class="pr__now">${money(p.price)}</strong> <s>${money(p.listPrice)}</s></span>` : `<strong>${money(p.price)}</strong>`;
   const P = () => window.LuxoraPrefs.get();
@@ -38,7 +38,7 @@
     return `<article class="pcard">
       <a class="pcard__img" href="#/shop/p/${p.id}${p.variantKey ? '?c=' + p.variantKey : ''}" aria-label="View ${esc(p.name)}">${p.deal && P().priceDrops ? `<span class="dealtag" title="Deal">-${p.deal.discountPercent}%</span>` : ''}<span class="a">${Art.product(p, 0)}</span><span class="b">${Art.product(p, 1)}</span>${Art.illus}</a>
       <button class="pcard__heart ${on ? 'on' : ''}" data-heart="${p.id}" aria-pressed="${on}" aria-label="${on ? 'Remove' : 'Save'} ${esc(p.name)}">${heart}</button>
-      <div class="pcard__body"><div class="pcard__store">${esc(p.store)}${P().budget && p.price > Number(P().budget) ? ' <span class="overtag">Over your budget</span>' : ''}</div>
+      <div class="pcard__body"><div class="pcard__store">${esc(p.store)}${S.preorderTag(p)}${P().budget && p.price > Number(P().budget) ? ' <span class="overtag">Over your budget</span>' : ''}</div>
         <h3><a href="#/shop/p/${p.id}${p.variantKey ? '?c=' + p.variantKey : ''}">${esc(p.name)}</a></h3>
         <div class="rate">${p.priceFrom ? 'From &middot; ' : ''}${S.checked(p).replace('Price checked', 'Checked')} &middot; ${esc(p.retailer.name)}</div>
         <div class="pcard__foot">${priceHtml(p)}<button class="btn btn--sm" data-add="${p.id}"${p.variantKey ? ` data-c="${p.variantKey}"` : ''}>${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button></div>
@@ -105,7 +105,7 @@
             <div class="gallery__thumbs">${Array.from({ length: Art.VIEWS }, (_, i) => `<button class="${i === d.view ? 'on' : ''}" data-view="${i}" aria-label="Photo ${i + 1}">${Art.product(p, i)}</button>`).join('')}</div></div>
           <div class="info">
             <div class="pcard__store">${esc(p.store)}</div><h1>${esc(p.name)}</h1>
-            <div class="rate">${S.checked(p)} &middot; at ${esc(p.retailer.name)}</div>
+            <div class="rate">${S.checked(p)} &middot; at ${esc(p.retailer.name)}</div>${S.preorderTag(p) ? `<div class="preline">${S.preorderTag(p)}</div>` : ''}
             <div class="price">${p.priceFrom ? '<small class="from">From</small> ' : ''}${priceHtml(p)}</div>${p.deal && P().priceDrops ? `<div class="dealnote"><span class="dealtag dealtag--inline">-${p.deal.discountPercent}%</span> <b>Deal.</b> ${esc(D.endsText(p.deal))}. ${esc(p.deal.headline)} <span class="dealnote__src">Compared with ${esc(p.deal.listPriceSource || 'the listed price')}.${p.deal.sourceUrl ? ` <a href="${esc(p.deal.sourceUrl)}" target="_blank" rel="noopener noreferrer sponsored">Source<span class="sr-only"> (opens in a new tab)</span></a>` : ''}</span></div>` : ''}
             <p class="desc">${esc(p.description || '')}</p>
             <div class="opt"><span class="lbl">Size${S.needsSize(p) ? ' <small class="req">(required)</small>' : ''}</span><select id="dSize" aria-label="Size" ${S.needsSize(p) ? 'aria-required="true" aria-describedby="dSizeErr"' : ''}>${S.needsSize(p) ? '<option value="">Select a size</option>' : ''}${p.sizes.map(s => `<option ${s === d.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><p class="sizeerr" id="dSizeErr" role="alert" hidden>Please select a size before adding this to your cart.</p></div>

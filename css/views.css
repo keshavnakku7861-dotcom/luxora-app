@@ -310,3 +310,7 @@
 :root[data-text="small"] :is(.feed > *, .panel > *, .settings, .shop, .saved, .shopbar, main) { zoom: .92; }
 :root[data-text="large"] :is(.feed > *, .panel > *, .settings, .shop, .saved, .shopbar, main) { zoom: 1.14; }
 .sfield input[aria-invalid=true], .sfield select[aria-invalid=true] { border-color: var(--orange-deep); }
+
+.pretag { display: inline-block; font-weight: 600; font-size: 11px; color: var(--orange-deep); background: var(--orange-soft); border-radius: 4px; padding: 1px 6px; margin-left: 6px; letter-spacing: 0; }
+.card .pretag, .preline .pretag { margin-left: 0; }
+.preline { margin: 6px 0 2px; }

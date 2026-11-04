@@ -25,7 +25,11 @@
     },
     /* "Buy now" on Amazon (Amazon Associates tag in the URL). always=false skips it when Amazon is already the main retailer, to avoid a duplicate button */
     DISCLOSURE: 'As an Amazon Associate, Luxora earns from qualifying purchases.',
+    /* pre-order products (e.g. a device not released yet): true until the release day */
+    preorder: p => !!(p && p.preorder && Date.now() < new Date(p.preorder.releases + 'T00:00:00').getTime()),
+    preorderTag(p) { if (!Store.preorder(p)) return ''; const d = new Date(p.preorder.releases + 'T12:00:00'); return `<span class="pretag">Pre-order · releases ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>`; },
     amazonLink(p, cls = 'btn', label, always, opts = {}) {
+      if (Store.preorder(p) && (!label || label === 'Buy now')) label = 'Pre-order';
       const a = p && p.amazon; if (!a || !/^https:\/\/www\.amazon\.com\/.*[?&]tag=luxora004-20/.test(a.url)) return '';
       if (!always && p.retailer && p.retailer.name === 'Amazon') return '';
       return `<a class="${cls}" href="${Store.esc(a.url)}" target="_blank" rel="sponsored noopener" data-amazon="${Store.esc(p.id)}" title="Opens Amazon.com in a new tab">${label || 'Buy now'}<span aria-hidden="true"> &#8599;</span>${opts.hint === false ? '' : '<small class="amzhint">on Amazon</small>'}<span class="sr-only"> (opens Amazon in a new tab)</span></a>`;

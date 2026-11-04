@@ -84,7 +84,7 @@
       const cards = el('div', 'cards');
       data.products.forEach(pr => {
         const c = el('div', 'card'); c.dataset.id = pr.id; c.tabIndex = 0; c.setAttribute('role', 'button'); c.setAttribute('aria-label', `View ${pr.name}`);
-        c.innerHTML = `<div class="card__art">${LuxoraArt.product(pr)}${LuxoraArt.illus}</div><div class="card__name">${esc(pr.name)}</div><div class="card__price">${money(pr.price)}</div>`;
+        c.innerHTML = `<div class="card__art">${LuxoraArt.product(pr)}${LuxoraArt.illus}</div><div class="card__name">${esc(pr.name)}</div>${S.preorderTag(pr)}<div class="card__price">${money(pr.price)}</div>`;
         const amz = S.amazonLink(pr, 'card__amz', 'Buy now', true); if (amz) { const holder = el('div', null, amz); const a = holder.firstChild; a.addEventListener('click', e => e.stopPropagation()); a.addEventListener('keydown', e => e.stopPropagation()); c.append(a); }
         const heart = el('button', 'card__heart' + (S.isSaved(pr.id) ? ' on' : ''), heartSvg); heart.type = 'button'; heart.setAttribute('aria-label', `Save ${pr.name}`); heart.setAttribute('aria-pressed', S.isSaved(pr.id));
         heart.addEventListener('click', e => { e.stopPropagation(); const on = toggleSave(pr); heart.classList.toggle('on', on); heart.setAttribute('aria-pressed', on); if (current && current.id === pr.id) renderPanel(); });

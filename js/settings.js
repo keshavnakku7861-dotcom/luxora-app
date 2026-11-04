@@ -7,7 +7,7 @@
   const CURR = [['USD', 'US dollar (USD)'], ['EUR', 'Euro (EUR)'], ['GBP', 'British pound (GBP)'], ['CAD', 'Canadian dollar (CAD)'], ['INR', 'Indian rupee (INR)'], ['AUD', 'Australian dollar (AUD)']];
   const FAQ = [
     ['Is Luxora a real store?', 'No. Luxora is a prototype assistant, not a store. The products, brands and prices are real and were checked on Nov 3, 2026, but Luxora does not sell anything: the Buy at button opens the retailer in a new tab. Luxora\'s own cart and checkout are a demo that takes no payment and places no order.'],
-    ['Why does the assistant only know about electronics?', 'The catalogue has nine products: smart rings, smartwatches, earbuds and headphones. Groceries and fashion are not available yet. The product pictures are illustrative images, not official photos.'],
+    ['Why does the assistant only know about electronics?', 'The catalogue has 13 products: smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. Groceries and fashion are not available yet. The product pictures are illustrative images, not official photos.'],
     ['How do currency and language work?', 'Prices are stored in US dollars and converted with fixed, approximate rates (not live exchange rates). Language changes number and date formatting and translates the interface into French, Spanish or German; Hindi stays in English for now.']
   ];
   const $ = s => root.querySelector(s);

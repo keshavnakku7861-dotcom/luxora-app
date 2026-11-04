@@ -80,13 +80,47 @@ const products = [
     highlights: ['Noise cancelling', '35 h battery', 'Lightweight'],
     price: 89.99, listPrice: 179.99, tags: ['music', 'noise', 'work', 'travel', 'battery', 'commute'],
     sizes: ['One size'], colors: ['black'],
-    retailer: { name: 'Sony', url: 'https://electronics.sony.com/audio/headphones/headband/p/whch720n-b' }, alsoAt: [], checkedAt: CHECKED }
+    retailer: { name: 'Sony', url: 'https://electronics.sony.com/audio/headphones/headband/p/whch720n-b' }, alsoAt: [], checkedAt: CHECKED },
+  /* added Nov 4, 2026 (Keshav approved): each Amazon page opened live that day; title, price and availability confirmed */
+  { id: 'ipad-mini-a20', name: 'Apple iPad mini (A20 Pro)', store: 'Apple', category: 'tablets', kind: 'tablet', tone: 'dark',
+    aliases: ['apple ipad mini', 'ipad mini a20 pro', 'ipad mini', 'ipad'],
+    description: 'Apple iPad mini with the A20 Pro chip: 128GB, Wi-Fi, Midnight.',
+    highlights: ['A20 Pro chip', '128GB, Wi-Fi', 'Compact tablet'],
+    price: 699, tags: ['premium', 'work', 'travel', 'reading', 'iphone', 'everyday'],
+    sizes: ['One size'], colors: ['standard'], optionsNote: 'This listing is the 128GB Wi-Fi model in Midnight.',
+    preorder: { releases: '2026-11-06' },
+    retailer: { name: 'Amazon', url: 'https://www.amazon.com/dp/B0HPC1JLCQ' }, alsoAt: [], checkedAt: '2026-11-04' },
+  { id: 'kindle-16gb-2026', name: 'Amazon Kindle 16GB (2026)', store: 'Amazon', category: 'e-readers', kind: 'ereader', tone: 'dark',
+    aliases: ['amazon kindle', 'kindle 16gb', 'kindle'],
+    description: 'The newest basic Kindle: 6-inch glare-free display, 16GB, thinner and lighter. This listing shows lockscreen ads.',
+    highlights: ['6-inch display', '16GB', 'With lockscreen ads'],
+    price: 149.99, tags: ['reading', 'travel', 'everyday', 'battery'],
+    sizes: ['One size'], colors: ['standard'], optionsNote: 'This listing is the ad-supported 16GB model; the version without lockscreen ads costs more on Amazon.',
+    retailer: { name: 'Amazon', url: 'https://www.amazon.com/dp/B0FXJ8VZ39' }, alsoAt: [], checkedAt: '2026-11-04' },
+  { id: 'echo-dot-2026', name: 'Amazon Echo Dot (2026)', store: 'Amazon', category: 'smart-home', kind: 'speaker', tone: 'dark',
+    aliases: ['amazon echo dot', 'echo dot', 'echo'],
+    description: 'Compact Alexa smart speaker and smart home hub (Graphite), designed for Alexa+.',
+    highlights: ['Smart speaker', 'Smart home hub', 'Designed for Alexa+'],
+    price: 99.99, tags: ['music', 'home', 'everyday', 'alexa'],
+    sizes: ['One size'], colors: ['standard'], optionsNote: 'This listing is the Graphite colour.',
+    retailer: { name: 'Amazon', url: 'https://www.amazon.com/dp/B0FXN2JWST' }, alsoAt: [], checkedAt: '2026-11-04' },
+  { id: 'alexa-tablet-8', name: 'Amazon Alexa Tablet 8 (64GB)', store: 'Amazon', category: 'tablets', kind: 'tablet', tone: 'dark',
+    aliases: ['amazon alexa tablet 8', 'alexa tablet 8', 'alexa tablet', 'fire tablet'],
+    description: '8.7-inch Alexa tablet with 4GB RAM and 64GB storage (Graphite), with Google Play. This listing has no lockscreen ads.',
+    highlights: ['8.7-inch display', '4GB RAM, 64GB', 'Google Play'],
+    price: 219.99, tags: ['reading', 'travel', 'everyday', 'alexa', 'home'],
+    sizes: ['One size'], colors: ['standard'], optionsNote: 'This listing is the 64GB Graphite model without lockscreen ads.',
+    retailer: { name: 'Amazon', url: 'https://www.amazon.com/dp/B0H8ZN512S' }, alsoAt: [], checkedAt: '2026-11-04' }
 ];
 
 /* Amazon.com product pages (checked in a browser Nov 3, 2026) with Keshav's Amazon Associates tag. Every product has a direct /dp/ page. */
 const AMAZON_TAG = 'luxora004-20';
 const AMAZON_DISCLOSURE = 'As an Amazon Associate, Luxora earns from qualifying purchases.';
 const ASIN = {
+  'ipad-mini-a20': 'B0HPC1JLCQ',      // Apple iPad mini (A20 Pro) — Midnight, 128GB Wi-Fi ($699.00, pre-order, releases Nov 6, 2026)
+  'kindle-16gb-2026': 'B0FXJ8VZ39',   // Amazon Kindle 16GB (newest model), lockscreen ad-supported ($149.99, in stock)
+  'echo-dot-2026': 'B0FXN2JWST',      // Amazon Echo Dot (newest model), Graphite ($99.99, in stock)
+  'alexa-tablet-8': 'B0H8ZN512S',     // Amazon Alexa Tablet 8, 4GB RAM, 64GB, Graphite, without lockscreen ads ($219.99, in stock)
   'aura-ring-4': 'B0D9WT1S2T',     // Oura Ring 4 Smart Ring - Silver
   'nova-ring': 'B0D3JDPB11',       // SAMSUNG Galaxy Ring
   'ring-pro': 'B0GRJVBPH3',
@@ -109,7 +143,10 @@ const categories = {
   'smart-rings': { label: 'smart rings', words: ['ring', 'rings', 'oura', 'smart ring', 'galaxy ring'] },
   'smartwatches': { label: 'smartwatches', words: ['watch', 'watches', 'smartwatch', 'smartwatches', 'wearable', 'wearables', 'garmin', 'forerunner'] },
   'earbuds': { label: 'earbuds', words: ['earbud', 'earbuds', 'buds', 'airpods', 'earphones'] },
-  'headphones': { label: 'headphones', words: ['headphone', 'headphones', 'cans', 'over-ear', 'overear'] }
+  'headphones': { label: 'headphones', words: ['headphone', 'headphones', 'cans', 'over-ear', 'overear'] },
+  'tablets': { label: 'tablets', words: ['tablet', 'tablets', 'ipad', 'ipads', 'ipad mini', 'alexa tablet', 'fire tablet'] },
+  'e-readers': { label: 'e-readers', words: ['kindle', 'kindles', 'e-reader', 'e-readers', 'ereader', 'ereaders', 'e-book', 'ebook', 'ebooks', 'reader'] },
+  'smart-home': { label: 'smart home devices', words: ['echo', 'echo dot', 'smart speaker', 'smart speakers', 'speaker', 'speakers', 'smart home', 'alexa speaker', 'home assistant']}
 };
 
 module.exports = { products, categories, CHECKED, AMAZON_TAG, AMAZON_DISCLOSURE };
@@ -120,6 +157,8 @@ module.exports = { products, categories, CHECKED, AMAZON_TAG, AMAZON_DISCLOSURE 
 // Contract: async respond(message, ctx) -> { reply: string, products: Product[], title?: string, followUp?: string }
 const { products, categories } = require('../products');
 const CHECKED_TXT = 'price checked Nov 3, 2026';
+const ck = p => p && p.checkedAt && p.checkedAt !== '2026-11-03' ? 'price checked ' + new Date(p.checkedAt + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : CHECKED_TXT;
+const pre = p => p && p.preorder && Date.now() < Date.parse(p.preorder.releases + 'T00:00:00-06:00') ? ` It's a pre-order on Amazon; it releases ${new Date(p.preorder.releases + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}.` : '';
 
 const money = n => '$' + n.toFixed(2);
 
@@ -197,7 +236,7 @@ async function respond(message, ctx = {}) {
 
   if (cats.length === 0 && /\b(grocer(y|ies)|food|snacks?|fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower)) {
     const which = /\b(fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower) ? 'Fashion' : 'Groceries';
-    return { reply: `${which} isn't available on Luxora yet. I can help with electronics: smart rings, smartwatches, earbuds and headphones. Try “best smart ring under $500”.`, products: [] };
+    return { reply: `${which} isn't available on Luxora yet. I can help with electronics: smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. Try “best smart ring under $500”.`, products: [] };
   }
   if (/^(hi|hello|hey|yo|good (morning|afternoon|evening))\b/.test(lower) && cats.length === 0) {
     return { reply: "Hi! I'm Luxora, your AI shopping assistant. Tell me what you're shopping for, your budget, or a brand, and I'll recommend the best options. Try “best smart ring under $500”.", products: [] };
@@ -213,7 +252,7 @@ async function respond(message, ctx = {}) {
   if (fu) return fu;
   if (named.length === 1 && !comparing) {
     const p = named[0], also = (p.alsoAt || []).map(a => `${a.name}${a.price ? ' (' + money(a.price) + ')' : ''}`).join(', ');
-    return { title: 'Your pick', products: [p], followUp: 'Want me to save it, or compare it with another one?', reply: `${p.name} (${p.store}) is ${money(p.price)} at ${p.retailer.name}, ${CHECKED_TXT}. ${p.description || ''}${also ? ` Also at ${also}.` : ''} Use the Buy at button on the product to buy it from the retailer.`.replace(/\s+/g, ' ').trim() };
+    return { title: 'Your pick', products: [p], followUp: 'Want me to save it, or compare it with another one?', reply: `${p.name} (${p.store}) is ${money(p.price)} at ${p.retailer.name}, ${ck(p)}.${pre(p)} ${p.description || ''}${also ? ` Also at ${also}.` : ''} Use the Buy at button on the product to buy it from the retailer.`.replace(/\s+/g, ' ').trim() };
   }
   if (comparing && named.length === 1 && last.length) return sideBySide(named[0], last.find(p => p !== named[0]) || named[0]);
 
@@ -228,7 +267,7 @@ async function respond(message, ctx = {}) {
     if (within.length === 0) {
       const cheapest = [...pool].sort((a, b) => a.price - b.price)[0];
       if (!cheapest) return fallback();
-      return { reply: `I couldn't find anything under $${Number.isInteger(budget) ? budget : budget.toFixed(2)} in that category. The closest is ${cheapest.name} at ${money(cheapest.price)} (${CHECKED_TXT}).`, products: [cheapest], title: 'Closest match', followUp: 'Would you like me to look at a higher budget?' };
+      return { reply: `I couldn't find anything under $${Number.isInteger(budget) ? budget : budget.toFixed(2)} in that category. The closest is ${cheapest.name} at ${money(cheapest.price)} (${ck(cheapest)}).`, products: [cheapest], title: 'Closest match', followUp: 'Would you like me to look at a higher budget?' };
     }
     pool = within;
   }
@@ -242,7 +281,7 @@ async function respond(message, ctx = {}) {
   const budgetText = budget != null ? `your budget (under $${Number.isInteger(budget) ? budget : budget.toFixed(2)})` : 'your budget';
   return {
     title: `Top suggested ${label}`,
-    reply: `Based on ${budgetText} and ${needs} needs, I recommend ${top.name} (${money(top.price)} at ${top.retailer.name}, ${CHECKED_TXT}). ${pool.length > 1 ? 'Here are a few more worth a look.' : ''}`.replace(/\s+/g, ' ').trim(),
+    reply: `Based on ${budgetText} and ${needs} needs, I recommend ${top.name} (${money(top.price)} at ${top.retailer.name}, ${ck(top)}).${pre(top)} ${pool.length > 1 ? 'Here are a few more worth a look.' : ''}`.replace(/\s+/g, ' ').trim(),
     products: pool,
     followUp: 'Want me to compare any of these, or save one for later?'
   };
@@ -250,18 +289,19 @@ async function respond(message, ctx = {}) {
 
 function fallback() {
   return {
-    reply: "I can help with smart rings, smartwatches, earbuds and headphones. Try something like “best smart ring under $500”, “earbuds for my commute” or “compare Oura Ring 4 and Samsung Galaxy Ring”.",
+    reply: "I can help with smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. Try something like “best smart ring under $500”, “earbuds for my commute” or “compare Oura Ring 4 and Samsung Galaxy Ring”.",
     products: []
   };
 }
 
-module.exports = { respond, name: 'rules' };
+module.exports = { ck, pre, respond, name: 'rules' };
 
   };
   defs.sender = function (module, exports, require) {
 // SENDER responder: reuses rules.js for product matching, rewrites the replies in a warm, casual voice.
 // Contract: async respond(message, ctx) -> { reply, products, title?, followUp? }
 const rules = require('./rules');
+const { ck, pre } = rules;
 const { categories } = require('../products');
 
 const money = n => '$' + (Number.isInteger(n) ? n : n.toFixed(2));
@@ -281,9 +321,9 @@ async function respond(message, ctx = {}) {
     return { reply: pick(["Anytime! Shout if you need anything else.", "Happy to help! Enjoy your new gear."]), products: [] };
   }
 
-  if (!/\b(rings?|watch(es)?|buds|earbuds?|headphones?|cans)\b/.test(lower) && /\b(grocer(y|ies)|food|snacks?|fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower)) {
+  if (!/\b(rings?|watch(es)?|buds|earbuds?|headphones?|cans|tablets?|ipads?|kindles?|e-?readers?|echo|speakers?)\b/.test(lower) && /\b(grocer(y|ies)|food|snacks?|fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower)) {
     const which = /\b(fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower) ? 'Fashion' : 'Groceries';
-    return { reply: `${which} isn't on Luxora's shelves just yet, so I can't recommend anything there right now. What I can do well is electronics: smart rings, smartwatches, earbuds and headphones. Want me to pull up the top picks?`, products: [] };
+    return { reply: `${which} isn't on Luxora's shelves just yet, so I can't recommend anything there right now. What I can do well is electronics: smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. Want me to pull up the top picks?`, products: [] };
   }
 
   const out = await rules.respond(text, ctx);
@@ -293,7 +333,7 @@ async function respond(message, ctx = {}) {
     return { reply: "Luxora doesn't take or ship orders itself, so there's nothing for me to track here. Use the Buy at button on a product to buy from the retailer, and you can track the order with them.", products: [] };
   }
   if (p.length === 0) {
-    return { reply: "I can help with smart rings, smartwatches, earbuds and headphones. Tell me what you'll use it for and roughly what you want to spend, like \"earbuds for my commute under $150\".", products: [] };
+    return { reply: "I can help with smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. Tell me what you'll use it for and roughly what you want to spend, like \"earbuds for my commute under $150\".", products: [] };
   }
   if (out.title === 'Side by side' && p.length >= 2) {
     return { ...out, reply: `${pick(['Okay, here is how they stack up.', 'Good pair to compare.', 'Let me line them up for you.'])} ${out.reply}`, followUp: 'Want me to save one for later?' };
@@ -303,7 +343,7 @@ async function respond(message, ctx = {}) {
   }
   if (out.title === 'Closest match') {
     const c = p[0];
-    return { ...out, reply: `Hmm, nothing quite fits that budget, sorry! The closest I've got is ${c.name} at ${money(c.price)} (price checked Nov 3, 2026).`, followUp: 'Want me to see what a little more stretch gets you?' };
+    return { ...out, reply: `Hmm, nothing quite fits that budget, sorry! The closest I've got is ${c.name} at ${money(c.price)} (${ck(c)}).`, followUp: 'Want me to see what a little more stretch gets you?' };
   }
 
   const top = p[0];
@@ -311,7 +351,7 @@ async function respond(message, ctx = {}) {
   const opener = pick(['Good call!', 'Ooh, nice.', 'Got you.', 'Love it.']);
   return {
     ...out,
-    reply: `${opener} I'd go with ${top.name}: ${money(top.price)} at ${top.retailer.name} (price checked Nov 3, 2026).${extra}`,
+    reply: `${opener} I'd go with ${top.name}: ${money(top.price)} at ${top.retailer.name} (${ck(top)}).${pre(top)}${extra}`,
     followUp: pick(['Want me to save it for later?', 'Want to see how it compares with another one?', 'Want me to add it to your cart? (Checkout here is a demo; you buy at the retailer.)'])
   };
 }
