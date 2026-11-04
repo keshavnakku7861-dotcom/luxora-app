@@ -239,3 +239,11 @@ select[aria-invalid=true] { border-color: var(--orange-deep) !important; }
 .panel .sw .c-white, #viewShop .sw .c-white, #drawer .dot.c-white, #viewSaved .dot.c-white { background: var(--silver-hi); box-shadow: inset 0 0 0 1px var(--gray-400); }
 .panel .sw .c-standard, #viewShop .sw .c-standard, #drawer .dot.c-standard, #viewSaved .dot.c-standard { background: var(--gray-200); }
 #viewShop .gallery__main, .car__art { position: relative; }
+
+/* Amazon Associates links + disclosure */
+.pcard__amz { display: block; margin: 8px 0 0; font-size: 12px; font-weight: 600; color: var(--gray-600); text-decoration: underline; text-underline-offset: 2px; }
+.pcard__amz:hover, .card__amz:hover { color: var(--black); }
+.card__amz { display: block; margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--gray-600); text-decoration: underline; text-underline-offset: 2px; position: relative; z-index: 2; margin-right: 34px; }
+.amzdisc { font-size: 11px; line-height: 1.4; color: var(--gray-600); margin: 6px 0 0; text-align: center; }
+.onote.amzdisc { text-align: left; font-size: 12px; }
+.btn--amz { white-space: nowrap; }

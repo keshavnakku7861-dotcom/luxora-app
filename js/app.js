@@ -17,7 +17,11 @@
       const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message, last }), signal: ctl.signal });
       if (!res.ok) return null;
       const data = await res.json();
-      return data && typeof data.reply === 'string' && Array.isArray(data.products) ? data : null;
+      if (!(data && typeof data.reply === 'string' && Array.isArray(data.products))) return null;
+      // the page's own catalog is authoritative for product fields (live deal prices, tagged Amazon links, ...)
+      const byId = Object.fromEntries(window.LuxoraOffline.products.map(x => [x.id, x]));
+      data.products = data.products.map(x => Object.assign({}, x, byId[x.id] || {}));
+      return data;
     } catch (e) { return null; } finally { clearTimeout(timer); }
   }
   async function chat(message) {
@@ -78,6 +82,7 @@
       data.products.forEach(pr => {
         const c = el('div', 'card'); c.dataset.id = pr.id; c.tabIndex = 0; c.setAttribute('role', 'button'); c.setAttribute('aria-label', `View ${pr.name}`);
         c.innerHTML = `<div class="card__art">${LuxoraArt.product(pr)}${LuxoraArt.illus}</div><div class="card__name">${esc(pr.name)}</div><div class="card__price">${money(pr.price)}</div>`;
+        const amz = S.amazonLink(pr, 'card__amz', 'Buy on Amazon', true); if (amz) { const holder = el('div', null, amz); const a = holder.firstChild; a.addEventListener('click', e => e.stopPropagation()); a.addEventListener('keydown', e => e.stopPropagation()); c.append(a); }
         const heart = el('button', 'card__heart' + (S.isSaved(pr.id) ? ' on' : ''), heartSvg); heart.type = 'button'; heart.setAttribute('aria-label', `Save ${pr.name}`); heart.setAttribute('aria-pressed', S.isSaved(pr.id));
         heart.addEventListener('click', e => { e.stopPropagation(); const on = toggleSave(pr); heart.classList.toggle('on', on); heart.setAttribute('aria-pressed', on); if (current && current.id === pr.id) renderPanel(); });
         const add = el('button', 'card__add', '+'); add.setAttribute('aria-label', `Add ${pr.name} to cart`); add.type = 'button';
@@ -138,7 +143,7 @@
       <div class="prod__top">
         <div class="prod__id"><div class="store">${esc(p.store)}</div><div class="prod__name">${esc(p.name)}</div>
           <div class="pnote">${S.checked(p)} &middot; ${esc(p.retailer.name)}</div></div>
-        <div class="prod__price">${p.priceFrom ? '<small>From</small> ' : ''}${money(p.price)}${p.listPrice ? ` <s class="was">${money(p.listPrice)}</s>` : ''}</div>
+        <div class="prod__price">${p.priceFrom ? '<small>From</small> ' : ''}${money(p.price)}${p.listPrice && LuxoraPrefs.get().priceDrops ? ` <s class="was">${money(p.listPrice)}</s>` : ''}</div>
       </div>
       <div class="opts">
         ${S.needsSize(p) ? `<div class="field"><span class="lbl" id="sizeLbl">Size <small class="req">(required)</small></span>
@@ -153,7 +158,8 @@
         <button class="add" id="add">Add to Cart</button>
         <button class="heart ${isOn ? 'on' : ''}" id="heart" aria-label="Save for later" aria-pressed="${isOn}">${heartSvg}</button>
       </div>
-      <div class="buyat">${S.buyLink(p, 'btn btn--ghost buyat__btn')}${(p.alsoAt || []).map(a => `<a class="buyat__alt" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer sponsored">Also at ${esc(a.name)}${a.price ? ' (' + money(a.price) + ')' : ''} &#8599;<span class="sr-only"> (opens in a new tab)</span></a>`).join('')}</div>
+      <div class="buyat">${S.buyLink(p, 'btn btn--ghost buyat__btn')}${S.amazonLink(p, 'btn btn--ghost buyat__btn btn--amz')}${(p.alsoAt || []).map(a => `<a class="buyat__alt" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer sponsored">Also at ${esc(a.name)}${a.price ? ' (' + money(a.price) + ')' : ''} &#8599;<span class="sr-only"> (opens in a new tab)</span></a>`).join('')}</div>
+      <p class="amzdisc">${S.DISCLOSURE}</p>
       <button class="confirm" id="confirm">Confirm &amp; Let AI Process</button>`;
     const go = d => { sel.view = (sel.view + d + views) % views; $('#art').innerHTML = LuxoraArt.product(p, sel.view); $('#dots').querySelectorAll('i').forEach((x, i) => x.classList.toggle('on', i === sel.view)); };
     $('#prev').onclick = () => go(-1); $('#next').onclick = () => go(1);

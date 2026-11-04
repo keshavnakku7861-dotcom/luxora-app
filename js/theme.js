@@ -14,6 +14,7 @@
     replyLength: 'standard',   // short | standard | detailed
     showCards: true, rememberChat: true
   };
+  const FIXED = { textSize: 'default', dealAlerts: true, orderUpdates: true, favCats: [], favBrands: [], sort: 'featured', budget: '', country: 'US', replyLength: 'standard', showCards: true, rememberChat: true };
   const RATES = { USD: 1, EUR: 0.92, GBP: 0.79, INR: 83, CAD: 1.36 };
   const read = () => { try { const v = JSON.parse(localStorage.getItem(KEY)); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch { return {}; } };
   const root = document.documentElement, mq = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
@@ -25,7 +26,9 @@
   }
   const api = {
     DEFAULTS, RATES,
-    get: () => ({ ...DEFAULTS, ...read() }),
+    /* Settings only offers theme, language, currency and price-drop alerts now; any other value an older version
+       saved is ignored so nothing (budget, favourites, text size, reply length...) keeps changing behaviour invisibly. */
+    get: () => ({ ...DEFAULTS, ...read(), ...FIXED }),
     set(patch) { const v = { ...api.get(), ...patch }; try { localStorage.setItem(KEY, JSON.stringify(v)); } catch {} apply(v); document.dispatchEvent(new CustomEvent('luxora:prefs', { detail: v })); return v; },
     clear() { try { localStorage.removeItem(KEY); } catch {} apply(api.get()); document.dispatchEvent(new CustomEvent('luxora:prefs', { detail: api.get() })); },
     /* format a USD catalogue amount in the chosen currency + language */

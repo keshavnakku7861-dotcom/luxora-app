@@ -5,7 +5,7 @@
   const products = window.LuxoraOffline.products, byId = Object.fromEntries(products.map(p => [p.id, p]));
   const CATS = [['all', 'All'], ['smart-rings', 'Smart rings'], ['smartwatches', 'Smartwatches'], ['earbuds', 'Earbuds'], ['headphones', 'Headphones'], ['deals', 'Deals']];
   const D = window.LuxoraDeals, inCat = (p, k) => k === 'all' || (k === 'deals' ? !!p.deal : p.category === k), dealsOn = () => D.list.length > 0;
-  const priceHtml = p => p.deal ? `<span class="pr"><strong class="pr__now">${money(p.price)}</strong> <s>${money(p.listPrice)}</s></span>` : `<strong>${money(p.price)}</strong>`;
+  const priceHtml = p => p.deal && P().priceDrops ? `<span class="pr"><strong class="pr__now">${money(p.price)}</strong> <s>${money(p.listPrice)}</s></span>` : `<strong>${money(p.price)}</strong>`;
   const P = () => window.LuxoraPrefs.get();
   const st = { cat: 'all', sort: ['price-asc', 'price-desc'].includes(P().sort) ? P().sort : 'featured', q: '' };
   $('#sort').value = st.sort;
@@ -39,7 +39,8 @@
       <div class="pcard__body"><div class="pcard__store">${esc(p.store)}${P().budget && p.price > Number(P().budget) ? ' <span class="overtag">Over your budget</span>' : ''}</div>
         <h3><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h3>
         <div class="rate">${p.priceFrom ? 'From &middot; ' : ''}${S.checked(p).replace('Price checked', 'Checked')} &middot; ${esc(p.retailer.name)}</div>
-        <div class="pcard__foot">${priceHtml(p)}<button class="btn btn--sm" data-add="${p.id}">${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button></div></div></article>`;
+        <div class="pcard__foot">${priceHtml(p)}<button class="btn btn--sm" data-add="${p.id}">${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button></div>
+        ${S.amazonLink(p, 'pcard__amz', 'Buy on Amazon', true)}</div></article>`;
   }
   function renderDeals() {
     const box = $('#dealsBox'), q = st.q.trim().toLowerCase();
@@ -47,11 +48,11 @@
     box.hidden = !items.length; if (!items.length) { box.innerHTML = ''; return; }
     box.innerHTML = `<div class="deals__head"><div><h2>Deals</h2><p>Verified lower prices on selected products. <b class="deals__sample">Prices checked Nov 3, 2026; they can change at any time.</b></p></div><button class="btn btn--ghost btn--sm" data-cat="deals">See all deals</button></div>
       <div class="deals__grid">${items.map(d => { const p = byId[d.productId]; return `<article class="dealcard">
-        <a class="dealcard__img" href="#/shop/p/${p.id}" aria-label="View ${esc(p.name)}">${Art.product(p, 0)}<span class="dealtag">-${d.discountPercent}%</span></a>
+        <a class="dealcard__img" href="#/shop/p/${p.id}" aria-label="View ${esc(p.name)}">${Art.product(p, 0)}${P().priceDrops ? `<span class="dealtag">-${d.discountPercent}%</span>` : ''}</a>
         <div class="dealcard__body"><span class="dealcard__flag">Deal at ${esc(d.retailer || p.retailer.name)}</span><h3><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h3>
           <p class="dealcard__head">${esc(d.headline)}</p>
-          <div class="dealcard__price"><strong>${money(p.price)}</strong> <s>${money(p.listPrice)}</s> <small>${esc(D.endsText(d))}</small></div>
-          <button class="btn btn--sm" data-add="${p.id}">${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button></div></article>`; }).join('')}</div>`;
+          <div class="dealcard__price"><strong>${money(p.price)}</strong> ${P().priceDrops ? `<s>${money(p.listPrice)}</s>` : ''} <small>${esc(D.endsText(d))}</small></div>
+          <button class="btn btn--sm" data-add="${p.id}">${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button> ${S.amazonLink(p, 'btn btn--sm btn--ghost btn--amz', 'Buy on Amazon', true)}</div></article>`; }).join('')}</div>`;
   }
   const COUNTRIES = { US: 'the United States', CA: 'Canada', GB: 'the United Kingdom', IN: 'India', DE: 'Germany', FR: 'France', ES: 'Spain', AU: 'Australia' };
   function region() { const f = $('#regionNote'); if (f) f.textContent = ` Shipping region: ${COUNTRIES[P().country] || 'the United States'} (shipping is set by the retailer). Prices shown in ${P().currency}${P().currency === 'USD' ? '' : ' at approximate rates, not live exchange rates'}.`; }
@@ -102,12 +103,13 @@
           <div class="info">
             <div class="pcard__store">${esc(p.store)}</div><h1>${esc(p.name)}</h1>
             <div class="rate">${S.checked(p)} &middot; at ${esc(p.retailer.name)}</div>
-            <div class="price">${p.priceFrom ? '<small class="from">From</small> ' : ''}${priceHtml(p)}</div>${p.deal ? `<div class="dealnote"><span class="dealtag dealtag--inline">-${p.deal.discountPercent}%</span> <b>Deal.</b> ${esc(D.endsText(p.deal))}. ${esc(p.deal.headline)} <span class="dealnote__src">Compared with ${esc(p.deal.listPriceSource || 'the listed price')}.${p.deal.sourceUrl ? ` <a href="${esc(p.deal.sourceUrl)}" target="_blank" rel="noopener noreferrer sponsored">Source<span class="sr-only"> (opens in a new tab)</span></a>` : ''}</span></div>` : ''}
+            <div class="price">${p.priceFrom ? '<small class="from">From</small> ' : ''}${priceHtml(p)}</div>${p.deal && P().priceDrops ? `<div class="dealnote"><span class="dealtag dealtag--inline">-${p.deal.discountPercent}%</span> <b>Deal.</b> ${esc(D.endsText(p.deal))}. ${esc(p.deal.headline)} <span class="dealnote__src">Compared with ${esc(p.deal.listPriceSource || 'the listed price')}.${p.deal.sourceUrl ? ` <a href="${esc(p.deal.sourceUrl)}" target="_blank" rel="noopener noreferrer sponsored">Source<span class="sr-only"> (opens in a new tab)</span></a>` : ''}</span></div>` : ''}
             <p class="desc">${esc(p.description || '')}</p>
             <div class="opt"><span class="lbl">Size${S.needsSize(p) ? ' <small class="req">(required)</small>' : ''}</span><select id="dSize" aria-label="Size" ${S.needsSize(p) ? 'aria-required="true" aria-describedby="dSizeErr"' : ''}>${S.needsSize(p) ? '<option value="">Select a size</option>' : ''}${p.sizes.map(s => `<option ${s === d.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><p class="sizeerr" id="dSizeErr" role="alert" hidden>Please select a size before adding this to your cart.</p></div>
             ${p.colors[0] === 'standard' ? '' : `<div class="opt"><span class="lbl">Color: <b>${cname(d.color)}</b></span><div class="sw" id="dSw">${p.colors.map(c => `<button type="button" class="c-${c} ${c === d.color ? 'on' : ''}" data-c="${c}" aria-label="${c}" aria-pressed="${c === d.color}">${c === d.color ? '&#10003;' : ''}</button>`).join('')}</div></div>`}
             <div class="opt"><span class="lbl">Quantity</span><div class="qty"><button id="dMinus" aria-label="Decrease">&minus;</button><span id="dQ">${d.qty}</span><button id="dPlus" aria-label="Increase">+</button></div></div>
-            <div class="buyat buyat--detail">${S.buyLink(p, 'btn btn--lg btn--orange')}${(p.alsoAt || []).map(a => `<a class="buyat__alt" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer sponsored">Also at ${esc(a.name)}${a.price ? ' (' + money(a.price) + ')' : ''} &#8599;<span class="sr-only"> (opens in a new tab)</span></a>`).join('')}</div>
+            <div class="buyat buyat--detail">${S.buyLink(p, 'btn btn--lg btn--orange')}${S.amazonLink(p, 'btn btn--lg btn--ghost btn--amz')}${(p.alsoAt || []).map(a => `<a class="buyat__alt" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer sponsored">Also at ${esc(a.name)}${a.price ? ' (' + money(a.price) + ')' : ''} &#8599;<span class="sr-only"> (opens in a new tab)</span></a>`).join('')}</div>
+            <p class="onote amzdisc">${S.DISCLOSURE} Amazon's price and availability can differ from the price shown here.</p>
             ${p.optionsNote ? `<p class="onote">${esc(p.optionsNote)}</p>` : ''}
             <p class="onote">Luxora doesn't sell this. The button opens ${esc(p.retailer.name)} in a new tab, where you buy and where shipping, returns and warranty are handled. The cart below is a demo.</p>
             <div class="buyrow"><button class="btn btn--lg btn--ghost" id="dAdd">Add to demo cart</button><button class="btn btn--lg btn--ghost" id="dBuy">Demo checkout</button>

@@ -79,6 +79,27 @@ const products = [
     retailer: { name: 'Sony', url: 'https://electronics.sony.com/audio/headphones/headband/p/whch720n-b' }, alsoAt: [], checkedAt: CHECKED }
 ];
 
+/* Amazon.com product pages (checked in a browser Nov 3, 2026) with Keshav's Amazon Associates tag. Every product has a direct /dp/ page. */
+const AMAZON_TAG = 'luxora004-20';
+const AMAZON_DISCLOSURE = 'As an Amazon Associate, Luxora earns from qualifying purchases.';
+const ASIN = {
+  'aura-ring-4': 'B0D9WT1S2T',     // Oura Ring 4 Smart Ring - Silver
+  'nova-ring': 'B0D3JDPB11',       // SAMSUNG Galaxy Ring
+  'ring-pro': 'B0GRJVBPH3',        // Oura Ring 5 Smart Ring - Silver
+  'pulse-watch-s': 'B0CT3SGHXL',   // Garmin Forerunner 165, 43mm, Black
+  'orbit-watch': 'B0HJBCX8VS',     // Apple Watch Series 12 GPS 42mm
+  'drift-buds': 'B0DWHPBK42',      // Sony WF-C710N, Black
+  'echo-buds-pro': 'B0FQFB8FMG',   // Apple AirPods Pro 3
+  'studio-cans': 'B09XS7JWHH',     // Sony WH-1000XM5, Black
+  'calm-over-ear': 'B0BS1QCFHX'    // Sony WH-CH720N, Black
+};
+products.forEach(p => {
+  const asin = ASIN[p.id];
+  p.amazon = { asin, url: `https://www.amazon.com/dp/${asin}?tag=${AMAZON_TAG}`, kind: 'product-page' };
+  if (p.retailer.name === 'Amazon') p.retailer.url = p.amazon.url;      // Amazon is already the main retailer: one tagged link
+  (p.alsoAt || []).forEach(a => { if (a.name === 'Amazon') a.url = p.amazon.url; });
+});
+
 const categories = {
   'smart-rings': { label: 'smart rings', words: ['ring', 'rings', 'oura', 'smart ring', 'galaxy ring'] },
   'smartwatches': { label: 'smartwatches', words: ['watch', 'watches', 'smartwatch', 'smartwatches', 'wearable', 'wearables', 'garmin', 'forerunner'] },
@@ -86,7 +107,7 @@ const categories = {
   'headphones': { label: 'headphones', words: ['headphone', 'headphones', 'cans', 'over-ear', 'overear'] }
 };
 
-module.exports = { products, categories, CHECKED };
+module.exports = { products, categories, CHECKED, AMAZON_TAG, AMAZON_DISCLOSURE };
 
   };
   defs.rules = function (module, exports, require) {
