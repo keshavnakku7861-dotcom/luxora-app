@@ -5,19 +5,25 @@
   const feed = $('#feed'), panel = $('#panel'), toastEl = $('#toast');
   let current = null, sel = { size: '', kit: true, color: '', qty: 1, view: 0 };
   S.bind();
-  // Static hosting (GitHub Pages) has no backend: answer in the browser via js/offline.js. Anywhere else, try the server first
-  // and fall back to the same offline responder if /api/chat is unreachable. Relative URLs so it works under /<repo>/.
+  // Chat backend. On the static GitHub Pages site the assistant first asks the hosted Luxora API (a free Cloudflare Worker)
+  // with a short timeout; if it is unreachable, slow or returns something unexpected, the bundled js/offline.js answers instead.
+  // Anywhere else (the local Node server) the same-origin api/chat is tried first, then the offline responder.
   const STATIC = window.LUXORA_STATIC || /\.github\.io$/.test(location.hostname);
+  const API_URL = window.LUXORA_API_URL || 'https://luxora-api.luxora-ks.workers.dev/api/chat', API_TIMEOUT_MS = 4000;
   const lastIds = () => { for (let i = hist.length - 1; i >= 0; i--) if (hist[i].r === 'b' && hist[i].ids && hist[i].ids.length) return hist[i].ids; return []; };
+  async function remoteChat(url, message, last, ms) {
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms);
+    try {
+      const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message, last }), signal: ctl.signal });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data && typeof data.reply === 'string' && Array.isArray(data.products) ? data : null;
+    } catch (e) { return null; } finally { clearTimeout(timer); }
+  }
   async function chat(message) {
     const last = lastIds();
-    if (!STATIC) {
-      try {
-        const res = await fetch('api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message, last }) });
-        if (res.ok) return await res.json();
-      } catch (e) { /* fall through to offline */ }
-    }
-    return window.LuxoraOffline.respond(message, { last });
+    const data = await remoteChat(STATIC ? API_URL : 'api/chat', message, last, STATIC ? API_TIMEOUT_MS : 15000);
+    return data || window.LuxoraOffline.respond(message, { last });
   }
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   function toast(t, link) {
