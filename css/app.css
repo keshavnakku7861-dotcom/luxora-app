@@ -251,3 +251,4 @@ select[aria-invalid=true] { border-color: var(--orange-deep) !important; }
 /* "Buy now" goes to Amazon: small honest hint */
 .amzhint { display: inline-block; margin-left: 6px; font-size: .78em; font-weight: 500; color: var(--gray-600); }
 .btn .amzhint { color: inherit; opacity: .8; }
+.panel .sw .c-midnight, #viewShop .sw .c-midnight, #drawer .dot.c-midnight, #viewSaved .dot.c-midnight { background: var(--screen); }

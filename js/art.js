@@ -10,7 +10,7 @@
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   function product(p, view = 0) {
     const v = ((view % VIEWS) + VIEWS) % VIEWS + 1;
-    return `<img class="pimg" src="images/${encodeURIComponent(p.id)}-${v}.webp" alt="Illustrative image of ${esc(p.name || 'the product')} (not an official product photo)" width="800" height="800" loading="lazy" decoding="async" onerror="this.onerror=null;this.style.visibility='hidden'">`;
+    return `<img class="pimg" src="images/${encodeURIComponent(p.imageId || p.id)}-${v}.webp" alt="Illustrative image of ${esc(p.name || 'the product')} (not an official product photo)" width="800" height="800" loading="lazy" decoding="async" onerror="this.onerror=null;this.style.visibility='hidden'">`;
   }
 
   const illus = '<span class="illus">Illustrative image</span>';

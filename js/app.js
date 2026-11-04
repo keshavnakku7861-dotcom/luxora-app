@@ -14,7 +14,7 @@
   async function remoteChat(url, message, last, ms) {
     const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms);
     try {
-      const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message, last }), signal: ctl.signal });
+      const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message, last, lang: LuxoraPrefs.get().language }), signal: ctl.signal });
       if (!res.ok) return null;
       const data = await res.json();
       if (!(data && typeof data.reply === 'string' && Array.isArray(data.products))) return null;
@@ -27,7 +27,7 @@
   async function chat(message) {
     const last = lastIds();
     const data = await remoteChat(STATIC ? API_URL : 'api/chat', message, last, STATIC ? API_TIMEOUT_MS : 15000);
-    return data || window.LuxoraOffline.respond(message, { last });
+    return data || window.LuxoraOffline.respond(message, { last, lang: LuxoraPrefs.get().language });
   }
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   function toast(t, link) {
@@ -42,7 +42,7 @@
   /* ---------- chat ---------- */
   const view = $('#viewAssistant');
   /* chat history: kept in localStorage ("luxora.chat", last 40 messages) so Settings can clear it */
-  const HK = 'luxora.chat'; let hist = []; let restoring = false;
+  const HK = 'luxora.chat'; let hist = []; let restoring = false, busyReply = false;
   try { const v = JSON.parse(localStorage.getItem(HK)); if (Array.isArray(v)) hist = v.slice(-40); } catch {}
   if (!LuxoraPrefs.get().rememberChat) { hist = []; try { localStorage.removeItem(HK); } catch {} }
   const saveHist = () => { try { hist.length && LuxoraPrefs.get().rememberChat ? localStorage.setItem(HK, JSON.stringify(hist.slice(-40))) : localStorage.removeItem(HK); } catch {} };
@@ -63,7 +63,10 @@
     let reply = d.reply || '';
     if (P.replyLength === 'short') { const m = reply.match(/^.*?[.!?](?=\s|$)/); if (m) reply = m[0]; }
     else if (P.replyLength === 'detailed' && d.products && d.products[0] && d.products[0].description) reply += ' ' + d.products[0].description;
-    return { ...d, reply: conv(reply), title: conv(d.title), followUp: conv(d.followUp) };
+    /* bot bubbles are not touched by the page translator: errors and fallback replies have exact translations and are
+       translated here; normal recommendation replies stay as the responder wrote them (with their title and follow-up). */
+    const T = s => (s && window.LuxoraI18n ? LuxoraI18n.t(s) : s), tr = T(reply), whole = tr !== reply;
+    return { ...d, reply: conv(tr), title: conv(whole ? T(d.title) : d.title), followUp: conv(whole ? T(d.followUp) : d.followUp) };
   }
   /* saved budget limit (USD prices) is applied when the question doesn't name a budget */
   function outgoing(text) {
@@ -74,10 +77,10 @@
   function botMsg(raw) {
     const P = LuxoraPrefs.get(), data = shape(raw, P);
     const [wrap, m] = botWrap();
-    const p = el('p'); p.textContent = data.reply; m.append(p);
+    const p = el('p'); p.setAttribute('data-no-i18n', ''); p.textContent = data.reply; m.append(p);   // bubble text: translated at the source (shape), not by the page translator
     if (data.products && data.products.length && !P.showCards) { show(data.products[0]); p.textContent += ' Top picks: ' + data.products.map(x => x.name).join(', ') + '.'; }
     if (data.products && data.products.length && P.showCards) {
-      const h = el('h3'); h.textContent = data.title || 'Top suggested'; m.append(h);
+      const h = el('h3'); h.setAttribute('data-no-i18n', ''); h.textContent = data.title || 'Top suggested'; m.append(h);
       const cards = el('div', 'cards');
       data.products.forEach(pr => {
         const c = el('div', 'card'); c.dataset.id = pr.id; c.tabIndex = 0; c.setAttribute('role', 'button'); c.setAttribute('aria-label', `View ${pr.name}`);
@@ -93,7 +96,7 @@
         cards.append(c);
       });
       m.append(cards);
-      const f = el('p', 'follow'); f.textContent = data.followUp || 'Want me to compare any of these, or save one for later?'; m.append(f);
+      const f = el('p', 'follow'); f.setAttribute('data-no-i18n', ''); f.textContent = data.followUp || 'Want me to compare any of these, or save one for later?'; m.append(f);
       show(data.products[0]); cards.firstChild.classList.add('sel');
     }
     feed.append(wrap); scroll();
@@ -103,8 +106,10 @@
     text = text.trim(); if (!text) return;
     userMsg(text, file);
     const [t] = botWrap('<span class="typing" role="status" aria-label="Luxora is typing"><i></i><i></i><i></i></span>'); feed.append(t); scroll();
+    busyReply = true;
     try { const data = await chat(outgoing(text)); t.remove(); botMsg(data); }
     catch (e) { t.remove(); botMsg({ reply: "Sorry, I couldn't reach the assistant just now. Please try again.", products: [] }); }
+    finally { busyReply = false; }
   }
   /* attachment: a prototype nicety - the file stays in the browser; only its name is shown in the chat */
   const fileIn = $('#file'), attached = $('#attached'); let attName = '';
@@ -181,7 +186,7 @@
     const n = S.count(), total = S.subtotal();
     $('#empty')?.remove(); view.classList.remove('is-empty', 'panel-open');
     botMsg({ cartLink: true, reply: `Great choice. Your cart now has ${n} item${n > 1 ? 's' : ''} (${money(total)}). Open the shop to review your cart and check out. Checkout here is a demo, so nothing is ordered or charged. To buy for real, use the Buy at button on the product.`, products: [] });
-    const last = feed.lastElementChild?.querySelector('.msg__body'); if (last) { const a = el('a', 'btn btn--sm cart-link', 'Go to cart'); a.href = '#/cart'; a.style.alignSelf = 'flex-start'; last.append(a); scroll(); }
+    const last = feed.lastElementChild?.querySelector('.msg__body'); if (last) { const a = el('a', 'btn btn--sm cart-link', window.LuxoraI18n ? LuxoraI18n.t('Go to cart') : 'Go to cart'); a.href = '#/cart'; a.style.alignSelf = 'flex-start'; last.append(a); scroll(); }
   }
   window.LuxoraAssistant = { refresh() { renderPanel(); document.querySelectorAll('.card[data-id]').forEach(c => { const on = S.isSaved(c.dataset.id), hb = c.querySelector('.card__heart'); if (hb) { hb.classList.toggle('on', on); hb.setAttribute('aria-pressed', on); } }); } };
   document.addEventListener('luxora:external', renderPanel);
@@ -196,8 +201,9 @@
 
   /* ---------- boot ---------- */
   show(window.LuxoraOffline.products[0]);
-  if (hist.length) {
-    restoring = true;
+  function restoreAll() {
+    if (!hist.length) return;
+    restoring = true; feed.querySelectorAll('.msg--user, .msg--bot').forEach(x => x.remove());
     const byId = Object.fromEntries(window.LuxoraOffline.products.map(p => [p.id, p]));
     const items = hist.slice();
     $('#empty')?.remove(); view.classList.remove('is-empty');
@@ -205,10 +211,14 @@
       if (h.r === 'u') userMsg(h.t, h.f);
       else {
         botMsg({ reply: h.reply, title: h.title, followUp: h.followUp, products: (h.ids || []).map(i => byId[i]).filter(Boolean) });
-        if (h.link) { const last = feed.lastElementChild?.querySelector('.msg__body'); if (last) { const l = el('a', 'btn btn--sm cart-link', 'Go to cart'); l.href = '#/cart'; l.style.alignSelf = 'flex-start'; last.append(l); } }
+        if (h.link) { const last = feed.lastElementChild?.querySelector('.msg__body'); if (last) { const l = el('a', 'btn btn--sm cart-link', window.LuxoraI18n ? LuxoraI18n.t('Go to cart') : 'Go to cart'); l.href = '#/cart'; l.style.alignSelf = 'flex-start'; last.append(l); } }
       }
     });
     restoring = false; feed.scrollTop = feed.scrollHeight;
   }
+  restoreAll();
+  /* the chosen language's dictionary arrives after boot (and can change): redraw the saved conversation so error and
+     fallback replies show translated */
+  document.addEventListener('luxora:i18n', () => { if (!busyReply) restoreAll(); });
   const q = new URLSearchParams(location.search).get('q'); if (q) send(q);
 })();

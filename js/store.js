@@ -13,6 +13,9 @@
     count: () => Store.cart().reduce((n, i) => n + i.qty, 0),
     savedCount: () => Store.saved().length,
     isSaved: id => Store.saved().some(s => s.id === id),
+    /* a finish variant (e.g. Oura Ring 4 Ceramic Midnight) shown through its base product */
+    variant(p, color) { const v = p && p.variants && p.variants[color]; return v ? { ...p, ...v, id: p.id, variantOf: p.id, variantKey: color, colors: [color], deal: v.deal || null, listPrice: v.listPrice } : p; },
+    colorName: (p, c) => (p && p.colorNames && p.colorNames[c]) || (c ? c[0].toUpperCase() + c.slice(1) : ''),
     info(item) { const c = catalog()[item.id] || {}; return { id: item.id, name: item.name || c.name || 'Product', store: item.store || c.store || 'Luxora', price: item.price ?? c.price ?? 0, retailer: c.retailer }; },
     /* "Buy at <retailer>" link: new tab, noopener, sponsored */
     buyLink(p, cls = 'btn', label) {

@@ -9,11 +9,14 @@
     D.feed = feed;
     D.list = (feed.deals || []).filter(d => d && d.productId && Number.isFinite(d.dealPrice) && (!d.endsAt || new Date(d.endsAt) > Date.now())).map(d => {
       const p = products.find(x => x.id === d.productId); if (!p) return null;
-      if (!p.listPrice) p.listPrice = p.price;
-      const pct = Math.round((1 - d.dealPrice / p.listPrice) * 100);
+      /* a deal on a finish variant (matched by its Amazon ASIN in the deal link) applies to that variant only */
+      const key = Object.keys(p.variants || {}).find(k => [d.url, d.sourceUrl].some(u => u && u.includes(p.variants[k].asin)));
+      const t = key ? p.variants[key] : p;
+      const list = Number.isFinite(d.listPrice) && d.listPrice > 0 ? d.listPrice : (t.listPrice || t.price);   // the feed's list price wins
+      const pct = Math.round((1 - d.dealPrice / list) * 100);
       if (pct < 1) return null;
-      p.price = d.dealPrice; p.deal = Object.assign({}, d, { listPrice: p.listPrice, discountPercent: pct });
-      return p.deal;
+      t.listPrice = list; t.price = d.dealPrice; t.deal = Object.assign({}, d, { listPrice: list, discountPercent: pct, color: key || null });
+      return t.deal;
     }).filter(Boolean);
   }
   D.ready = fetch('deals.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : Promise.reject(r.status)).then(apply).catch(() => {})

@@ -16,7 +16,11 @@ const products = [
     description: 'Titanium smart ring (Silver) for sleep, readiness and activity tracking.',
     highlights: ['Titanium', 'Sleep + readiness tracking'],
     price: 349, tags: ['health', 'sleep', 'everyday', 'fitness', 'titanium'],
-    sizes: RING_SIZES, colors: ['silver'], optionsNote: 'Confirm your ring size at Oura before you buy; a sizing kit is recommended.',
+    sizes: RING_SIZES, colors: ['silver', 'midnight'], optionsNote: 'Confirm your ring size at Oura before you buy; a sizing kit is recommended.',
+    /* finish variants: Silver is the base listing; Ceramic Midnight is its own Amazon page (B0FKQW8LTZ, $399 list; opened Nov 4, 2026) */
+    variants: { midnight: { label: 'Ceramic Midnight', name: 'Oura Ring 4 Ceramic Midnight', price: 399, asin: 'B0FKQW8LTZ', imageId: 'aura-ring-4-midnight',
+      description: 'Ceramic smart ring (Midnight) for sleep, readiness and activity tracking.', retailer: { name: 'Amazon', url: 'https://www.amazon.com/dp/B0FKQW8LTZ' }, checkedAt: '2026-11-04' } },
+    colorNames: { silver: 'Silver', midnight: 'Ceramic Midnight' },
     retailer: { name: 'Oura', url: 'https://ouraring.com/store/rings/oura-ring-4/silver' }, alsoAt: [], checkedAt: CHECKED },
   { id: 'nova-ring', name: 'Samsung Galaxy Ring', store: 'Samsung', category: 'smart-rings', kind: 'ring', tone: 'silver',
     aliases: ['samsung galaxy ring', 'galaxy ring', 'samsung ring'],
@@ -85,7 +89,7 @@ const AMAZON_DISCLOSURE = 'As an Amazon Associate, Luxora earns from qualifying 
 const ASIN = {
   'aura-ring-4': 'B0D9WT1S2T',     // Oura Ring 4 Smart Ring - Silver
   'nova-ring': 'B0D3JDPB11',       // SAMSUNG Galaxy Ring
-  'ring-pro': 'B0GRJVBPH3',        // Oura Ring 5 Smart Ring - Silver
+  'ring-pro': 'B0GRJVBPH3',
   'pulse-watch-s': 'B0CT3SGHXL',   // Garmin Forerunner 165, 43mm, Black
   'orbit-watch': 'B0HJBCX8VS',     // Apple Watch Series 12 GPS 42mm
   'drift-buds': 'B0DWHPBK42',      // Sony WF-C710N, Black
@@ -98,6 +102,7 @@ products.forEach(p => {
   p.amazon = { asin, url: `https://www.amazon.com/dp/${asin}?tag=${AMAZON_TAG}`, kind: 'product-page' };
   if (p.retailer.name === 'Amazon') p.retailer.url = p.amazon.url;      // Amazon is already the main retailer: one tagged link
   (p.alsoAt || []).forEach(a => { if (a.name === 'Amazon') a.url = p.amazon.url; });
+  Object.values(p.variants || {}).forEach(v => { v.amazon = { asin: v.asin, url: `https://www.amazon.com/dp/${v.asin}?tag=${AMAZON_TAG}`, kind: 'product-page' }; if (v.retailer && v.retailer.name === 'Amazon') v.retailer.url = v.amazon.url; });
 });
 
 const categories = {
