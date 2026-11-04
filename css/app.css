@@ -60,7 +60,7 @@ body { background: var(--page); overflow: hidden; }
 .panel .sw { display: flex; gap: 12px; padding-top: 4px; }
 .panel .sw button { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--white); outline: 1px solid var(--gray-200); display: grid; place-items: center; color: var(--white); font-size: 12px; padding: 0; }
 .panel .sw button.on { outline: 2px solid var(--black); }
-.panel .sw .c-black { background: var(--black); }
+.panel .sw .c-black { background: var(--screen); }
 .panel .sw .c-orange { background: var(--orange); }
 .panel .sw .c-gray { background: var(--gray-400); }
 .panel .buy { display: grid; grid-template-columns: auto minmax(0, 1fr) 46px; gap: 12px; height: 46px; }
@@ -220,3 +220,22 @@ body { background: var(--page); overflow: hidden; }
 .sizeerr { font-size: 13px; color: var(--orange-deep); margin-top: 6px; }
 select[aria-invalid=true] { border-color: var(--orange-deep) !important; }
 .req { font-weight: 400; color: var(--gray-600); font-size: 12px; }
+
+/* real-product additions: illustrative-image label, buy-at link, price note, swatches */
+.card__art, .car__art { position: relative; }
+.illus { position: absolute; left: 6px; bottom: 6px; z-index: 2; font-size: 10px; font-weight: 500; line-height: 1.2; letter-spacing: .02em; color: var(--gray-600); background: var(--white); border: 1px solid var(--gray-200); border-radius: 999px; padding: 2px 7px; pointer-events: none; }
+.illus--static { left: 50%; transform: translateX(-50%); bottom: 8px; position: absolute; }
+.pnote { font-size: 12px; color: var(--gray-600); margin-top: 2px; }
+.onote { font-size: 12px; color: var(--gray-600); line-height: 1.45; margin: 6px 0 0; }
+.buyat { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 8px 0 2px; }
+.buyat__alt { font-size: 12px; color: var(--gray-600); text-decoration: underline; text-underline-offset: 2px; }
+.buyat__alt:hover { color: var(--black); }
+.buyat__btn { font-size: 13px; }
+.prod__price small, .price small.from { font-size: 12px; font-weight: 500; color: var(--gray-600); }
+.prod__price .was { font-size: 13px; font-weight: 400; color: var(--gray-400); }
+.dealnote__src { display: block; font-size: 12px; color: var(--gray-600); margin-top: 2px; }
+.dealnote__src a { color: inherit; text-decoration: underline; }
+.panel .sw .c-silver, #viewShop .sw .c-silver, #drawer .dot.c-silver, #viewSaved .dot.c-silver { background: var(--silver); }
+.panel .sw .c-white, #viewShop .sw .c-white, #drawer .dot.c-white, #viewSaved .dot.c-white { background: var(--silver-hi); box-shadow: inset 0 0 0 1px var(--gray-400); }
+.panel .sw .c-standard, #viewShop .sw .c-standard, #drawer .dot.c-standard, #viewSaved .dot.c-standard { background: var(--gray-200); }
+#viewShop .gallery__main, .car__art { position: relative; }

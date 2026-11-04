@@ -22,7 +22,7 @@
       return `<article class="line">
         <a class="line__img" href="#/shop/p/${p.id}" aria-label="View ${esc(p.name)}">${LuxoraArt.product(p)}</a>
         <div><div class="line__store">${esc(p.store)}</div><h2 class="line__name"><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h2>
-          <div class="line__opts"><span>Size: ${esc(size)}</span><span><i class="dot c-${esc(color)}"></i>${cname(color)}</span><span class="stars">${S.stars(p.rating)}</span></div>
+          <div class="line__opts"><span>Size: ${esc(size)}</span><span><i class="dot c-${esc(color)}"></i>${cname(color)}</span><span>${esc(S.checked(p).replace('Price checked', 'Checked'))}</span></div>
           <div class="line__ctl"><button class="btn btn--sm" data-move="${p.id}">${S.needsSize(p) && !x.size ? 'Choose size' : 'Move to cart'}</button><button class="rm" data-unsave="${p.id}">Remove</button></div></div>
         <div class="line__price">${money(p.price)}</div></article>`;
     }).join('');

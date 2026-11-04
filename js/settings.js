@@ -4,16 +4,16 @@
   const S = window.LuxoraStore, P = window.LuxoraPrefs, esc = S.esc;
   const VERSION = '1.2.0';
   const CATS = [['smart-rings', 'Smart rings'], ['smartwatches', 'Smartwatches'], ['earbuds', 'Earbuds'], ['headphones', 'Headphones']];
-  const BRANDS = ['Brightmart', 'Northgate', 'Peak Outlet'];
+  const BRANDS = ['Oura', 'Samsung', 'Garmin', 'Apple', 'Sony'];
   const LANGS = [['en-US', 'English (US)'], ['en-GB', 'English (UK)'], ['es-ES', 'Español'], ['fr-FR', 'Français'], ['de-DE', 'Deutsch'], ['hi-IN', 'हिन्दी']];
   const CURR = [['USD', 'US dollar (USD)'], ['EUR', 'Euro (EUR)'], ['GBP', 'British pound (GBP)'], ['CAD', 'Canadian dollar (CAD)'], ['INR', 'Indian rupee (INR)']];
   const COUNTRIES = [['US', 'United States'], ['CA', 'Canada'], ['GB', 'United Kingdom'], ['IN', 'India'], ['DE', 'Germany'], ['FR', 'France'], ['ES', 'Spain'], ['AU', 'Australia']];
   const SUPPORT = 'support@luxora.example';   // placeholder address: no mailbox exists yet
   const FAQ = [
-    ['Is Luxora a real store?', 'No. Luxora is a prototype. Products, prices, deals and reviews are sample data, and checkout never takes payment or places an order.'],
+    ['Is Luxora a real store?', 'No. Luxora is a prototype assistant, not a store. The products, brands and prices are real and were checked on Nov 3, 2026, but Luxora does not sell anything: the Buy at button opens the retailer in a new tab. Luxora\'s own cart and checkout are a demo that takes no payment and places no order.'],
     ['Where is my data stored?', 'In this browser only (local storage): your profile, settings, chat history, saved items and cart. See Privacy & data below to download or erase it.'],
-    ['Why does the assistant only know about electronics?', 'The sample catalogue has smart rings, smartwatches, earbuds and headphones. Groceries and fashion are not available yet.'],
-    ['How do currency and language work?', 'Prices are stored in US dollars and converted with fixed, approximate sample rates. Language changes number and date formatting; the interface text is English for now.'],
+    ['Why does the assistant only know about electronics?', 'The catalogue has nine products: smart rings, smartwatches, earbuds and headphones. Groceries and fashion are not available yet. The product pictures are illustrative images, not official photos.'],
+    ['How do currency and language work?', 'Prices are stored in US dollars and converted with fixed, approximate rates (not live exchange rates). Language changes number and date formatting; the interface text is English for now.'],
     ['How do I stop deal emails?', 'Turn off "Email me Luxora deals and updates" under Notifications. The prototype list is opt-in only.']
   ];
   const $ = s => root.querySelector(s);
@@ -52,12 +52,12 @@
       sec('shopping', 'Shopping preferences',
         chips('favCats', 'Favorite categories', CATS, f.favCats) +
         chips('favBrands', 'Preferred brands', BRANDS.map(b => [b, b]), f.favBrands) +
-        `<div class="sgrid">${sel('sort', 'Default sort in the store', [['featured', 'Featured'], ['price-asc', 'Price: low to high'], ['price-desc', 'Price: high to low'], ['rating', 'Top rated']], f.sort)}
+        `<div class="sgrid">${sel('sort', 'Default sort in the store', [['featured', 'Featured'], ['price-asc', 'Price: low to high'], ['price-desc', 'Price: high to low']], f.sort)}
           <label class="sfield"><span>Budget limit (US dollars, optional)</span><input type="number" min="0" max="100000" step="10" inputmode="numeric" data-budget value="${esc(f.budget)}" placeholder="No limit"></label></div>
         <p class="sset__note">Favorites move to the top of the Featured list. A budget limit marks pricier products and is applied to assistant questions that don't name a budget.</p>`) +
       sec('region', 'Region',
         `<div class="sgrid">${sel('language', 'Language', LANGS, f.language)}${sel('currency', 'Currency', CURR, f.currency)}${sel('country', 'Country', COUNTRIES, f.country)}</div>
-        <p class="sset__note">Prices convert from US dollars at fixed, approximate sample rates. Language changes number formatting; the interface text is English for now.</p>`) +
+        <p class="sset__note">Prices are in US dollars at the retailer and convert at fixed, approximate rates (not live exchange rates). Language changes number formatting; the interface text is English for now.</p>`) +
       sec('appearance', 'Appearance',
         seg('theme', 'Theme', [['light', 'Light'], ['dark', 'Dark'], ['system', 'System']], f.theme) +
         seg('textSize', 'Text size', [['small', 'Small'], ['default', 'Default'], ['large', 'Large']], f.textSize)) +
@@ -81,7 +81,7 @@
           <li><div><b>Report a bug</b><p>Opens a pre-filled email in your own mail app. Nothing is sent automatically.</p></div><a class="btn btn--ghost btn--sm" id="bug" href="#">Report a bug</a></li>
         </ul>`) +
       sec('about', 'About Luxora',
-        `<p class="sset__txt">Luxora is a prototype AI shopping assistant with sample products. No payment is ever taken and no real order is placed.</p>
+        `<p class="sset__txt">Luxora is a prototype AI shopping assistant. It shows real products with prices checked on Nov 3, 2026 and links to the retailer to buy. Prices can change. Luxora's own cart and checkout are a demo: no payment is taken and no order is placed. Product pictures are illustrative images, not official photos.</p>
         <dl class="about"><div><dt>Version</dt><dd>${VERSION}</dd></div></dl>
         <p class="sset__links"><a href="terms.html">Terms of use</a><a href="privacy.html">Privacy policy</a></p>`);
     jump.innerHTML = [...root.querySelectorAll('.sset')].map(s => `<button type="button" data-go="${s.id}">${esc(s.querySelector('h2').textContent)}</button>`).join('');

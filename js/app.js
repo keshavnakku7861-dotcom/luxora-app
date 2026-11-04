@@ -55,7 +55,7 @@
     else if (P.replyLength === 'detailed' && d.products && d.products[0] && d.products[0].description) reply += ' ' + d.products[0].description;
     return { ...d, reply: conv(reply), title: conv(d.title), followUp: conv(d.followUp) };
   }
-  /* saved budget limit (USD sample prices) is applied when the question doesn't name a budget */
+  /* saved budget limit (USD prices) is applied when the question doesn't name a budget */
   function outgoing(text) {
     const b = parseFloat(LuxoraPrefs.get().budget);
     if (!b || /\$\s*\d|under|below|less than|max|up to|<\s*\d/i.test(text) || /^(hi|hello|hey|yo|thanks|thank)\b/i.test(text.trim())) return text;
@@ -71,7 +71,7 @@
       const cards = el('div', 'cards');
       data.products.forEach(pr => {
         const c = el('div', 'card'); c.dataset.id = pr.id; c.tabIndex = 0; c.setAttribute('role', 'button'); c.setAttribute('aria-label', `View ${pr.name}`);
-        c.innerHTML = `<div class="card__art">${LuxoraArt.product(pr)}</div><div class="card__name">${esc(pr.name)}</div><div class="card__price">${money(pr.price)}</div>`;
+        c.innerHTML = `<div class="card__art">${LuxoraArt.product(pr)}${LuxoraArt.illus}</div><div class="card__name">${esc(pr.name)}</div><div class="card__price">${money(pr.price)}</div>`;
         const heart = el('button', 'card__heart' + (S.isSaved(pr.id) ? ' on' : ''), heartSvg); heart.type = 'button'; heart.setAttribute('aria-label', `Save ${pr.name}`); heart.setAttribute('aria-pressed', S.isSaved(pr.id));
         heart.addEventListener('click', e => { e.stopPropagation(); const on = toggleSave(pr); heart.classList.toggle('on', on); heart.setAttribute('aria-pressed', on); if (current && current.id === pr.id) renderPanel(); });
         const add = el('button', 'card__add', '+'); add.setAttribute('aria-label', `Add ${pr.name} to cart`); add.type = 'button';
@@ -82,7 +82,7 @@
         cards.append(c);
       });
       m.append(cards);
-      const f = el('p', 'follow'); f.textContent = data.followUp || 'Would you like me to handle your order from confirmation to delivery?'; m.append(f);
+      const f = el('p', 'follow'); f.textContent = data.followUp || 'Want me to compare any of these, or save one for later?'; m.append(f);
       show(data.products[0]); cards.firstChild.classList.add('sel');
     }
     feed.append(wrap); scroll();
@@ -115,44 +115,46 @@
 
   /* ---------- recommended panel ---------- */
   function show(p) { current = p; sel = { size: '', kit: false, sizeErr: false, color: p.colors[0], qty: 1, view: 0 }; renderPanel(); }
-  const chosen = () => ({ size: sel.size || (sel.kit ? 'Free sizing kit' : (S.needsSize(current) ? '' : current.sizes[0])), color: sel.color, qty: sel.qty });
+  const chosen = () => ({ size: sel.size || (sel.kit ? 'Sizing kit' : (S.needsSize(current) ? '' : current.sizes[0])), color: sel.color, qty: sel.qty });
   /* a size must be picked before anything is added: show the error and focus the select */
   function needSize() { if (!S.needsSize(current) || chosen().size) return false; sel.sizeErr = true; renderPanel(); const s = $('#size'); if (s) s.focus(); return true; }
   function renderPanel() {
     const p = current; if (!p) return;
-    const views = LuxoraArt.VIEWS, isOn = S.isSaved(p.id), hasKit = p.sizes.includes('Free sizing kit');
+    const views = LuxoraArt.VIEWS, isOn = S.isSaved(p.id), hasKit = p.sizes.includes('Sizing kit');
     panel.innerHTML = `
       <div class="panel__head"><button class="panel__back" id="pback" type="button" aria-label="Back to chat">&#8592;</button><div class="panel__title">Recommended for you</div><button class="panel__back" id="pclose" type="button" aria-label="Close">&#10005;</button></div>
       <div class="car">
         <button class="car__btn car__btn--prev" id="prev" aria-label="Previous image">&#8249;</button>
-        <div class="car__art" id="art">${LuxoraArt.product(p, sel.view)}</div>
+        <div class="car__art" id="art">${LuxoraArt.product(p, sel.view)}</div>${LuxoraArt.illus}
         <button class="car__btn car__btn--next" id="next" aria-label="Next image">&#8250;</button>
       </div>
       <div class="dots" id="dots">${Array.from({ length: views }, (_, i) => `<i class="${i === sel.view ? 'on' : ''}" data-i="${i}" role="button" aria-label="Image ${i + 1}"></i>`).join('')}</div>
       <div class="prod__top">
         <div class="prod__id"><div class="store">${esc(p.store)}</div><div class="prod__name">${esc(p.name)}</div>
-          <div class="stars">${S.stars(p.rating)}<span>${p.rating.toFixed(1)} (${esc(p.reviews)} Reviews)</span></div></div>
-        <div class="prod__price">${money(p.price)}</div>
+          <div class="pnote">${S.checked(p)} &middot; ${esc(p.retailer.name)}</div></div>
+        <div class="prod__price">${p.priceFrom ? '<small>From</small> ' : ''}${money(p.price)}${p.listPrice ? ` <s class="was">${money(p.listPrice)}</s>` : ''}</div>
       </div>
       <div class="opts">
         ${S.needsSize(p) ? `<div class="field"><span class="lbl" id="sizeLbl">Size <small class="req">(required)</small></span>
-          ${hasKit ? `<button class="kit" id="kit" type="button" aria-pressed="${sel.kit}"><span>Free sizing kit</span><span class="tick ${sel.kit ? '' : 'off'}">&#10003;</span></button>` : ''}
-          <select id="size" aria-label="Select your size" aria-required="true" aria-describedby="sizeErr" ${sel.sizeErr ? 'aria-invalid="true"' : ''}><option value="">Select your size</option>${p.sizes.filter(s => s !== 'Free sizing kit').map(s => `<option ${s === sel.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>
+          ${hasKit ? `<button class="kit" id="kit" type="button" aria-pressed="${sel.kit}"><span>Sizing kit</span><span class="tick ${sel.kit ? '' : 'off'}">&#10003;</span></button>` : ''}
+          <select id="size" aria-label="Select your size" aria-required="true" aria-describedby="sizeErr" ${sel.sizeErr ? 'aria-invalid="true"' : ''}><option value="">Select your size</option>${p.sizes.filter(s => s !== 'Sizing kit').map(s => `<option ${s === sel.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>
           <p class="sizeerr" id="sizeErr" role="alert" ${sel.sizeErr ? '' : 'hidden'}>Please select a size before adding this to your cart.</p></div>` : ''}
-        <div class="field"><span class="lbl">Select color</span><div class="sw" id="sw">${p.colors.map(c => `<button type="button" class="c-${c} ${c === sel.color ? 'on' : ''}" data-c="${c}" aria-label="${c}" aria-pressed="${c === sel.color}">${c === sel.color ? '&#10003;' : ''}</button>`).join('')}</div></div>
+        ${p.colors[0] === 'standard' ? '' : `<div class="field"><span class="lbl">Select color</span><div class="sw" id="sw">${p.colors.map(c => `<button type="button" class="c-${c} ${c === sel.color ? 'on' : ''}" data-c="${c}" aria-label="${c}" aria-pressed="${c === sel.color}">${c === sel.color ? '&#10003;' : ''}</button>`).join('')}</div></div>`}
       </div>
+      ${p.optionsNote ? `<p class="onote">${esc(p.optionsNote)}</p>` : ''}
       <div class="buy">
         <div class="qty"><button id="minus" aria-label="Decrease">&minus;</button><span id="q">${sel.qty}</span><button id="plus" aria-label="Increase">+</button></div>
         <button class="add" id="add">Add to Cart</button>
         <button class="heart ${isOn ? 'on' : ''}" id="heart" aria-label="Save for later" aria-pressed="${isOn}">${heartSvg}</button>
       </div>
+      <div class="buyat">${S.buyLink(p, 'btn btn--ghost buyat__btn')}${(p.alsoAt || []).map(a => `<a class="buyat__alt" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer sponsored">Also at ${esc(a.name)}${a.price ? ' (' + money(a.price) + ')' : ''} &#8599;<span class="sr-only"> (opens in a new tab)</span></a>`).join('')}</div>
       <button class="confirm" id="confirm">Confirm &amp; Let AI Process</button>`;
     const go = d => { sel.view = (sel.view + d + views) % views; $('#art').innerHTML = LuxoraArt.product(p, sel.view); $('#dots').querySelectorAll('i').forEach((x, i) => x.classList.toggle('on', i === sel.view)); };
     $('#prev').onclick = () => go(-1); $('#next').onclick = () => go(1);
     $('#dots').onclick = e => { const i = e.target.dataset.i; if (i != null) go(Number(i) - sel.view); };
     if ($('#kit')) $('#kit').onclick = () => { sel.kit = !sel.kit; if (sel.kit) sel.size = ''; sel.sizeErr = false; renderPanel(); };
     if ($('#size')) $('#size').onchange = e => { sel.size = e.target.value; if (sel.size) sel.kit = false; sel.sizeErr = false; renderPanel(); };
-    $('#sw').onclick = e => { const b = e.target.closest('button'); if (b) { sel.color = b.dataset.c; renderPanel(); } };
+    if ($('#sw')) $('#sw').onclick = e => { const b = e.target.closest('button'); if (b) { sel.color = b.dataset.c; renderPanel(); } };
     $('#minus').onclick = () => { sel.qty = Math.max(1, sel.qty - 1); $('#q').textContent = sel.qty; };
     $('#plus').onclick = () => { sel.qty = Math.min(9, sel.qty + 1); $('#q').textContent = sel.qty; };
     $('#add').onclick = () => { if (!needSize()) addToCart(p, chosen()); };
@@ -166,7 +168,7 @@
     if (!S.cart().some(i => i.id === current.id && i.size === c.size && i.color === c.color)) S.addToCart(current, c);
     const n = S.count(), total = S.subtotal();
     $('#empty')?.remove(); view.classList.remove('is-empty', 'panel-open');
-    botMsg({ cartLink: true, reply: `Great choice. Your cart now has ${n} item${n > 1 ? 's' : ''} (${money(total)}). Open the shop to review your cart and check out. This is a prototype with sample data, so nothing is actually ordered or charged.`, products: [] });
+    botMsg({ cartLink: true, reply: `Great choice. Your cart now has ${n} item${n > 1 ? 's' : ''} (${money(total)}). Open the shop to review your cart and check out. Checkout here is a demo, so nothing is ordered or charged. To buy for real, use the Buy at button on the product.`, products: [] });
     const last = feed.lastElementChild?.querySelector('.msg__body'); if (last) { const a = el('a', 'btn btn--sm cart-link', 'Go to cart'); a.href = '#/cart'; a.style.alignSelf = 'flex-start'; last.append(a); scroll(); }
   }
   window.LuxoraAssistant = { refresh() { renderPanel(); document.querySelectorAll('.card[data-id]').forEach(c => { const on = S.isSaved(c.dataset.id), hb = c.querySelector('.card__heart'); if (hb) { hb.classList.toggle('on', on); hb.setAttribute('aria-pressed', on); } }); } };

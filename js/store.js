@@ -13,7 +13,13 @@
     count: () => Store.cart().reduce((n, i) => n + i.qty, 0),
     savedCount: () => Store.saved().length,
     isSaved: id => Store.saved().some(s => s.id === id),
-    info(item) { const c = catalog()[item.id] || {}; return { id: item.id, name: item.name || c.name || 'Product', store: item.store || c.store || 'Luxora', price: item.price ?? c.price ?? 0 }; },
+    info(item) { const c = catalog()[item.id] || {}; return { id: item.id, name: item.name || c.name || 'Product', store: item.store || c.store || 'Luxora', price: item.price ?? c.price ?? 0, retailer: c.retailer }; },
+    /* "Buy at <retailer>" link: new tab, noopener, sponsored */
+    buyLink(p, cls = 'btn', label) {
+      const r = p && p.retailer; if (!r || !/^https:/.test(r.url)) return '';
+      return `<a class="${cls}" href="${Store.esc(r.url)}" target="_blank" rel="noopener noreferrer sponsored" data-buy="${Store.esc(p.id)}">${label || 'Buy at ' + Store.esc(r.name)}<span aria-hidden="true"> &#8599;</span><span class="sr-only"> (opens in a new tab)</span></a>`;
+    },
+    checked: p => { const d = new Date((p && p.checkedAt || '2026-11-03') + 'T12:00:00'); return 'Price checked ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); },
     defaults(p) { return { size: p.sizes[0], color: p.colors[0] }; },
     /* sizes the shopper must pick (rings, watches...). "One size" products need no choice. */
     needsSize: p => (p.sizes || []).some(x => x !== 'One size'),
@@ -39,7 +45,6 @@
     shipping(method = 'standard') { const sub = Store.subtotal(); if (!sub) return 0; return method === 'express' ? EXPRESS : (sub >= FREE_OVER ? 0 : STANDARD); },
     money: n => window.LuxoraPrefs ? LuxoraPrefs.fmt(n) : '$' + Number(n).toFixed(2),
     esc: s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])),
-    stars: r => '★'.repeat(Math.round(r)) + '☆'.repeat(5 - Math.round(r)),
     bind() {
       if (Store._bound) return; Store._bound = true;
       const set = (sel, n) => document.querySelectorAll(sel).forEach(b => { b.textContent = n; b.hidden = n === 0; });

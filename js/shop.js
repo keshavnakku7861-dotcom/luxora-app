@@ -7,7 +7,7 @@
   const D = window.LuxoraDeals, inCat = (p, k) => k === 'all' || (k === 'deals' ? !!p.deal : p.category === k), dealsOn = () => D.list.length > 0;
   const priceHtml = p => p.deal ? `<span class="pr"><strong class="pr__now">${money(p.price)}</strong> <s>${money(p.listPrice)}</s></span>` : `<strong>${money(p.price)}</strong>`;
   const P = () => window.LuxoraPrefs.get();
-  const st = { cat: 'all', sort: P().sort || 'featured', q: '' };
+  const st = { cat: 'all', sort: ['price-asc', 'price-desc'].includes(P().sort) ? P().sort : 'featured', q: '' };
   $('#sort').value = st.sort;
   const heart = '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg>';
   const cname = c => c[0].toUpperCase() + c.slice(1);
@@ -28,36 +28,35 @@
     let list = products.filter(p => inCat(p, st.cat) && (!q || [p.name, p.store, p.category.replace('-', ' '), ...p.tags].join(' ').toLowerCase().includes(q)));
     if (st.sort === 'price-asc') list.sort((a, b) => a.price - b.price);
     else if (st.sort === 'price-desc') list.sort((a, b) => b.price - a.price);
-    else if (st.sort === 'rating') list.sort((a, b) => b.rating - a.rating);
     else { const f = P(), w = p => (f.favCats.includes(p.category) ? 2 : 0) + (f.favBrands.includes(p.store) ? 1 : 0); if (f.favCats.length || f.favBrands.length) list = list.map((p, i) => [p, i]).sort((a, b) => w(b[0]) - w(a[0]) || a[1] - b[1]).map(x => x[0]); }
     return list;
   }
   function cardHtml(p) {
     const on = S.isSaved(p.id);
     return `<article class="pcard">
-      <a class="pcard__img" href="#/shop/p/${p.id}" aria-label="View ${esc(p.name)}">${p.deal && P().priceDrops ? `<span class="dealtag" title="Sample deal">-${p.deal.discountPercent}%</span>` : ''}<span class="a">${Art.product(p, 0)}</span><span class="b">${Art.product(p, 1)}</span></a>
+      <a class="pcard__img" href="#/shop/p/${p.id}" aria-label="View ${esc(p.name)}">${p.deal && P().priceDrops ? `<span class="dealtag" title="Deal">-${p.deal.discountPercent}%</span>` : ''}<span class="a">${Art.product(p, 0)}</span><span class="b">${Art.product(p, 1)}</span>${Art.illus}</a>
       <button class="pcard__heart ${on ? 'on' : ''}" data-heart="${p.id}" aria-pressed="${on}" aria-label="${on ? 'Remove' : 'Save'} ${esc(p.name)}">${heart}</button>
       <div class="pcard__body"><div class="pcard__store">${esc(p.store)}${P().budget && p.price > Number(P().budget) ? ' <span class="overtag">Over your budget</span>' : ''}</div>
         <h3><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h3>
-        <div class="rate"><span class="stars">${S.stars(p.rating)}</span> <span>${p.rating.toFixed(1)} (${esc(p.reviews)})</span></div>
+        <div class="rate">${p.priceFrom ? 'From &middot; ' : ''}${S.checked(p).replace('Price checked', 'Checked')} &middot; ${esc(p.retailer.name)}</div>
         <div class="pcard__foot">${priceHtml(p)}<button class="btn btn--sm" data-add="${p.id}">${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button></div></div></article>`;
   }
   function renderDeals() {
     const box = $('#dealsBox'), q = st.q.trim().toLowerCase();
     const items = P().dealAlerts && dealsOn() && st.cat !== 'deals' ? D.list.filter(d => { const p = byId[d.productId]; return p && inCat(p, st.cat) && (!q || [p.name, p.store, p.category.replace('-', ' '), ...p.tags].join(' ').toLowerCase().includes(q)); }) : [];
     box.hidden = !items.length; if (!items.length) { box.innerHTML = ''; return; }
-    box.innerHTML = `<div class="deals__head"><div><h2>Deals</h2><p>Limited-time prices on selected products. <b class="deals__sample">Sample deals for this demo.</b></p></div><button class="btn btn--ghost btn--sm" data-cat="deals">See all deals</button></div>
+    box.innerHTML = `<div class="deals__head"><div><h2>Deals</h2><p>Verified lower prices on selected products. <b class="deals__sample">Prices checked Nov 3, 2026; they can change at any time.</b></p></div><button class="btn btn--ghost btn--sm" data-cat="deals">See all deals</button></div>
       <div class="deals__grid">${items.map(d => { const p = byId[d.productId]; return `<article class="dealcard">
         <a class="dealcard__img" href="#/shop/p/${p.id}" aria-label="View ${esc(p.name)}">${Art.product(p, 0)}<span class="dealtag">-${d.discountPercent}%</span></a>
-        <div class="dealcard__body"><span class="dealcard__flag">Sample deal</span><h3><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h3>
-          <p class="dealcard__head">${esc(d.headline.replace(/^Sample deal:\s*/i, ''))}</p>
-          <div class="dealcard__price"><strong>${money(p.price)}</strong> <s>${money(p.listPrice)}</s> <small>${esc(D.endsText(d.endsAt))}</small></div>
+        <div class="dealcard__body"><span class="dealcard__flag">Deal at ${esc(d.retailer || p.retailer.name)}</span><h3><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h3>
+          <p class="dealcard__head">${esc(d.headline)}</p>
+          <div class="dealcard__price"><strong>${money(p.price)}</strong> <s>${money(p.listPrice)}</s> <small>${esc(D.endsText(d))}</small></div>
           <button class="btn btn--sm" data-add="${p.id}">${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button></div></article>`; }).join('')}</div>`;
   }
   const COUNTRIES = { US: 'the United States', CA: 'Canada', GB: 'the United Kingdom', IN: 'India', DE: 'Germany', FR: 'France', ES: 'Spain', AU: 'Australia' };
-  function region() { const f = $('#regionNote'); if (f) f.textContent = ` Shipping region: ${COUNTRIES[P().country] || 'the United States'} (sample). Prices shown in ${P().currency}${P().currency === 'USD' ? '' : ' at approximate sample rates'}.`; }
+  function region() { const f = $('#regionNote'); if (f) f.textContent = ` Shipping region: ${COUNTRIES[P().country] || 'the United States'} (shipping is set by the retailer). Prices shown in ${P().currency}${P().currency === 'USD' ? '' : ' at approximate rates, not live exchange rates'}.`; }
   document.addEventListener('luxora:prefs', () => {
-    st.sort = P().sort || 'featured'; $('#sort').value = st.sort; region();
+    st.sort = ['price-asc', 'price-desc'].includes(P().sort) ? P().sort : 'featured'; $('#sort').value = st.sort; region();
     if (shown) { if (!$('#listView').hidden) renderList(); else { const m = location.hash.match(/^#\/shop\/p\/([\w-]+)/); if (m && byId[m[1]]) renderDetail(byId[m[1]]); } } renderDrawer();
   });
   region();
@@ -98,19 +97,22 @@
       root.innerHTML = `
         <nav class="crumbs" aria-label="Breadcrumb"><a href="#/shop">Shop</a> / <a href="#/shop?cat=${p.category}">${CATS.find(c => c[0] === p.category)[1]}</a> / <span>${esc(p.name)}</span></nav>
         <div class="detail">
-          <div class="gallery"><div class="gallery__main">${Art.product(p, d.view)}</div>
+          <div class="gallery"><div class="gallery__main">${Art.product(p, d.view)}${Art.illus}</div>
             <div class="gallery__thumbs">${Array.from({ length: Art.VIEWS }, (_, i) => `<button class="${i === d.view ? 'on' : ''}" data-view="${i}" aria-label="Photo ${i + 1}">${Art.product(p, i)}</button>`).join('')}</div></div>
           <div class="info">
             <div class="pcard__store">${esc(p.store)}</div><h1>${esc(p.name)}</h1>
-            <div class="rate"><span class="stars">${S.stars(p.rating)}</span> <span>${p.rating.toFixed(1)} (${esc(p.reviews)} reviews)</span></div>
-            <div class="price">${priceHtml(p)}</div>${p.deal ? `<div class="dealnote"><span class="dealtag dealtag--inline">-${p.deal.discountPercent}%</span> <b>Sample deal.</b> ${esc(D.endsText(p.deal.endsAt))}. ${esc(p.deal.headline.replace(/^Sample deal:\s*/i, ''))}</div>` : ''}
+            <div class="rate">${S.checked(p)} &middot; at ${esc(p.retailer.name)}</div>
+            <div class="price">${p.priceFrom ? '<small class="from">From</small> ' : ''}${priceHtml(p)}</div>${p.deal ? `<div class="dealnote"><span class="dealtag dealtag--inline">-${p.deal.discountPercent}%</span> <b>Deal.</b> ${esc(D.endsText(p.deal))}. ${esc(p.deal.headline)} <span class="dealnote__src">Compared with ${esc(p.deal.listPriceSource || 'the listed price')}.${p.deal.sourceUrl ? ` <a href="${esc(p.deal.sourceUrl)}" target="_blank" rel="noopener noreferrer sponsored">Source<span class="sr-only"> (opens in a new tab)</span></a>` : ''}</span></div>` : ''}
             <p class="desc">${esc(p.description || '')}</p>
             <div class="opt"><span class="lbl">Size${S.needsSize(p) ? ' <small class="req">(required)</small>' : ''}</span><select id="dSize" aria-label="Size" ${S.needsSize(p) ? 'aria-required="true" aria-describedby="dSizeErr"' : ''}>${S.needsSize(p) ? '<option value="">Select a size</option>' : ''}${p.sizes.map(s => `<option ${s === d.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><p class="sizeerr" id="dSizeErr" role="alert" hidden>Please select a size before adding this to your cart.</p></div>
-            <div class="opt"><span class="lbl">Color: <b>${cname(d.color)}</b></span><div class="sw" id="dSw">${p.colors.map(c => `<button type="button" class="c-${c} ${c === d.color ? 'on' : ''}" data-c="${c}" aria-label="${c}" aria-pressed="${c === d.color}">${c === d.color ? '&#10003;' : ''}</button>`).join('')}</div></div>
+            ${p.colors[0] === 'standard' ? '' : `<div class="opt"><span class="lbl">Color: <b>${cname(d.color)}</b></span><div class="sw" id="dSw">${p.colors.map(c => `<button type="button" class="c-${c} ${c === d.color ? 'on' : ''}" data-c="${c}" aria-label="${c}" aria-pressed="${c === d.color}">${c === d.color ? '&#10003;' : ''}</button>`).join('')}</div></div>`}
             <div class="opt"><span class="lbl">Quantity</span><div class="qty"><button id="dMinus" aria-label="Decrease">&minus;</button><span id="dQ">${d.qty}</span><button id="dPlus" aria-label="Increase">+</button></div></div>
-            <div class="buyrow"><button class="btn btn--lg" id="dAdd">Add to cart</button><button class="btn btn--lg btn--orange" id="dBuy">Buy now</button>
+            <div class="buyat buyat--detail">${S.buyLink(p, 'btn btn--lg btn--orange')}${(p.alsoAt || []).map(a => `<a class="buyat__alt" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer sponsored">Also at ${esc(a.name)}${a.price ? ' (' + money(a.price) + ')' : ''} &#8599;<span class="sr-only"> (opens in a new tab)</span></a>`).join('')}</div>
+            ${p.optionsNote ? `<p class="onote">${esc(p.optionsNote)}</p>` : ''}
+            <p class="onote">Luxora doesn't sell this. The button opens ${esc(p.retailer.name)} in a new tab, where you buy and where shipping, returns and warranty are handled. The cart below is a demo.</p>
+            <div class="buyrow"><button class="btn btn--lg btn--ghost" id="dAdd">Add to demo cart</button><button class="btn btn--lg btn--ghost" id="dBuy">Demo checkout</button>
               <button class="heartbtn ${on ? 'on' : ''}" id="dHeart" aria-pressed="${on}" aria-label="${on ? 'Remove from saved' : 'Save for later'}">${heart}</button></div>
-            <ul class="perks"><li>Free standard shipping over ${money(S.FREE_OVER)}</li><li>30-day returns (sample policy)</li><li>Demo store: no real payment or delivery</li></ul>
+            <ul class="perks"><li>Real shipping, returns and warranty come from ${esc(p.retailer.name)}</li><li>Prices can change; always confirm at the retailer</li><li>Luxora's cart and checkout are a demo: no payment, no delivery</li></ul>
           </div></div>
         <h2 class="rel__t">You may also like</h2><div class="grid grid--4">${related.map(cardHtml).join('')}</div>`;
     };
@@ -208,7 +210,7 @@
     const html = summary(), ref = 'DEMO-' + Math.floor(100000 + Math.random() * 900000);
     S.clearCart(); closeDrawer();
     $('#coBody').innerHTML = `<h2 id="coTitle">Demo order placed</h2><p class="ref">Reference ${ref} &mdash; <b>not a real order</b></p>${html}
-      <p class="fine"><b>No payment was taken and nothing will be shipped.</b> This confirmation only demonstrates the Luxora checkout flow with sample data.</p>
+      <p class="fine"><b>No payment was taken and nothing will be shipped.</b> This confirmation only demonstrates the Luxora checkout flow. To buy the product for real, use its Buy at link.</p>
       <div class="demo__btns"><button class="btn btn--lg" id="coDone">Continue shopping</button><a class="btn btn--lg btn--ghost" href="#/saved" id="coSaved">View saved items</a></div>`;
     $('#coDone').onclick = () => { dlg.close(); closeDrawer(); }; $('#coSaved').onclick = () => dlg.close();
   }

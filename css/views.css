@@ -67,7 +67,7 @@
 #viewShop .sw { display: flex; gap: 12px; }
 #viewShop .sw button { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--white); outline: 1px solid var(--gray-200); color: var(--white); font-size: 13px; padding: 0; display: grid; place-items: center; }
 #viewShop .sw button.on { outline: 2px solid var(--black); }
-#viewShop .sw .c-black { background: var(--black); }
+#viewShop .sw .c-black { background: var(--screen); }
 #viewShop .sw .c-orange { background: var(--orange); }
 #viewShop .sw .c-gray { background: var(--gray-400); }
 #viewShop .qty, #drawer .qty { display: inline-flex; align-items: center; border: 1px solid var(--gray-200); border-radius: 8px; width: fit-content; }
@@ -101,7 +101,7 @@
 #drawer .line__name { font-size: 16px; font-weight: 500; margin: 1px 0 4px; }
 #drawer .line__opts { font-size: 13px; color: var(--gray-600); }
 #drawer .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; border: 1px solid var(--gray-200); }
-#drawer .dot.c-black { background: var(--black); }
+#drawer .dot.c-black { background: var(--screen); }
 #drawer .dot.c-orange { background: var(--orange); }
 #drawer .dot.c-gray { background: var(--gray-400); }
 #drawer .line__ctl { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
@@ -161,7 +161,7 @@
 #viewSaved .line__name a:hover { color: var(--orange-deep); }
 #viewSaved .line__opts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; font-size: 13px; color: var(--gray-600); }
 #viewSaved .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--gray-200); }
-#viewSaved .dot.c-black { background: var(--black); }
+#viewSaved .dot.c-black { background: var(--screen); }
 #viewSaved .dot.c-orange { background: var(--orange); }
 #viewSaved .dot.c-gray { background: var(--gray-400); }
 #viewSaved .line__ctl { display: flex; align-items: center; gap: 18px; margin-top: 14px; }

@@ -2,52 +2,98 @@
 (function () {
   const defs = {}, cache = {};
   defs.products = function (module, exports, require) {
-// SAMPLE DATA ONLY - fictional products, stores and prices for the Luxora prototype.
-// `kind`/`tone` are metadata only; product photos live in public/images/<id>-1..3.webp (see public/js/art.js).
+// REAL PRODUCTS (names, brands, prices and retailer links) from the DEALS bot's verified mapping, prices checked Nov 3, 2026
+// (America/Chicago). Source: deals-proposal/product-mapping.json. Prices change; always confirm at the retailer.
+// Ids are kept from the earlier prototype so saved items, carts and product photo filenames keep working.
+// Photos in public/images/<id>-1..3.webp are generated, illustrative images, NOT official product photos.
+// Fields: store = brand, retailer = where the "Buy at" button goes, alsoAt = other retailers, listPrice = verified higher
+// price (only set where a deal in deals.json is verified), checkedAt = date the price was read from the retailer page.
+const CHECKED = '2026-11-03';
+const RING_SIZES = ['Sizing kit', 'Size 6', 'Size 7', 'Size 8', 'Size 9', 'Size 10', 'Size 11'];
 const products = [
-  { id: 'aura-ring-4', description: 'Titanium smart ring with all-day heart rate, sleep and recovery tracking. Up to 8 days of battery and water resistant to 100 m.', name: 'Aura Ring 4', store: 'Brightmart', category: 'smart-rings', kind: 'ring', tone: 'copper',
-    price: 279.30, rating: 5.0, reviews: '2K', tags: ['health', 'sleep', 'battery', 'everyday', 'fitness'],
-    sizes: ['Free sizing kit', 'Size 6', 'Size 7', 'Size 8', 'Size 9', 'Size 10', 'Size 11'], colors: ['black', 'orange', 'gray'] },
-  { id: 'nova-ring', description: 'Brushed titanium band with temperature, sleep and readiness insights. Lightweight, scratch resistant and comfortable all day.', name: 'Nova Ring', store: 'Northgate', category: 'smart-rings', kind: 'ring', tone: 'silver',
-    price: 399.99, rating: 4.6, reviews: '1.2K', tags: ['health', 'sleep', 'titanium', 'premium'],
-    sizes: ['Free sizing kit', 'Size 6', 'Size 7', 'Size 8', 'Size 9', 'Size 10', 'Size 11'], colors: ['gray', 'black', 'orange'] },
-  { id: 'ring-pro', description: 'Our most advanced ring: ECG-grade heart tracking, glowing sensors and a durable ceramic-coated finish.', name: 'Ring Pro', store: 'Peak Outlet', category: 'smart-rings', kind: 'ring', tone: 'dark',
-    price: 479.00, rating: 4.4, reviews: '860', tags: ['health', 'premium', 'fitness', 'ecg'],
-    sizes: ['Free sizing kit', 'Size 6', 'Size 7', 'Size 8', 'Size 9', 'Size 10', 'Size 11'], colors: ['black', 'gray', 'orange'] },
-  { id: 'pulse-watch-s', description: 'Sport smartwatch with built-in GPS, 7-day battery and 50 workout modes. Soft silicone strap in a 40 or 44 mm case.', name: 'Pulse Watch S', store: 'Brightmart', category: 'smartwatches', kind: 'watch', tone: 'dark',
-    price: 249.00, rating: 4.7, reviews: '3.4K', tags: ['fitness', 'gps', 'battery', 'running', 'health'],
-    sizes: ['40 mm', '44 mm'], colors: ['black', 'orange', 'gray'] },
-  { id: 'orbit-watch', description: 'Stainless steel smartwatch with a bright always-on display, sleep coaching and a breathable woven strap.', name: 'Orbit Watch', store: 'Northgate', category: 'smartwatches', kind: 'watch', tone: 'silver',
-    price: 329.50, rating: 4.5, reviews: '1.9K', tags: ['premium', 'health', 'everyday', 'sleep'],
-    sizes: ['40 mm', '44 mm'], colors: ['gray', 'black', 'orange'] },
-  { id: 'drift-buds', description: 'Lightweight wireless earbuds with rich sound, noise reduction and 28 hours of battery with the charging case.', name: 'Drift Buds', store: 'Peak Outlet', category: 'earbuds', kind: 'earbuds', tone: 'silver',
-    price: 129.00, rating: 4.6, reviews: '5.1K', tags: ['music', 'commute', 'noise', 'battery', 'everyday'],
-    sizes: ['One size'], colors: ['gray', 'black', 'orange'] },
-  { id: 'echo-buds-pro', description: 'Premium earbuds with adaptive noise cancelling, transparency mode and clear call quality in a matte black finish.', name: 'Echo Buds Pro', store: 'Brightmart', category: 'earbuds', kind: 'earbuds', tone: 'dark',
-    price: 189.00, rating: 4.8, reviews: '2.7K', tags: ['music', 'noise', 'premium', 'commute', 'workout'],
-    sizes: ['One size'], colors: ['black', 'orange', 'gray'] },
-  { id: 'studio-cans', description: 'Over-ear headphones with copper-finish cups, active noise cancelling and 40 hours of battery for work and travel.', name: 'Studio Cans', store: 'Northgate', category: 'headphones', kind: 'headphones', tone: 'copper',
-    price: 299.00, rating: 4.7, reviews: '1.4K', tags: ['music', 'noise', 'premium', 'work', 'travel'],
-    sizes: ['One size'], colors: ['orange', 'black', 'gray'] },
-  { id: 'calm-over-ear', description: 'Comfortable over-ear headphones with soft fabric cushions, noise reduction and foldable design for the commute.', name: 'Calm Over-Ear', store: 'Peak Outlet', category: 'headphones', kind: 'headphones', tone: 'dark',
-    price: 159.00, rating: 4.3, reviews: '980', tags: ['music', 'noise', 'work', 'travel', 'battery'],
-    sizes: ['One size'], colors: ['black', 'gray', 'orange'] }
+  { id: 'aura-ring-4', name: 'Oura Ring 4', store: 'Oura', category: 'smart-rings', kind: 'ring', tone: 'silver',
+    aliases: ['oura ring 4', 'oura 4', 'ring 4'],
+    description: 'Titanium smart ring (Silver) for sleep, readiness and activity tracking.',
+    highlights: ['Titanium', 'Sleep + readiness tracking'],
+    price: 349, tags: ['health', 'sleep', 'everyday', 'fitness', 'titanium'],
+    sizes: RING_SIZES, colors: ['silver'], optionsNote: 'Confirm your ring size at Oura before you buy; a sizing kit is recommended.',
+    retailer: { name: 'Oura', url: 'https://ouraring.com/store/rings/oura-ring-4/silver' }, alsoAt: [], checkedAt: CHECKED },
+  { id: 'nova-ring', name: 'Samsung Galaxy Ring', store: 'Samsung', category: 'smart-rings', kind: 'ring', tone: 'silver',
+    aliases: ['samsung galaxy ring', 'galaxy ring', 'samsung ring'],
+    description: 'Titanium smart ring (Titanium Silver) from Samsung. Works with Android and Samsung phones only.',
+    highlights: ['Titanium', 'Android / Samsung only'],
+    price: 324.99, tags: ['health', 'sleep', 'titanium', 'everyday', 'fitness', 'android'],
+    sizes: RING_SIZES, colors: ['silver'], optionsNote: 'Confirm your ring size at the retailer before you buy. Samsung.com lists the ring "from $299.99" before trade-in; the Amazon price shown here was verified.',
+    retailer: { name: 'Amazon', url: 'https://www.amazon.com/SAMSUNG-Subscription-Monitoring-Titanium-Manufacturer/dp/B0D3JDPB11' },
+    alsoAt: [{ name: 'Samsung', url: 'https://www.samsung.com/us/rings/galaxy-ring/' }], checkedAt: CHECKED },
+  { id: 'ring-pro', name: 'Oura Ring 5', store: 'Oura', category: 'smart-rings', kind: 'ring', tone: 'silver',
+    aliases: ['oura ring 5', 'oura 5', 'ring 5'],
+    description: "Oura's newest smart ring (Silver).",
+    highlights: ['Newest Oura ring'],
+    price: 399, tags: ['health', 'sleep', 'premium', 'everyday', 'fitness'],
+    sizes: RING_SIZES, colors: ['silver'], optionsNote: 'Confirm your ring size at Oura before you buy; a sizing kit is recommended. Other finishes may cost more.',
+    retailer: { name: 'Oura', url: 'https://ouraring.com/store/rings/oura-ring-5/silver' }, alsoAt: [], checkedAt: CHECKED },
+  { id: 'pulse-watch-s', name: 'Garmin Forerunner 165', store: 'Garmin', category: 'smartwatches', kind: 'watch', tone: 'dark',
+    aliases: ['garmin forerunner 165', 'forerunner 165', 'forerunner', 'garmin'],
+    description: 'GPS running watch with an AMOLED display. Comes in a single 43 mm case size.',
+    highlights: ['GPS', 'AMOLED display', '43 mm case'],
+    price: 249.99, tags: ['fitness', 'gps', 'running', 'health', 'workout'],
+    sizes: ['One size'], colors: ['gray'], optionsNote: 'Single 43 mm case size.',
+    retailer: { name: 'Garmin', url: 'https://www.garmin.com/en-US/p/1055469/' },
+    alsoAt: [{ name: 'Running Warehouse', url: 'https://www.runningwarehouse.com/Garmin_Forerunner_165_GPS_Watch/descpage-GFR165.html' }], checkedAt: CHECKED },
+  { id: 'orbit-watch', name: 'Apple Watch Series 12', store: 'Apple', category: 'smartwatches', kind: 'watch', tone: 'silver',
+    aliases: ['apple watch series 12', 'apple watch', 'series 12'],
+    description: 'The current Apple Watch on apple.com.',
+    highlights: ['Current Apple Watch', 'Price is a starting price'],
+    price: 399, priceFrom: true, tags: ['premium', 'health', 'everyday', 'sleep', 'fitness', 'iphone'],
+    sizes: ['One size'], colors: ['standard'], optionsNote: 'Starting price. Case size, finish and band are chosen at Apple.',
+    retailer: { name: 'Apple', url: 'https://www.apple.com/shop/buy-watch/apple-watch' }, alsoAt: [], checkedAt: CHECKED },
+  { id: 'drift-buds', name: 'Sony WF-C710N', store: 'Sony', category: 'earbuds', kind: 'earbuds', tone: 'dark',
+    aliases: ['sony wf-c710n', 'wf-c710n', 'c710n'],
+    description: 'Noise-cancelling wireless earbuds (Black). Up to 30 hours total battery with ANC, IPX4 water resistance.',
+    highlights: ['Noise cancelling', 'Up to 30 h total battery with ANC', 'IPX4'],
+    price: 99.99, listPrice: 129.99, tags: ['music', 'commute', 'noise', 'battery', 'everyday', 'workout'],
+    sizes: ['One size'], colors: ['black'],
+    retailer: { name: 'Sony', url: 'https://electronics.sony.com/audio/headphones/all-headphones/p/wfc710n-b' }, alsoAt: [], checkedAt: CHECKED },
+  { id: 'echo-buds-pro', name: 'Apple AirPods Pro 3', store: 'Apple', category: 'earbuds', kind: 'earbuds', tone: 'silver',
+    aliases: ['apple airpods pro 3', 'airpods pro 3', 'airpods pro', 'airpods'],
+    description: "Apple's current AirPods Pro. $199 at Amazon (sold by Amazon.com) versus $249 at apple.com.",
+    highlights: ['Current AirPods Pro', '$199 at Amazon vs $249 at Apple'],
+    price: 199, listPrice: 249, tags: ['music', 'noise', 'premium', 'commute', 'workout', 'iphone', 'everyday'],
+    sizes: ['One size'], colors: ['white'], optionsNote: 'Ear tip sizes are chosen when you unbox them.',
+    retailer: { name: 'Amazon', url: 'https://www.amazon.com/dp/B0FQFB8FMG' },
+    alsoAt: [{ name: 'Apple', url: 'https://www.apple.com/shop/buy-airpods/airpods-pro-3', price: 249 }], checkedAt: CHECKED },
+  { id: 'studio-cans', name: 'Sony WH-1000XM5', store: 'Sony', category: 'headphones', kind: 'headphones', tone: 'dark',
+    aliases: ['sony wh-1000xm5', 'wh-1000xm5', '1000xm5', 'xm5'],
+    description: 'Over-ear noise-cancelling headphones (Black). 30 hours of battery and a design that folds flat.',
+    highlights: ['Noise cancelling', '30 h battery', 'Folds flat'],
+    price: 199.99, listPrice: 399.99, tags: ['music', 'noise', 'premium', 'work', 'travel', 'battery', 'commute'],
+    sizes: ['One size'], colors: ['black'],
+    retailer: { name: 'Sony', url: 'https://electronics.sony.com/audio/headphones/headband/p/wh1000xm5-b' }, alsoAt: [], checkedAt: CHECKED },
+  { id: 'calm-over-ear', name: 'Sony WH-CH720N', store: 'Sony', category: 'headphones', kind: 'headphones', tone: 'dark',
+    aliases: ['sony wh-ch720n', 'wh-ch720n', 'ch720n'],
+    description: 'Lightweight over-ear noise-cancelling headphones (Black) with 35 hours of battery.',
+    highlights: ['Noise cancelling', '35 h battery', 'Lightweight'],
+    price: 89.99, listPrice: 179.99, tags: ['music', 'noise', 'work', 'travel', 'battery', 'commute'],
+    sizes: ['One size'], colors: ['black'],
+    retailer: { name: 'Sony', url: 'https://electronics.sony.com/audio/headphones/headband/p/whch720n-b' }, alsoAt: [], checkedAt: CHECKED }
 ];
 
 const categories = {
-  'smart-rings': { label: 'smart rings', words: ['ring', 'rings', 'oura', 'smart ring'] },
-  'smartwatches': { label: 'smartwatches', words: ['watch', 'watches', 'smartwatch', 'smartwatches', 'wearable', 'wearables'] },
+  'smart-rings': { label: 'smart rings', words: ['ring', 'rings', 'oura', 'smart ring', 'galaxy ring'] },
+  'smartwatches': { label: 'smartwatches', words: ['watch', 'watches', 'smartwatch', 'smartwatches', 'wearable', 'wearables', 'garmin', 'forerunner'] },
   'earbuds': { label: 'earbuds', words: ['earbud', 'earbuds', 'buds', 'airpods', 'earphones'] },
   'headphones': { label: 'headphones', words: ['headphone', 'headphones', 'cans', 'over-ear', 'overear'] }
 };
 
-module.exports = { products, categories };
+module.exports = { products, categories, CHECKED };
 
   };
   defs.rules = function (module, exports, require) {
 // Built-in rule-based responder (keyword matching). Replace or wrap it - see README "Plugging in SENDER".
 // Contract: async respond(message, ctx) -> { reply: string, products: Product[], title?: string, followUp?: string }
 const { products, categories } = require('../products');
+const CHECKED_TXT = 'price checked Nov 3, 2026';
 
 const money = n => '$' + n.toFixed(2);
 
@@ -64,28 +110,31 @@ function detectCategories(text) {
     .map(([key]) => key);
 }
 
-/* products named in the text, in the order they appear ("Aura Ring", "nova", "Ring Pro"...) */
+/* products named in the text, in the order they appear ("Oura Ring 4", "galaxy ring", "airpods"...) */
 function namedProducts(lower) {
   const esc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const hits = [];
   products.forEach(p => {
-    const n = p.name.toLowerCase(), first = n.split(' ')[0], toks = [n, n.replace(/\s+\d+$/, '')];
-    if (first !== 'ring') toks.push(first);
+    const toks = [p.name.toLowerCase(), ...(p.aliases || [])];
     let idx = -1;
-    for (const t of toks) { const m = lower.match(new RegExp('\\b' + esc(t) + '\\b')); if (m && (idx < 0 || m.index < idx)) idx = m.index; }
+    for (const t of toks) { const m = lower.match(new RegExp('(^|[^a-z0-9])' + esc(t) + '(?![a-z0-9])')); if (m && (idx < 0 || m.index < idx)) idx = m.index; }
     if (idx >= 0) hits.push([idx, p]);
   });
   return hits.sort((a, b) => a[0] - b[0]).map(h => h[1]);
 }
 
+const dealPct = p => p.listPrice ? Math.round((1 - p.price / p.listPrice) * 100) : 0;
+const facts = p => (p.highlights || []).slice(0, 2).join(', ');
+/* There are no verified review scores, so "better" is answered with price, discount and specs only. */
 function sideBySide(a, b) {
-  return { title: 'Side by side', reply: `${a.name} (${money(a.price)}, ${a.rating} stars) vs ${b.name} (${money(b.price)}, ${b.rating} stars). ${a.price < b.price ? a.name : b.name} is the better value; ${a.rating >= b.rating ? a.name : b.name} is rated higher.`, products: [a, b], followUp: 'Want me to add one of them to your cart?' };
+  const cheaper = a.price <= b.price ? a : b, other = cheaper === a ? b : a;
+  return { title: 'Side by side', reply: `${a.name} is ${money(a.price)} (${facts(a)}) and ${b.name} is ${money(b.price)} (${facts(b)}), ${CHECKED_TXT}. ${cheaper.name} costs ${money(other.price - cheaper.price)} less. I don't have verified reviews to rank them on quality, so it comes down to price and features.`, products: [a, b], followUp: 'Want me to add one of them to your cart?' };
 }
 
 /* follow-up questions about the products shown last ("which one is cheaper?", "tell me more about the first one") */
 function followUp(lower, last, cats, named) {
   if (!last.length || cats.length || named.length >= 2) return null;
-  const pick = (p, reply, extra) => ({ title: 'Your pick', reply, products: [p], followUp: extra || 'Want me to add it to your cart?' });
+  const pick = (p, reply, extra) => ({ title: 'Your pick', reply, products: [p], followUp: extra || 'Want me to save it, or compare it with another one?' });
   const ord = /\b(first|1st)\b/.test(lower) ? 0 : /\b(second|2nd)\b/.test(lower) ? 1 : /\b(third|3rd)\b/.test(lower) ? 2 : -1;
   if (/\b(compare|difference|differ)\b.*\b(them|these|those|both|two)\b|\b(them|these|those|both)\b.*\b(compare|differ)/.test(lower) && last.length >= 2) return sideBySide(last[0], last[1]);
   if (/\b(cheaper|cheapest|less expensive|lowest price|least expensive|most affordable|budget[- ]friendly)\b/.test(lower)) {
@@ -97,18 +146,18 @@ function followUp(lower, last, cats, named) {
     return pick(p, `${p.name} is the priciest at ${money(p.price)}.`);
   }
   if (/\b(better|best|top rated|highest rated|best rated|higher rated|worth it|should i (get|buy|pick|choose)|recommend)\b/.test(lower) && last.length) {
-    const p = [...last].sort((a, b) => b.rating - a.rating || a.price - b.price)[0];
-    return pick(p, last.length > 1 ? `Of the ones I showed, ${p.name} is rated highest at ${p.rating.toFixed(1)} stars from ${p.reviews} reviews, at ${money(p.price)}.` : `${p.name} is a strong choice at ${p.rating.toFixed(1)} stars from ${p.reviews} reviews.`);
+    const p = [...last].sort((a, b) => dealPct(b) - dealPct(a) || a.price - b.price)[0];
+    return pick(p, last.length > 1 ? `I don't have verified reviews, so I'm going by price and features. ${p.name} looks like the best value of those at ${money(p.price)}${dealPct(p) ? ` (${dealPct(p)}% below its listed price)` : ''}: ${facts(p)}. Prices ${CHECKED_TXT}.` : `${p.name} is ${money(p.price)}: ${facts(p)} (${CHECKED_TXT}).`);
   }
   if (/\b(tell me more|more about|more info|details?|describe|what about)\b/.test(lower) || ord >= 0) {
     const p = last[ord >= 0 && ord < last.length ? ord : 0];
-    return pick(p, `${p.name} (${p.store}) is ${money(p.price)}, rated ${p.rating.toFixed(1)} stars from ${p.reviews} reviews. ${p.description || ''}`.trim());
+    return pick(p, `${p.name} (${p.store}) is ${money(p.price)}, ${CHECKED_TXT}. ${p.description || ''} You can buy it at ${p.retailer.name} (button on the product card).`.trim());
   }
   return null;
 }
 
 function score(p, words) {
-  let s = p.rating;
+  let s = dealPct(p) / 100;
   for (const w of words) if (p.tags.includes(w)) s += 1.5;
   return s;
 }
@@ -128,7 +177,7 @@ async function respond(message, ctx = {}) {
     return { reply: "Hi! I'm Luxora, your AI shopping assistant. Tell me what you're shopping for, your budget, or a brand, and I'll recommend the best options. Try “best smart ring under $500”.", products: [] };
   }
   if (/\b(track|where is|delivery|shipping|order status)\b/.test(lower)) {
-    return { reply: "I can guide you from confirmation to delivery. Once you confirm an order I'll keep you posted on shipping. (This is a prototype with sample data, so no real orders are placed.)", products: [] };
+    return { reply: "Luxora doesn't take or ship orders, so there's nothing for me to track. Use the Buy at link on a product to buy from the retailer, and track the order with them.", products: [] };
   }
   const named = namedProducts(lower);
   const last = (ctx && Array.isArray(ctx.last) ? ctx.last : []).map(id => products.find(p => p.id === id)).filter(Boolean);
@@ -136,6 +185,10 @@ async function respond(message, ctx = {}) {
   if (comparing && named.length >= 2) return sideBySide(named[0], named[1]);
   const fu = followUp(lower, last, cats, named);
   if (fu) return fu;
+  if (named.length === 1 && !comparing) {
+    const p = named[0], also = (p.alsoAt || []).map(a => `${a.name}${a.price ? ' (' + money(a.price) + ')' : ''}`).join(', ');
+    return { title: 'Your pick', products: [p], followUp: 'Want me to save it, or compare it with another one?', reply: `${p.name} (${p.store}) is ${money(p.price)} at ${p.retailer.name}, ${CHECKED_TXT}. ${p.description || ''}${also ? ` Also at ${also}.` : ''} Use the Buy at button on the product to buy it from the retailer.`.replace(/\s+/g, ' ').trim() };
+  }
   if (comparing && named.length === 1 && last.length) return sideBySide(named[0], last.find(p => p !== named[0]) || named[0]);
 
   let pool = products.filter(p => cats.length === 0 || cats.includes(p.category));
@@ -149,7 +202,7 @@ async function respond(message, ctx = {}) {
     if (within.length === 0) {
       const cheapest = [...pool].sort((a, b) => a.price - b.price)[0];
       if (!cheapest) return fallback();
-      return { reply: `I couldn't find anything under $${Number.isInteger(budget) ? budget : budget.toFixed(2)} in that category. The closest is ${cheapest.name} at ${money(cheapest.price)}.`, products: [cheapest], title: 'Closest match', followUp: 'Would you like me to look at a higher budget?' };
+      return { reply: `I couldn't find anything under $${Number.isInteger(budget) ? budget : budget.toFixed(2)} in that category. The closest is ${cheapest.name} at ${money(cheapest.price)} (${CHECKED_TXT}).`, products: [cheapest], title: 'Closest match', followUp: 'Would you like me to look at a higher budget?' };
     }
     pool = within;
   }
@@ -163,15 +216,15 @@ async function respond(message, ctx = {}) {
   const budgetText = budget != null ? `your budget (under $${Number.isInteger(budget) ? budget : budget.toFixed(2)})` : 'your budget';
   return {
     title: `Top suggested ${label}`,
-    reply: `Based on ${budgetText} and ${needs} needs, I recommend ${top.name} (${money(top.price)}, ${top.rating.toFixed(1)} stars from ${top.reviews} reviews). ${pool.length > 1 ? 'Here are a few more worth a look.' : ''}`.replace(/\s+/g, ' ').trim(),
+    reply: `Based on ${budgetText} and ${needs} needs, I recommend ${top.name} (${money(top.price)} at ${top.retailer.name}, ${CHECKED_TXT}). ${pool.length > 1 ? 'Here are a few more worth a look.' : ''}`.replace(/\s+/g, ' ').trim(),
     products: pool,
-    followUp: 'Would you like me to handle your order from confirmation to delivery?'
+    followUp: 'Want me to compare any of these, or save one for later?'
   };
 }
 
 function fallback() {
   return {
-    reply: "I can help with smart rings, smartwatches, earbuds and headphones. Try something like “best smart ring under $500”, “earbuds for my commute” or “compare Aura Ring and Nova Ring”.",
+    reply: "I can help with smart rings, smartwatches, earbuds and headphones. Try something like “best smart ring under $500”, “earbuds for my commute” or “compare Oura Ring 4 and Samsung Galaxy Ring”.",
     products: []
   };
 }
@@ -211,25 +264,20 @@ async function respond(message, ctx = {}) {
   const p = out.products || [];
 
   if (/order status|track|where is|delivery|shipping/.test(lower) && p.length === 0) {
-    return { reply: "Once you confirm an order I'll keep you posted all the way to your door. Just a heads up, this is a demo with sample data, so nothing actually ships yet.", products: [] };
+    return { reply: "Luxora doesn't take or ship orders itself, so there's nothing for me to track here. Use the Buy at button on a product to buy from the retailer, and you can track the order with them.", products: [] };
   }
   if (p.length === 0) {
     return { reply: "I can help with smart rings, smartwatches, earbuds and headphones. Tell me what you'll use it for and roughly what you want to spend, like \"earbuds for my commute under $150\".", products: [] };
   }
   if (out.title === 'Side by side' && p.length >= 2) {
-    const [a, b] = p;
-    const cheaper = a.price < b.price ? a : b, better = a.rating >= b.rating ? a : b;
-    const reply = cheaper === better
-      ? `Honestly, ${cheaper.name} wins both ways: it's cheaper at ${money(cheaper.price)} and rated higher (${cheaper.rating} stars).`
-      : `${cheaper.name} saves you some cash at ${money(cheaper.price)}, while ${better.name} is the reviewers' favorite at ${better.rating} stars. Depends whether price or polish matters more to you.`;
-    return { ...out, reply, followUp: 'Want me to add one to your cart?' };
+    return { ...out, reply: `${pick(['Okay, here is how they stack up.', 'Good pair to compare.', 'Let me line them up for you.'])} ${out.reply}`, followUp: 'Want me to save one for later?' };
   }
   if (out.title === 'Your pick') {
     return { ...out, reply: `${pick(['Easy one!', 'Good question.', 'Sure thing.'])} ${out.reply}` };
   }
   if (out.title === 'Closest match') {
     const c = p[0];
-    return { ...out, reply: `Hmm, nothing quite fits that budget, sorry! The closest I've got is ${c.name} at ${money(c.price)}.`, followUp: 'Want me to see what a little more stretch gets you?' };
+    return { ...out, reply: `Hmm, nothing quite fits that budget, sorry! The closest I've got is ${c.name} at ${money(c.price)} (price checked Nov 3, 2026).`, followUp: 'Want me to see what a little more stretch gets you?' };
   }
 
   const top = p[0];
@@ -237,8 +285,8 @@ async function respond(message, ctx = {}) {
   const opener = pick(['Good call!', 'Ooh, nice.', 'Got you.', 'Love it.']);
   return {
     ...out,
-    reply: `${opener} I'd go with ${top.name}: ${money(top.price)}, ${top.rating.toFixed(1)} stars from ${top.reviews} reviews.${extra}`,
-    followUp: pick(['Want me to add it to your cart?', 'Want a size or color recommendation?', 'Should I put one aside for you?'])
+    reply: `${opener} I'd go with ${top.name}: ${money(top.price)} at ${top.retailer.name} (price checked Nov 3, 2026).${extra}`,
+    followUp: pick(['Want me to save it for later?', 'Want to see how it compares with another one?', 'Want me to add it to your cart? (Checkout here is a demo; you buy at the retailer.)'])
   };
 }
 
