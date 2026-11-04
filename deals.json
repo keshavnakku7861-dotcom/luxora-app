@@ -1,7 +1,7 @@
 {
   "_readme": "Luxora deals feed (real products). Every deal below was read from the retailer's own product page on Nov 3, 2026 (America/Chicago); sourceUrl is that page and checkedAt is when the price was read. Prices can change at any time, so always confirm at the retailer. endsAt is null because the retailers do not publish an end date; the shop shows 'Price checked <date>' instead. The shop view reads this file for deal badges and the Deals section; the EMAIL bot reads it to write deal emails. Fields per deal: id, productId (matches products.js), productName, listPrice, dealPrice (USD), discountPercent, endsAt (ISO 8601 with offset, or null), headline, url (deep link in the shop), retailer, sourceUrl (retailer page with the deal price), listPriceSource, listSourceUrl, checkedAt (ISO 8601 with offset), verified.",
   "currency": "USD",
-  "updated": "2026-11-03",
+  "updated": "2026-11-04",
   "checkedAt": "2026-11-03T18:44:00-06:00",
   "shopUrl": "https://keshavnakku7861-dotcom.github.io/luxora-app/app.html#/shop?cat=deals",
   "deals": [
@@ -76,6 +76,25 @@
       "checkedAt": "2026-11-03T18:44:00-06:00",
       "verified": true,
       "note": "List price is Apple's $249 (apple.com, checked Nov 3, 2026 18:43 CST); the Amazon page itself showed no separate list-price line."
+    },
+    {
+      "id": "deal-oura-ring-4-ceramic-midnight",
+      "productId": "aura-ring-4",
+      "productName": "Oura Ring 4 Ceramic (Midnight)",
+      "listPrice": 399,
+      "dealPrice": 279,
+      "discountPercent": 30,
+      "endsAt": "2026-11-11T23:59:00-06:00",
+      "headline": "Oura Ring 4 Ceramic Midnight for $279 at Amazon, 30% below its $399 list price (price can vary by ring size)",
+      "url": "https://www.amazon.com/dp/B0FKQW8LTZ?tag=luxora004-20",
+      "retailer": "Amazon",
+      "sourceUrl": "https://www.amazon.com/dp/B0FKQW8LTZ?tag=luxora004-20",
+      "listPriceSource": "Amazon list price",
+      "listSourceUrl": "https://www.amazon.com/dp/B0FKQW8LTZ",
+      "checkedAt": "2026-11-04T16:50:00-06:00",
+      "verified": true,
+      "sample": false,
+      "note": "Sold by Amazon.com; sizes 5 and 8 checked at $279. Price can vary by ring size; confirm at Amazon."
     }
   ]
 }
