@@ -17,15 +17,15 @@
     /* "Buy at <retailer>" link: new tab, noopener, sponsored */
     buyLink(p, cls = 'btn', label) {
       const r = p && p.retailer; if (!r || !/^https:/.test(r.url)) return '';
-      if (r.name === 'Amazon' && p.amazon) return Store.amazonLink(p, cls, 'Buy on Amazon', true).replace(' data-amazon=', ` data-buy="${Store.esc(p.id)}" data-amazon=`);   // Amazon is the retailer: a single tagged button
+      if (r.name === 'Amazon' && p.amazon) return Store.amazonLink(p, cls, 'Buy now', true).replace(' data-amazon=', ` data-buy="${Store.esc(p.id)}" data-amazon=`);   // Amazon is the retailer: a single tagged button
       return `<a class="${cls}" href="${Store.esc(r.url)}" target="_blank" rel="noopener noreferrer sponsored" data-buy="${Store.esc(p.id)}">${label || 'Buy at ' + Store.esc(r.name)}<span aria-hidden="true"> &#8599;</span><span class="sr-only"> (opens in a new tab)</span></a>`;
     },
-    /* "Buy on Amazon" (Amazon Associates tag in the URL). always=false skips it when Amazon is already the main retailer, to avoid a duplicate button */
+    /* "Buy now" on Amazon (Amazon Associates tag in the URL). always=false skips it when Amazon is already the main retailer, to avoid a duplicate button */
     DISCLOSURE: 'As an Amazon Associate, Luxora earns from qualifying purchases.',
     amazonLink(p, cls = 'btn', label, always) {
       const a = p && p.amazon; if (!a || !/^https:\/\/www\.amazon\.com\/.*[?&]tag=luxora004-20/.test(a.url)) return '';
       if (!always && p.retailer && p.retailer.name === 'Amazon') return '';
-      return `<a class="${cls}" href="${Store.esc(a.url)}" target="_blank" rel="sponsored noopener" data-amazon="${Store.esc(p.id)}">${label || 'Buy on Amazon'}<span aria-hidden="true"> &#8599;</span><span class="sr-only"> (opens Amazon in a new tab)</span></a>`;
+      return `<a class="${cls}" href="${Store.esc(a.url)}" target="_blank" rel="sponsored noopener" data-amazon="${Store.esc(p.id)}" title="Opens Amazon.com in a new tab">${label || 'Buy now'}<span aria-hidden="true"> &#8599;</span><small class="amzhint">on Amazon</small><span class="sr-only"> (opens Amazon in a new tab)</span></a>`;
     },
     checked: p => { const d = new Date((p && p.checkedAt || '2026-11-03') + 'T12:00:00'); return 'Price checked ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); },
     defaults(p) { return { size: p.sizes[0], color: p.colors[0] }; },

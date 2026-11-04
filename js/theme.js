@@ -10,12 +10,12 @@
     deals: false,              // opted in to deal emails (the sign-up form still has to be submitted)
     dealAlerts: true, priceDrops: true, orderUpdates: true,
     favCats: [], favBrands: [], sort: 'featured', budget: '',
-    language: 'en-US', currency: 'USD', country: 'US',
+    language: 'en-US', currency: 'USD',
     replyLength: 'standard',   // short | standard | detailed
     showCards: true, rememberChat: true
   };
-  const FIXED = { textSize: 'default', dealAlerts: true, orderUpdates: true, favCats: [], favBrands: [], sort: 'featured', budget: '', country: 'US', replyLength: 'standard', showCards: true, rememberChat: true };
-  const RATES = { USD: 1, EUR: 0.92, GBP: 0.79, INR: 83, CAD: 1.36 };
+  const FIXED = { textSize: 'default', dealAlerts: true, orderUpdates: true, favCats: [], favBrands: [], sort: 'featured', budget: '', replyLength: 'standard', showCards: true, rememberChat: true };
+  const RATES = { USD: 1, EUR: 0.92, GBP: 0.79, INR: 83, CAD: 1.36, AUD: 1.52 };
   const read = () => { try { const v = JSON.parse(localStorage.getItem(KEY)); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch { return {}; } };
   const root = document.documentElement, mq = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
   function apply(v) {

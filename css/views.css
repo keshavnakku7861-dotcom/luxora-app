@@ -309,3 +309,4 @@
 /* text size (Settings > Appearance): zoom the scrolling content, not the fixed-height frames */
 :root[data-text="small"] :is(.feed > *, .panel > *, .settings, .shop, .saved, .shopbar, main) { zoom: .92; }
 :root[data-text="large"] :is(.feed > *, .panel > *, .settings, .shop, .saved, .shopbar, main) { zoom: 1.14; }
+.sfield input[aria-invalid=true], .sfield select[aria-invalid=true] { border-color: var(--orange-deep); }

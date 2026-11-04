@@ -40,7 +40,7 @@
         <h3><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h3>
         <div class="rate">${p.priceFrom ? 'From &middot; ' : ''}${S.checked(p).replace('Price checked', 'Checked')} &middot; ${esc(p.retailer.name)}</div>
         <div class="pcard__foot">${priceHtml(p)}<button class="btn btn--sm" data-add="${p.id}">${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button></div>
-        ${S.amazonLink(p, 'pcard__amz', 'Buy on Amazon', true)}</div></article>`;
+        ${S.amazonLink(p, 'pcard__amz', 'Buy now', true)}</div></article>`;
   }
   function renderDeals() {
     const box = $('#dealsBox'), q = st.q.trim().toLowerCase();
@@ -52,7 +52,7 @@
         <div class="dealcard__body"><span class="dealcard__flag">Deal at ${esc(d.retailer || p.retailer.name)}</span><h3><a href="#/shop/p/${p.id}">${esc(p.name)}</a></h3>
           <p class="dealcard__head">${esc(d.headline)}</p>
           <div class="dealcard__price"><strong>${money(p.price)}</strong> ${P().priceDrops ? `<s>${money(p.listPrice)}</s>` : ''} <small>${esc(D.endsText(d))}</small></div>
-          <button class="btn btn--sm" data-add="${p.id}">${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button> ${S.amazonLink(p, 'btn btn--sm btn--ghost btn--amz', 'Buy on Amazon', true)}</div></article>`; }).join('')}</div>`;
+          <button class="btn btn--sm" data-add="${p.id}">${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button> ${S.amazonLink(p, 'btn btn--sm btn--ghost btn--amz', 'Buy now', true)}</div></article>`; }).join('')}</div>`;
   }
   const COUNTRIES = { US: 'the United States', CA: 'Canada', GB: 'the United Kingdom', IN: 'India', DE: 'Germany', FR: 'France', ES: 'Spain', AU: 'Australia' };
   function region() { const f = $('#regionNote'); if (f) f.textContent = ` Shipping region: ${COUNTRIES[P().country] || 'the United States'} (shipping is set by the retailer). Prices shown in ${P().currency}${P().currency === 'USD' ? '' : ' at approximate rates, not live exchange rates'}.`; }

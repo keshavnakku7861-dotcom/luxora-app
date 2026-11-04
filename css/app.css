@@ -246,4 +246,8 @@ select[aria-invalid=true] { border-color: var(--orange-deep) !important; }
 .card__amz { display: block; margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--gray-600); text-decoration: underline; text-underline-offset: 2px; position: relative; z-index: 2; margin-right: 34px; }
 .amzdisc { font-size: 11px; line-height: 1.4; color: var(--gray-600); margin: 6px 0 0; text-align: center; }
 .onote.amzdisc { text-align: left; font-size: 12px; }
-.btn--amz { white-space: nowrap; }
+.btn--amz { white-space: normal; height: auto; min-height: 32px; padding-top: 5px; padding-bottom: 5px; line-height: 1.15; text-align: center; flex-wrap: wrap; justify-content: center; }
+.btn--amz .amzhint { margin-left: 4px; }
+/* "Buy now" goes to Amazon: small honest hint */
+.amzhint { display: inline-block; margin-left: 6px; font-size: .78em; font-weight: 500; color: var(--gray-600); }
+.btn .amzhint { color: inherit; opacity: .8; }
