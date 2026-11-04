@@ -108,13 +108,13 @@
             <div class="opt"><span class="lbl">Size${S.needsSize(p) ? ' <small class="req">(required)</small>' : ''}</span><select id="dSize" aria-label="Size" ${S.needsSize(p) ? 'aria-required="true" aria-describedby="dSizeErr"' : ''}>${S.needsSize(p) ? '<option value="">Select a size</option>' : ''}${p.sizes.map(s => `<option ${s === d.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><p class="sizeerr" id="dSizeErr" role="alert" hidden>Please select a size before adding this to your cart.</p></div>
             ${p.colors[0] === 'standard' ? '' : `<div class="opt"><span class="lbl">Color: <b>${cname(d.color)}</b></span><div class="sw" id="dSw">${p.colors.map(c => `<button type="button" class="c-${c} ${c === d.color ? 'on' : ''}" data-c="${c}" aria-label="${c}" aria-pressed="${c === d.color}">${c === d.color ? '&#10003;' : ''}</button>`).join('')}</div></div>`}
             <div class="opt"><span class="lbl">Quantity</span><div class="qty"><button id="dMinus" aria-label="Decrease">&minus;</button><span id="dQ">${d.qty}</span><button id="dPlus" aria-label="Increase">+</button></div></div>
-            <div class="buyat buyat--detail">${S.buyLink(p, 'btn btn--lg btn--orange')}${S.amazonLink(p, 'btn btn--lg btn--ghost btn--amz')}${(p.alsoAt || []).map(a => `<a class="buyat__alt" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer sponsored">Also at ${esc(a.name)}${a.price ? ' (' + money(a.price) + ')' : ''} &#8599;<span class="sr-only"> (opens in a new tab)</span></a>`).join('')}</div>
+            <div class="buyat buyat--detail">${S.amazonLink(p, 'btn btn--lg btn--orange', 'Buy now', true, { hint: false }).replace(' data-amazon=', ` data-buy="${esc(p.id)}" data-amazon=`)}</div>
             <p class="onote amzdisc">${S.DISCLOSURE} Amazon's price and availability can differ from the price shown here.</p>
             ${p.optionsNote ? `<p class="onote">${esc(p.optionsNote)}</p>` : ''}
-            <p class="onote">Luxora doesn't sell this. The button opens ${esc(p.retailer.name)} in a new tab, where you buy and where shipping, returns and warranty are handled. The cart below is a demo.</p>
+            <p class="onote">Luxora doesn't sell this. Buy now opens the product's store page in a new tab, where you buy and where shipping, returns and warranty are handled. The cart below is a demo.</p>
             <div class="buyrow"><button class="btn btn--lg btn--ghost" id="dAdd">Add to demo cart</button><button class="btn btn--lg btn--ghost" id="dBuy">Demo checkout</button>
               <button class="heartbtn ${on ? 'on' : ''}" id="dHeart" aria-pressed="${on}" aria-label="${on ? 'Remove from saved' : 'Save for later'}">${heart}</button></div>
-            <ul class="perks"><li>Real shipping, returns and warranty come from ${esc(p.retailer.name)}</li><li>Prices can change; always confirm at the retailer</li><li>Luxora's cart and checkout are a demo: no payment, no delivery</li></ul>
+            <ul class="perks"><li>Real shipping, returns and warranty come from the seller</li><li>Prices can change; always confirm at the retailer</li><li>Luxora's cart and checkout are a demo: no payment, no delivery</li></ul>
           </div></div>
         <h2 class="rel__t">You may also like</h2><div class="grid grid--4">${related.map(cardHtml).join('')}</div>`;
     };

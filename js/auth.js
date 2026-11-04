@@ -45,6 +45,19 @@
   const COUNTRIES = [['US', 'United States'], ['CA', 'Canada'], ['GB', 'United Kingdom'], ['IN', 'India'], ['DE', 'Germany'], ['FR', 'France'], ['ES', 'Spain'], ['AU', 'Australia']];
   const CURRENCY = { US: 'USD', CA: 'CAD', GB: 'GBP', IN: 'INR', DE: 'EUR', FR: 'EUR', ES: 'EUR', AU: 'AUD' };
   const POSTAL = { US: /^\d{5}(-\d{4})?$/, CA: /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/, GB: /^[A-Za-z]{1,2}\d[A-Za-z\d]? ?\d[A-Za-z]{2}$/, IN: /^\d{6}$/, DE: /^\d{5}$/, FR: /^\d{5}$/, ES: /^\d{5}$/, AU: /^\d{4}$/ };
+  /* phone: national number digits after removing spaces, dashes, dots, brackets and an optional +<code> / leading 0 */
+  const PHONE = { US: ['1', /^[2-9]\d{2}[2-9]\d{6}$/], CA: ['1', /^[2-9]\d{2}[2-9]\d{6}$/], GB: ['44', /^7\d{9}$|^[1-3]\d{8,9}$/], IN: ['91', /^[6-9]\d{9}$/],
+    DE: ['49', /^1[5-7]\d{8,9}$|^[2-9]\d{5,10}$/], FR: ['33', /^[1-9]\d{8}$/], ES: ['34', /^[6-9]\d{8}$/], AU: ['61', /^[2-478]\d{8}$/] };
+  function normPhone(raw, country) {
+    const r = PHONE[country]; if (!r) return null;
+    let d = String(raw || '').replace(/[\s().\-]/g, '');
+    if (!/^\+?\d+$/.test(d)) return null;
+    if (d.startsWith('+')) { if (!d.startsWith('+' + r[0])) return null; d = d.slice(1 + r[0].length); }
+    else if (d.startsWith('00' + r[0])) d = d.slice(2 + r[0].length);
+    else if (r[0] === '1' && d.length === 11 && d.startsWith('1')) d = d.slice(1);
+    if (r[0] !== '1') d = d.replace(/^0/, '');
+    return r[1].test(d) ? `+${r[0]} ${d}` : null;
+  }
   const REGION_LABEL = { US: 'State', CA: 'Province', AU: 'State', IN: 'State' };
   const ACCTS = 'luxora.accounts';
   const accts = () => { try { const v = JSON.parse(localStorage.getItem(ACCTS)); return v && typeof v === 'object' ? v : {}; } catch { return {}; } };
@@ -60,12 +73,29 @@
     const e = {};
     if (!CURRENCY[v.country]) e.country = 'Please choose your country.';
     if (!v.region) e.region = `Please enter your ${(REGION_LABEL[v.country] || 'state or region').toLowerCase()}.`;
+    if (!v.phone) e.phone = 'Please enter your phone number.';
+    else if (CURRENCY[v.country] && !normPhone(v.phone, v.country)) e.phone = 'That phone number does not look right for this country.';
+    if (!v.street) e.street = 'Please enter your street address.';
     if (!v.city) e.city = 'Please enter your city.';
     if (!v.postal) e.postal = 'Please enter your ZIP or postal code.';
     else if (POSTAL[v.country] && !POSTAL[v.country].test(v.postal)) e.postal = 'That ZIP or postal code does not look right for this country.';
     return e;
   }
   const clean = x => String(x || '').trim().replace(/\s+/g, ' ');
+  const inApp = () => /app\.html$/.test(location.pathname) || !!document.getElementById('viewAssistant');
+  function toChat() { inApp() ? (location.hash = '#/assistant') : location.assign('app.html#/assistant'); }
+  /* new account -> Luxora's Forminit form kbj6dk1nfgl (fire and forget; never the password, street or ZIP) */
+  const FORM = 'https://forminit.com/f/kbj6dk1nfgl';
+  function report(v) {
+    try {
+      const fd = new FormData();
+      fd.append('fi-sender-fullName', v.name); fd.append('fi-sender-email', v.email);
+      fd.append('fi-text-phone', v.phone); fd.append('fi-text-city', v.city); fd.append('fi-text-state', v.region);
+      fd.append('fi-text-country', (COUNTRIES.find(c => c[0] === v.country) || [, v.country])[1]); fd.append('fi-text-signedUpAt', v.createdAt);
+      fd.append('fi-text-source', 'account-signup');
+      fetch(FORM, { method: 'POST', body: fd, headers: { Accept: 'application/json' }, keepalive: true }).catch(() => {});
+    } catch {}
+  }
   function setCountryPrefs(country) { if (window.LuxoraPrefs && CURRENCY[country]) LuxoraPrefs.set({ country, currency: CURRENCY[country] }); }
 
   function field(id, label, attrs, input) {
@@ -85,7 +115,7 @@
     const em = field('authEmail', 'Email', { name: 'email', type: 'email', autocomplete: 'email', inputmode: 'email', maxlength: '120', required: '' });
     const pw = field('authPass', 'Password', { name: 'password', type: 'password', autocomplete: mode === 'signup' ? 'new-password' : 'current-password', maxlength: '128', required: '' });
     const formErr = el('p', { class: 'auth__err', id: 'authFormErr', role: 'alert', hidden: '' });
-    let nm, pw2, co, rg, ci, pc;
+    let nm, pw2, co, rg, ci, pc, ph, st;
     if (mode === 'signup') {
       nm = field('authName', 'Full name', { name: 'name', type: 'text', autocomplete: 'name', maxlength: '60', required: '' });
       pw2 = field('authPass2', 'Confirm password', { name: 'password2', type: 'password', autocomplete: 'new-password', maxlength: '128', required: '' });
@@ -93,14 +123,16 @@
       sel.append(el('option', { value: '', text: 'Choose your country' }), ...COUNTRIES.map(([v, l]) => el('option', { value: v, text: l })));
       co = field('authCountry', 'Country', null, sel);
       rg = field('authRegion', 'State / region', { name: 'region', type: 'text', autocomplete: 'address-level1', maxlength: '60', required: '' });
+      ph = field('authPhone', 'Phone number', { name: 'phone', type: 'tel', autocomplete: 'tel', inputmode: 'tel', maxlength: '20', required: '' });
+      st = field('authStreet', 'Street address', { name: 'street', type: 'text', autocomplete: 'address-line1', maxlength: '100', required: '' });
       ci = field('authCity', 'City', { name: 'city', type: 'text', autocomplete: 'address-level2', maxlength: '60', required: '' });
       pc = field('authPostal', 'ZIP / postal code', { name: 'postal', type: 'text', autocomplete: 'postal-code', maxlength: '12', required: '' });
       sel.addEventListener('change', () => { rg.wrap[0].firstChild.textContent = REGION_LABEL[sel.value] || 'State / region'; });
       const pwHint = el('p', { class: 'auth__hint', text: 'At least 8 characters.' });
-      form.append(...nm.wrap, ...em.wrap, ...pw.wrap, pwHint, ...pw2.wrap,
-        el('fieldset', { class: 'auth__loc' }, [el('legend', { text: 'Your location' }), ...co.wrap, ...rg.wrap, el('div', { class: 'auth__row' }, [el('div', {}, ci.wrap), el('div', {}, pc.wrap)])]),
+      form.append(...nm.wrap, ...em.wrap, ...ph.wrap, ...pw.wrap, pwHint, ...pw2.wrap,
+        el('fieldset', { class: 'auth__loc' }, [el('legend', { text: 'Your address' }), ...co.wrap, ...st.wrap, ...rg.wrap, el('div', { class: 'auth__row' }, [el('div', {}, ci.wrap), el('div', {}, pc.wrap)])]),
         formErr, el('button', { type: 'submit', class: 'btn auth__go', text: 'Create account' }),
-        el('p', { class: 'auth__fine', text: 'Prototype: your account is saved only in this browser and is not sent anywhere. The password is stored as a one-way hash. Luxora never asks for a card, PIN or street address.' }));
+        el('p', { class: 'auth__fine', text: 'Your account is saved in this browser; the password is stored only as a one-way hash and never leaves this device. Your name, email, phone and city/state/country are also sent to Luxora’s sign-up form provider (Forminit) so Luxora knows who joined. Luxora never asks for a card or PIN.' }));
     } else {
       form.append(...em.wrap, ...pw.wrap, formErr, el('button', { type: 'submit', class: 'btn auth__go', text: 'Sign in' }),
         el('p', { class: 'auth__fine', text: 'Accounts are saved only in this browser, so sign in on the device where you created it.' }));
@@ -114,20 +146,21 @@
         if (!EMAIL.test(email)) return em.inp.focus(); if (!pass) return pw.inp.focus();
         const a = accts()[key];
         if (!a || a.hash !== await hash(pass, a.salt)) { formErr.textContent = 'That email and password do not match an account on this device.'; formErr.hidden = false; return pw.inp.focus(); }
-        mem = a.profile; write(a.profile); setCountryPrefs(a.profile.country); paint(); close(); announce(`Signed in as ${a.profile.name}`); return;
+        mem = a.profile; write(a.profile); setCountryPrefs(a.profile.country); paint(); close(); announce(`Signed in as ${a.profile.name}`); toChat(); return;
       }
-      const v = { name: clean(nm.inp.value).slice(0, 60), email: email.slice(0, 120), country: co.inp.value, region: clean(rg.inp.value).slice(0, 60), city: clean(ci.inp.value).slice(0, 60), postal: clean(pc.inp.value).toUpperCase().slice(0, 12) };
+      const v = { name: clean(nm.inp.value).slice(0, 60), email: email.slice(0, 120), country: co.inp.value, region: clean(rg.inp.value).slice(0, 60), city: clean(ci.inp.value).slice(0, 60), postal: clean(pc.inp.value).toUpperCase().slice(0, 12), phone: clean(ph.inp.value).slice(0, 20), street: clean(st.inp.value).slice(0, 100) };
       const loc = checkLocation(v);
       const errs = [
         [nm, v.name ? '' : 'Please enter your full name.'],
         [em, !email ? 'Please enter your email address.' : EMAIL.test(email) ? (accts()[key] ? 'An account with this email already exists on this device. Sign in instead.' : '') : 'That email address does not look right. Please check it.'],
         [pw, !pass ? 'Please choose a password.' : pass.length < 8 ? 'Use at least 8 characters.' : ''],
         [pw2, !pw2.inp.value ? 'Please confirm your password.' : pw2.inp.value !== pass ? 'The passwords do not match.' : ''],
-        [co, loc.country], [rg, loc.region], [ci, loc.city], [pc, loc.postal]];
+        [ph, loc.phone], [co, loc.country], [st, loc.street], [rg, loc.region], [ci, loc.city], [pc, loc.postal]];
       errs.forEach(([f, m]) => flag(f, m));
       const bad = errs.find(([, m]) => m); if (bad) return bad[0].inp.focus();
       const salt = newSalt(), all = accts(); all[key] = { salt, hash: await hash(pass, salt), profile: v }; saveAccts(all);
-      mem = v; write(v); setCountryPrefs(v.country); paint(); close(); announce(`Account created. Signed in as ${v.name}`);
+      v.phone = normPhone(v.phone, v.country); v.createdAt = new Date().toISOString();
+      mem = v; write(v); setCountryPrefs(v.country); report(v); paint(); close(); announce(`Account created. Signed in as ${v.name}`); toChat();
     });
     dlg.append(closeBtn(), logo, el('h2', { id: 'authTitle', text: mode === 'signup' ? 'Create your Luxora account' : 'Sign in to Luxora' }),
       el('p', { class: 'auth__lead', text: mode === 'signup' ? 'Your name, email and location help Luxora show prices in your currency.' : 'Welcome back. Enter your email and password.' }), form, swap);
@@ -151,11 +184,17 @@
     const p = get(); p ? accountView(p) : formView();
     if (!dlg.open) dlg.showModal();
   }
-  document.addEventListener('click', e => { const t = e.target.closest('[data-signin]'); if (t) { e.preventDefault(); open(t); } });
+  document.addEventListener('click', e => {
+    const g = e.target.closest('[data-get-started]');
+    if (g) { e.preventDefault(); get() ? toChat() : open(g); return; }          // signed in: straight to chat, never ask again
+    const t = e.target.closest('[data-signin]'); if (!t) return; e.preventDefault();
+    if (get() && !inApp()) { toChat(); return; }                               // landing/legal pages: signed in -> chat
+    open(t);
+  });
   window.addEventListener('storage', e => { if (e.key === KEY) { mem = null; paint(); } });
   const init = () => paint();
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
-  window.LuxoraAuth = { profile: get, open, EMAIL, COUNTRIES, CURRENCY, REGION_LABEL, checkLocation, setCountryPrefs,
+  window.LuxoraAuth = { profile: get, open, EMAIL, normPhone, COUNTRIES, CURRENCY, REGION_LABEL, checkLocation, setCountryPrefs,
     update(p) {   // edit profile; keeps the local account record in step (moves it if the email changed)
       const old = get(), all = accts(), ok = old && old.email && all[old.email.toLowerCase()];
       if (p && ok) { const rec = all[old.email.toLowerCase()]; delete all[old.email.toLowerCase()]; rec.profile = p; all[p.email.toLowerCase()] = rec; saveAccts(all); }
