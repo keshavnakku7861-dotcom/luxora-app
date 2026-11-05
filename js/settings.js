@@ -62,7 +62,7 @@
     const swb = t.closest('[data-sw]'); if (swb) { const on = swb.getAttribute('aria-checked') !== 'true'; swb.setAttribute('aria-checked', on); P.set({ [swb.dataset.sw]: on }); saved(); return; }
     const sg = t.closest('[data-seg]'); if (sg) { P.set({ [sg.dataset.seg]: sg.dataset.v }); sg.parentElement.querySelectorAll('[role=radio]').forEach(b => b.setAttribute('aria-checked', b === sg)); saved(); return; }
     const go = t.closest('[data-go]'); if (go) { const s = document.getElementById(go.dataset.go); s.scrollIntoView({ behavior: 'smooth', block: 'start' }); s.querySelector('h2').setAttribute('tabindex', '-1'); s.querySelector('h2').focus({ preventScroll: true }); return; }
-    if (t.closest('#logOut')) { LuxoraAuth.logOut(); location.hash = '#/assistant'; return; }
+    if (t.closest('#logOut')) { LuxoraAuth.logOut(); return; }
   });
   root.addEventListener('change', e => { const s = e.target.closest('[data-sel]'); if (s) { P.set({ [s.dataset.sel]: s.value }); saved(); } });
   root.addEventListener('submit', e => {

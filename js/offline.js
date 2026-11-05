@@ -322,7 +322,7 @@ async function respond(message, ctx = {}) {
   pool = pool.sort((a, b) => score(b, words) - score(a, words)).slice(0, 3);
   const top = pool[0];
   const label = cats.length === 1 ? categories[cats[0]].label : 'picks';
-  const needs = words.includes('everyday') ? 'everyday' : (words.find(w => ['fitness', 'sleep', 'health', 'music', 'travel', 'work', 'running', 'commute', 'workout'].includes(w)) || 'everyday');
+  const needs = words.includes('everyday') ? 'everyday' : (words.find(w => ['fitness', 'sleep', 'health', 'music', 'travel', 'work', 'running', 'commute', 'workout'].includes(w) && !(w === 'work' && /\bworks?\s+(?:well\s+)?with\b/.test(lower))) || 'everyday');
   const budgetText = budget != null ? `your budget (under $${Number.isInteger(budget) ? budget : budget.toFixed(2)})` : 'your budget';
   return {
     title: `Top suggested ${label}`,
@@ -425,7 +425,7 @@ async function respond(message, ctx = {}) {
   const top = p[0];
   const extra = p.length > 1 ? ` ${p.slice(1).map(x => `${x.name} (${money(x.price)})`).join(' and ')} ${p.length > 2 ? 'are good options' : 'is a good option'} too.` : '';
   const budget = (lower.match(/(?:under|below|less than|max|up to)\s*\$?\s*(\d+)/) || lower.match(/\$\s*(\d+)/) || [])[1];
-  const need = (lower.match(/\b(running|workouts?|gym|fitness|sleep|travel|commute|work|music|reading|kids)\b/) || [])[1];
+  const need = (lower.replace(/\bworks?\s+(?:well\s+)?with\b/g, 'compatible with').match(/\b(running|workouts?|gym|fitness|sleep|travel|commute|work|music|reading|kids)\b/) || [])[1];
   const opener = need ? `For ${need}, ` : budget ? `Under $${budget}, ` : '';
   const why = (top.highlights || [])[0];
   return {

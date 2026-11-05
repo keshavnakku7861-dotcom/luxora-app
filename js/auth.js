@@ -86,7 +86,7 @@
   function toChat() { inApp() ? (location.hash = '#/assistant') : location.assign('app.html#/assistant'); }
   /* After sign-in or create-account, show the empty assistant welcome (not leftover chat). */
   function welcomeAfterAuth() {
-    try { localStorage.removeItem('luxora.chat'); } catch {}
+    try { localStorage.removeItem('luxora.chat'); localStorage.removeItem('luxora.chatOwner'); } catch {}
     document.dispatchEvent(new Event('luxora:clear-chat'));
   }
   /* new account -> Luxora's Forminit form kbj6dk1nfgl (fire and forget; never the password, street or ZIP) */
@@ -179,7 +179,7 @@
   function accountView(p) {
     dlg.replaceChildren(); dlg.classList.remove('auth--wide');
     const out = el('button', { type: 'button', class: 'btn btn--ghost', text: 'Log out' });
-    out.addEventListener('click', () => { mem = null; write(null); paint(); close(); announce('Logged out'); });
+    out.addEventListener('click', () => { close(); logOut(); });
     const done = el('button', { type: 'button', class: 'btn', text: 'Close' }); done.addEventListener('click', close);
     const av = el('span', { class: 'auth__avatar', 'aria-hidden': 'true', text: p.name.trim().charAt(0).toUpperCase() });
     dlg.append(closeBtn(), av, el('h2', { id: 'authTitle', text: `Hi, ${first(p.name)}` }), el('p', { class: 'auth__lead', text: p.email }),
@@ -188,10 +188,18 @@
       el('p', { class: 'auth__fine', text: 'Prototype profile saved only in this browser.' }));
     setTimeout(() => done.focus(), 0);
   }
-  function open(trigger) {
+  /* log out takes effect at once: the chat and product pane are cleared and the app goes back behind the sign-in gate */
+  function logOut() {
+    mem = null; write(null);
+    try { localStorage.removeItem('luxora.chat'); localStorage.removeItem('luxora.chatOwner'); } catch {}
+    document.dispatchEvent(new Event('luxora:clear-chat'));
+    paint(); announce('Logged out');
+    if (inApp()) location.replace('index.html');
+  }
+  function open(trigger, mode) {
     if (!dlg) build();
     opener = trigger || document.activeElement;
-    const p = get(); p ? accountView(p) : formView();
+    const p = get(); p ? accountView(p) : formView(mode);
     if (!dlg.open) dlg.showModal();
   }
   document.addEventListener('click', e => {
@@ -199,7 +207,7 @@
     if (g) { e.preventDefault(); get() ? toChat() : open(g); return; }          // signed in: straight to chat, never ask again
     const t = e.target.closest('[data-signin]'); if (!t) return; e.preventDefault();
     if (get() && !inApp()) { toChat(); return; }                               // landing/legal pages: signed in -> chat
-    open(t);
+    open(t, 'signin');                                                         // Sign In opens the sign-in form; Get Started / create-account CTAs open sign-up
   });
   window.addEventListener('storage', e => { if (e.key === KEY) { mem = null; paint(); } });
   /* sign-in gate: every way into the app (Open App, app.html#/assistant, ?q= links) needs an account, like Get Started.
@@ -215,5 +223,5 @@
       const old = get(), all = accts(), ok = old && old.email && all[old.email.toLowerCase()];
       if (p && ok) { const rec = all[old.email.toLowerCase()]; delete all[old.email.toLowerCase()]; rec.profile = p; all[p.email.toLowerCase()] = rec; saveAccts(all); }
       mem = p; write(p); paint(); },
-    emailTaken(email) { const old = get(), k = String(email).toLowerCase(); return !!accts()[k] && (!old || old.email.toLowerCase() !== k); }, logOut() { mem = null; write(null); paint(); } };
+    emailTaken(email) { const old = get(), k = String(email).toLowerCase(); return !!accts()[k] && (!old || old.email.toLowerCase() !== k); }, logOut };
 })();

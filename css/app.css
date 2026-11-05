@@ -117,6 +117,10 @@ body { background: var(--page); overflow: hidden; }
 .view--assistant { gap: 12px; grid-template-columns: minmax(0, 1fr) minmax(380px, 40%); }
 .view--assistant.is-empty { grid-template-columns: minmax(0, 1fr); }
 .view--assistant.is-empty .panel { display: none; }
+/* product pane only after the user clicks a product in the chat; its close button shows on desktop too */
+.panel #pclose { display: grid; }
+.view--assistant:not(.panel-open) { grid-template-columns: minmax(0, 1fr); }
+.view--assistant:not(.panel-open) .panel { display: none; }
 .chat { border-radius: 16px; padding: 0 clamp(20px, 3vw, 40px) 22px; }
 .panel { border-radius: 16px; }
 

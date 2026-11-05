@@ -41,11 +41,14 @@
 
   /* ---------- chat ---------- */
   const view = $('#viewAssistant');
-  /* chat history: kept in localStorage ("luxora.chat", last 40 messages) so Settings can clear it */
-  const HK = 'luxora.chat'; let hist = []; let restoring = false, busyReply = false;
+  /* chat history: kept in localStorage ("luxora.chat", last 40 messages) so Settings can clear it.
+     "luxora.chatOwner" remembers whose chat it is: a different (or no) signed-in account never sees it. */
+  const HK = 'luxora.chat', OK = 'luxora.chatOwner'; let hist = []; let restoring = false, busyReply = false;
+  const who = () => { const p = window.LuxoraAuth && LuxoraAuth.profile(); return p ? String(p.email).toLowerCase() : ''; };
   try { const v = JSON.parse(localStorage.getItem(HK)); if (Array.isArray(v)) hist = v.slice(-40); } catch {}
+  try { if (hist.length && (localStorage.getItem(OK) || '') !== who()) { hist = []; localStorage.removeItem(HK); } } catch {}
   if (!LuxoraPrefs.get().rememberChat) { hist = []; try { localStorage.removeItem(HK); } catch {} }
-  const saveHist = () => { try { hist.length && LuxoraPrefs.get().rememberChat ? localStorage.setItem(HK, JSON.stringify(hist.slice(-40))) : localStorage.removeItem(HK); } catch {} };
+  const saveHist = () => { try { if (hist.length && LuxoraPrefs.get().rememberChat) { localStorage.setItem(HK, JSON.stringify(hist.slice(-40))); localStorage.setItem(OK, who()); } else localStorage.removeItem(HK); } catch {} };
   const emptyHTML = $('#empty').outerHTML;
   function userMsg(text, file) {
     $('#empty')?.remove(); view.classList.remove('is-empty');
@@ -78,7 +81,7 @@
     const P = LuxoraPrefs.get(), data = shape(raw, P);
     const [wrap, m] = botWrap();
     const p = el('p'); p.setAttribute('data-no-i18n', ''); p.textContent = data.reply; m.append(p);   // bubble text: translated at the source (shape), not by the page translator
-    if (data.products && data.products.length && !P.showCards) { show(data.products[0]); p.textContent += ' Top picks: ' + data.products.map(x => x.name).join(', ') + '.'; }
+    if (data.products && data.products.length && !P.showCards) { p.textContent += ' Top picks: ' + data.products.map(x => x.name).join(', ') + '.'; }
     if (data.products && data.products.length && P.showCards) {
       const h = el('h3'); h.setAttribute('data-no-i18n', ''); h.textContent = data.title || 'Top suggested'; m.append(h);
       const cards = el('div', 'cards');
@@ -97,7 +100,6 @@
       });
       m.append(cards);
       const f = el('p', 'follow'); f.setAttribute('data-no-i18n', ''); f.textContent = data.followUp || 'Want me to compare any of these, or save one for later?'; m.append(f);
-      show(data.products[0]); cards.firstChild.classList.add('sel');
     }
     feed.append(wrap); scroll();
     if (!restoring) { hist.push({ r: 'b', reply: raw.reply, title: raw.title || '', followUp: raw.followUp || '', ids: (raw.products || []).map(x => x.id), link: !!raw.cartLink }); saveHist(); }
@@ -135,7 +137,7 @@
   /* a size must be picked before anything is added: show the error and focus the select */
   function needSize() { if (!S.needsSize(current) || chosen().size) return false; sel.sizeErr = true; renderPanel(); const s = $('#size'); if (s) s.focus(); return true; }
   function renderPanel() {
-    const p = current; if (!p) return;
+    const p = current; if (!p || !p.colors) return;
     const views = LuxoraArt.VIEWS, isOn = S.isSaved(p.id), hasKit = p.sizes.includes('Sizing kit');
     panel.innerHTML = `
       <div class="panel__head"><button class="panel__back" id="pback" type="button" aria-label="Back to chat">&#8592;</button><div class="panel__title">Recommended for you</div><button class="panel__back" id="pclose" type="button" aria-label="Close">&#10005;</button></div>
@@ -177,7 +179,7 @@
     $('#add').onclick = () => { if (!needSize()) addToCart(p, chosen()); };
     $('#heart').onclick = () => { toggleSave(p, chosen()); renderPanel(); document.querySelectorAll('.card').forEach(c => { const hb = c.querySelector('.card__heart'); if (hb && c.getAttribute('aria-label') === `View ${p.name}`) { hb.classList.toggle('on', S.isSaved(p.id)); hb.setAttribute('aria-pressed', S.isSaved(p.id)); } }); };
     $('#confirm').onclick = confirmOrder;
-    $('#pback').onclick = $('#pclose').onclick = () => view.classList.remove('panel-open');
+    $('#pback').onclick = $('#pclose').onclick = () => { view.classList.remove('panel-open'); feed.querySelectorAll('.card.sel').forEach(x => x.classList.remove('sel')); };
   }
   function confirmOrder() {
     if (!current || needSize()) return;
@@ -196,11 +198,11 @@
   /* Settings > Your data > Clear chat history */
   document.addEventListener('luxora:clear-chat', () => {
     hist = []; saveHist(); feed.innerHTML = emptyHTML; LuxoraArt.hydrate(feed); view.classList.add('is-empty'); view.classList.remove('panel-open');
-    current = null; show(window.LuxoraOffline.products[0]);
+    current = null; panel.innerHTML = '';
   });
+  /* the product pane opens only when the user clicks a product card in the chat (never on a greeting or by default) */
 
   /* ---------- boot ---------- */
-  show(window.LuxoraOffline.products[0]);
   function restoreAll() {
     if (!hist.length) return;
     restoring = true; feed.querySelectorAll('.msg--user, .msg--bot').forEach(x => x.remove());

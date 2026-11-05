@@ -29,6 +29,7 @@
     const form = host.firstElementChild, msg = form.querySelector('.signup__msg'), btn = form.querySelector('.signup__btn'), email = form.elements['fi-sender-email'], opt = form.elements['fi-checkbox-optin'];
     const prof = window.LuxoraAuth && LuxoraAuth.profile();   // prefill from the prototype sign-in
     if (prof) { form.elements['fi-sender-fullName'].value = prof.name; email.value = prof.email; }
+    document.addEventListener('luxora:auth', e => { if (!e.detail) { form.elements['fi-sender-fullName'].value = ''; email.value = ''; } });
     const say = (text, kind) => { msg.textContent = text; msg.className = 'signup__msg signup__msg--' + kind; msg.hidden = !text; };
     form.addEventListener('submit', async e => {
       e.preventDefault(); say('', 'ok');
