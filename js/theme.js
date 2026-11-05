@@ -35,6 +35,8 @@
     fmt(usd, opts = {}) {
       const { currency, language } = api.get(), n = Number(usd) * (RATES[currency] || 1);
       const whole = currency === 'INR' || opts.whole;
+      /* USD (the catalogue currency) is always shown as the retailer lists it: "$349.00" in every language (TRANSLATOR patch 01) */
+      if (currency === 'USD') return '$' + n.toFixed(whole ? 0 : 2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
       try { return new Intl.NumberFormat(language, { style: 'currency', currency, minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 }).format(n); }
       catch { return '$' + Number(usd).toFixed(2); }
     }

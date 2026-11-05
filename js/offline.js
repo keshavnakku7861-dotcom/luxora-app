@@ -105,7 +105,7 @@ const products = [
     sizes: ['One size'], colors: ['standard'], optionsNote: 'This listing is the Graphite colour.',
     retailer: { name: 'Amazon', url: 'https://www.amazon.com/dp/B0FXN2JWST' }, alsoAt: [], checkedAt: '2026-11-04' },
   { id: 'alexa-tablet-8', name: 'Amazon Alexa Tablet 8 (64GB)', store: 'Amazon', category: 'tablets', kind: 'tablet', tone: 'dark',
-    aliases: ['amazon alexa tablet 8', 'alexa tablet 8', 'alexa tablet', 'fire tablet'],
+    aliases: ['amazon alexa tablet 8', 'alexa tablet 8', 'alexa tablet', 'fire tablet', 'tablette', 'tablettes', 'tableta', 'tabletas'],
     description: '8.7-inch Alexa tablet with 4GB RAM and 64GB storage (Graphite), with Google Play. This listing has no lockscreen ads.',
     highlights: ['8.7-inch display', '4GB RAM, 64GB', 'Google Play'],
     price: 219.99, tags: ['reading', 'travel', 'everyday', 'alexa', 'home'],
@@ -140,13 +140,13 @@ products.forEach(p => {
 });
 
 const categories = {
-  'smart-rings': { label: 'smart rings', words: ['ring', 'rings', 'oura', 'smart ring', 'galaxy ring'] },
-  'smartwatches': { label: 'smartwatches', words: ['watch', 'watches', 'smartwatch', 'smartwatches', 'wearable', 'wearables', 'garmin', 'forerunner'] },
+  'smart-rings': { label: 'smart rings', words: ['ring', 'rings', 'oura', 'smart ring', 'galaxy ring', 'bague', 'bagues', 'anillo', 'anillos'] },
+  'smartwatches': { label: 'smartwatches', words: ['watch', 'watches', 'smartwatch', 'smartwatches', 'wearable', 'wearables', 'garmin', 'forerunner', 'montre', 'montres', 'reloj', 'relojes', 'uhr'] },
   'earbuds': { label: 'earbuds', words: ['earbud', 'earbuds', 'buds', 'airpods', 'earphones'] },
-  'headphones': { label: 'headphones', words: ['headphone', 'headphones', 'cans', 'over-ear', 'overear'] },
-  'tablets': { label: 'tablets', words: ['tablet', 'tablets', 'ipad', 'ipads', 'ipad mini', 'alexa tablet', 'fire tablet'] },
-  'e-readers': { label: 'e-readers', words: ['kindle', 'kindles', 'e-reader', 'e-readers', 'ereader', 'ereaders', 'e-book', 'ebook', 'ebooks', 'reader'] },
-  'smart-home': { label: 'smart home devices', words: ['echo', 'echo dot', 'smart speaker', 'smart speakers', 'speaker', 'speakers', 'smart home', 'alexa speaker', 'home assistant']}
+  'headphones': { label: 'headphones', words: ['headphone', 'headphones', 'cans', 'over-ear', 'overear', 'casque', 'casques', 'auriculares'] },
+  'tablets': { label: 'tablets', words: ['tablet', 'tablets', 'ipad', 'ipads', 'ipad mini', 'alexa tablet', 'fire tablet', 'tablette', 'tablettes', 'tableta', 'tabletas'] },
+  'e-readers': { label: 'e-readers', words: ['kindle', 'kindles', 'e-reader', 'e-readers', 'ereader', 'ereaders', 'e-book', 'ebook', 'ebooks', 'reader', 'liseuse', 'liseuses', 'lector', 'lectores'] },
+  'smart-home': { label: 'smart home devices', words: ['echo', 'echo dot', 'smart speaker', 'smart speakers', 'speaker', 'speakers', 'smart home', 'alexa speaker', 'home assistant', 'enceinte', 'enceintes', 'altavoz', 'altavoces', 'lautsprecher']}
 };
 
 module.exports = { products, categories, CHECKED, AMAZON_TAG, AMAZON_DISCLOSURE };
