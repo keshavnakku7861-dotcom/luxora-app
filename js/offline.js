@@ -160,7 +160,7 @@ const CHECKED_TXT = 'price checked Nov 3, 2026';
 const ck = p => p && p.checkedAt && p.checkedAt !== '2026-11-03' ? 'price checked ' + new Date(p.checkedAt + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : CHECKED_TXT;
 const pre = p => p && p.preorder && Date.now() < Date.parse(p.preorder.releases + 'T00:00:00-06:00') ? ` It's a pre-order on Amazon; it releases ${new Date(p.preorder.releases + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}.` : '';
 
-const money = n => '$' + n.toFixed(2);
+const money = n => '$' + (Number.isInteger(n) ? n : n.toFixed(2));   // one price format everywhere: $349, $324.99
 
 function parseBudget(text) {
   const m = text.match(/(?:under|below|less than|max(?:imum)?|up to|<)\s*\$?\s*(\d+(?:[.,]\d+)?)/i)
@@ -193,7 +193,8 @@ const facts = p => (p.highlights || []).slice(0, 2).join(', ');
 /* There are no verified review scores, so "better" is answered with price, discount and specs only. */
 function sideBySide(a, b) {
   const cheaper = a.price <= b.price ? a : b, other = cheaper === a ? b : a;
-  return { title: 'Side by side', reply: `${a.name} is ${money(a.price)} (${facts(a)}) and ${b.name} is ${money(b.price)} (${facts(b)}), ${CHECKED_TXT}. ${cheaper.name} costs ${money(other.price - cheaper.price)} less. I don't have verified reviews to rank them on quality, so it comes down to price and features.`, products: [a, b], followUp: 'Want me to add one of them to your cart?' };
+  const diff = other.price - cheaper.price;
+  return { title: 'Side by side', reply: `${a.name} is ${money(a.price)} (${facts(a)}) and ${b.name} is ${money(b.price)} (${facts(b)}).${diff >= 1 ? ` ${cheaper.name} saves you about $${Math.round(diff)}.` : ''} I go by price and features, not reviews. Prices checked Nov 3.`, products: [a, b], followUp: 'Want me to add one of them to your cart?' };
 }
 
 /* follow-up questions about the products shown last ("which one is cheaper?", "tell me more about the first one") */
@@ -210,13 +211,43 @@ function followUp(lower, last, cats, named) {
     const p = [...last].sort((a, b) => b.price - a.price)[0];
     return pick(p, `${p.name} is the priciest at ${money(p.price)}.`);
   }
+  const attr = (lower.match(/\b(battery|noise|sleep|fitness|running|gps|iphone|android|weight|light|display|screen|storage)\b/) || [])[1];
+  if (attr && /\b(better|best|which|longer|more|good)\b/.test(lower) && last.length >= 2) {
+    const key = { light: 'weight', screen: 'display' }[attr] || attr;
+    const hits = last.map(p => [p, [...(p.highlights || []), p.description || ''].find(h => h.toLowerCase().includes(key))]).filter(x => x[1]);
+    if (hits.length) return { keep: true, title: 'Side by side', products: last.slice(0, 3), followUp: 'Want me to save one for later?', reply: `On ${key}: ${hits.map(([p, h]) => `${p.name}: ${h.replace(/\.$/, '')}`).join('; ')}.${hits.length < last.length ? ` I don't have ${key} details for ${last.filter(p => !hits.some(h => h[0] === p)).map(p => p.name).join(' or ')}, so check the Amazon listing.` : ''}` };
+    return { keep: true, title: 'Side by side', products: last.slice(0, 3), followUp: 'Want me to compare them on price instead?', reply: `I don't have verified ${key} numbers for these, so I can't honestly rank them on that. Check each Amazon listing for the specs.` };
+  }
   if (/\b(better|best|top rated|highest rated|best rated|higher rated|worth it|should i (get|buy|pick|choose)|recommend)\b/.test(lower) && last.length) {
     const p = [...last].sort((a, b) => dealPct(b) - dealPct(a) || a.price - b.price)[0];
-    return pick(p, last.length > 1 ? `I don't have verified reviews, so I'm going by price and features. ${p.name} looks like the best value of those at ${money(p.price)}${dealPct(p) ? ` (${dealPct(p)}% below its listed price)` : ''}: ${facts(p)}. Prices ${CHECKED_TXT}.` : `${p.name} is ${money(p.price)}: ${facts(p)} (${CHECKED_TXT}).`);
+    return pick(p, last.length > 1 ? `I don't have verified reviews, so I'm going by price and features. ${p.name} looks like the best value of those at ${money(p.price)}${dealPct(p) ? ` (${dealPct(p)}% below its listed price)` : ''}: ${facts(p)}. Prices checked Nov 3.` : `${p.name} is ${money(p.price)}: ${facts(p)} (${CHECKED_TXT}).`);
   }
   if (/\b(tell me more|more about|more info|details?|describe|what about)\b/.test(lower) || ord >= 0) {
     const p = last[ord >= 0 && ord < last.length ? ord : 0];
-    return pick(p, `${p.name} (${p.store}) is ${money(p.price)}, ${CHECKED_TXT}. ${p.description || ''} You can buy it at ${p.retailer.name} (button on the product card).`.trim());
+    return pick(p, `${p.name} (${p.store}) is ${money(p.price)}, ${CHECKED_TXT}. ${p.description || ''} Tap ${pre(p) ? 'Pre-order' : 'Buy now'} on the card to get it.`.trim());
+  }
+  return null;
+}
+
+/* sizing and colour questions answered from the catalog (sizes, colors, variants, optionsNote) */
+const COLOR_WORDS = ['black', 'white', 'silver', 'gold', 'gray', 'grey', 'blue', 'pink', 'green', 'red', 'midnight', 'graphite', 'rose', 'purple', 'brown'];
+function sizeOrColor(lower, p) {
+  const ask = (reply, followUp) => ({ title: 'Your pick', products: [p], reply, followUp: followUp || 'Want me to save it, or compare it with another one?' });
+  if (/\b(size|sizes|sizing|fit|fits)\b/.test(lower)) {
+    const real = (p.sizes || []).filter(x => x !== 'One size' && /\d/.test(x)).map(x => x.replace(/^size\s*/i, ''));
+    if (real.length) return ask(`Good question! ${p.name} comes in sizes ${real[0]} to ${real[real.length - 1]}. ${p.optionsNote || 'Check the sizing guide on the product page before you buy.'}`.trim());
+    return ask(`${p.name} is one size, so there's nothing to pick. ${p.optionsNote || ''}`.trim());
+  }
+  const asked = COLOR_WORDS.find(c => new RegExp('\\b' + c + '\\b').test(lower));
+  if (asked || /\b(colou?rs?|finish(es)?)\b/.test(lower)) {
+    const names = (p.colors || []).filter(c => c !== 'standard').map(c => (p.colorNames && p.colorNames[c]) || c[0].toUpperCase() + c.slice(1));
+    const list = names.length ? names.join(' and ') : '';
+    const vprice = Object.values(p.variants || {}).map(v => `${v.label} is ${money(v.price)}`).join(', ');
+    if (!list) return ask(`Here we only list one colour of ${p.name}. ${p.optionsNote || 'Other colours may be on the retailer page.'}`.trim());
+    const hit = asked && names.some(n => n.toLowerCase().includes(asked === 'grey' ? 'gray' : asked));
+    const dark = asked === 'black' && names.some(n => /midnight|graphite/i.test(n));
+    const lead = hit ? `Yes! ${p.name} comes in ${list}.` : dark ? `Not black exactly, but close: ${p.name} comes in ${list}.` : asked ? `Not in ${asked} here. ${p.name} comes in ${list}.` : `${p.name} comes in ${list}.`;
+    return ask(`${lead}${vprice ? ` The base is ${money(p.price)}; ${vprice}.` : ''}`, 'Want me to pull up one of them?');
   }
   return null;
 }
@@ -238,11 +269,15 @@ async function respond(message, ctx = {}) {
     const which = /\b(fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower) ? 'Fashion' : 'Groceries';
     return { reply: `${which} isn't available on Luxora yet. I can help with electronics: smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. Try “best smart ring under $500”.`, products: [] };
   }
+  const NOT = (lower.match(/\b(laptops?|computers?|pcs?|macbooks?|phones?|iphones?|smartphones?|tvs?|televisions?|cameras?|consoles?|xbox|playstation|ps5|nintendo|monitors?|printers?|keyboards?|mice|mouse|drones?|furniture|toys?|books?|cars?|bikes?)\b/) || [])[1];
+  if (NOT && cats.length === 0 && !namedProducts(lower).length) {
+    return { keep: true, reply: `Luxora doesn't carry ${NOT.replace(/s?$/, 's').replace(/ss$/, 's')} yet, sorry! Right now I can help with smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers.`, products: [] };
+  }
   if (/^(hi|hello|hey|yo|good (morning|afternoon|evening))\b/.test(lower) && cats.length === 0) {
     return { reply: "Hi! I'm Luxora, your AI shopping assistant. Tell me what you're shopping for, your budget, or a brand, and I'll recommend the best options. Try “best smart ring under $500”.", products: [] };
   }
   if (/\b(track|where is|delivery|shipping|order status)\b/.test(lower)) {
-    return { reply: "Luxora doesn't take or ship orders, so there's nothing for me to track. Use the Buy at link on a product to buy from the retailer, and track the order with them.", products: [] };
+    return { reply: "Luxora doesn't take or ship orders, so there's nothing for me to track. You buy from the retailer with the Buy now button, and you can track the order with them.", products: [] };
   }
   const named = namedProducts(lower);
   const last = (ctx && Array.isArray(ctx.last) ? ctx.last : []).map(id => products.find(p => p.id === id)).filter(Boolean);
@@ -250,9 +285,19 @@ async function respond(message, ctx = {}) {
   if (comparing && named.length >= 2) return sideBySide(named[0], named[1]);
   const fu = followUp(lower, last, cats, named);
   if (fu) return fu;
+  /* "AirPods Pro or Sony earbuds?": one named product plus another brand counts as a comparison */
+  const whichish = /\b(which|better|or|vs|versus|prefer|choose|pick)\b/.test(lower);
+  if (named.length === 1 && whichish) {
+    const other = products.find(p => p !== named[0] && p.store !== named[0].store && new RegExp('\\b' + p.store.toLowerCase() + '\\b').test(lower) && (p.category === named[0].category || cats.includes(p.category)));
+    if (other) return sideBySide(named[0], other);
+  }
+  if (named.length === 1 && !comparing) {
+    const so = sizeOrColor(lower, named[0]);
+    if (so) return so;
+  }
   if (named.length === 1 && !comparing) {
     const p = named[0], also = (p.alsoAt || []).map(a => `${a.name}${a.price ? ' (' + money(a.price) + ')' : ''}`).join(', ');
-    return { title: 'Your pick', products: [p], followUp: 'Want me to save it, or compare it with another one?', reply: `${p.name} (${p.store}) is ${money(p.price)} at ${p.retailer.name}, ${ck(p)}.${pre(p)} ${p.description || ''}${also ? ` Also at ${also}.` : ''} Use the Buy at button on the product to buy it from the retailer.`.replace(/\s+/g, ' ').trim() };
+    return { title: 'Your pick', products: [p], followUp: 'Want me to save it, or compare it with another one?', reply: `${p.name} (${p.store}) is ${money(p.price)} (${ck(p)}), and the ${pre(p) ? 'Pre-order' : 'Buy now'} button takes you to it.${pre(p)} ${p.description || ''}${also ? ` Also at ${also}.` : ''}`.replace(/\s+/g, ' ').trim() };
   }
   if (comparing && named.length === 1 && last.length) return sideBySide(named[0], last.find(p => p !== named[0]) || named[0]);
 
@@ -281,7 +326,7 @@ async function respond(message, ctx = {}) {
   const budgetText = budget != null ? `your budget (under $${Number.isInteger(budget) ? budget : budget.toFixed(2)})` : 'your budget';
   return {
     title: `Top suggested ${label}`,
-    reply: `Based on ${budgetText} and ${needs} needs, I recommend ${top.name} (${money(top.price)} at ${top.retailer.name}, ${ck(top)}).${pre(top)} ${pool.length > 1 ? 'Here are a few more worth a look.' : ''}`.replace(/\s+/g, ' ').trim(),
+    reply: `Based on ${budgetText} and ${needs} needs, I recommend ${top.name} (${money(top.price)}, ${ck(top)}).${pre(top)} ${pool.length > 1 ? 'Here are a few more worth a look.' : ''}`.replace(/\s+/g, ' ').trim(),
     products: pool,
     followUp: 'Want me to compare any of these, or save one for later?'
   };
@@ -302,6 +347,7 @@ module.exports = { ck, pre, respond, name: 'rules' };
 // Contract: async respond(message, ctx) -> { reply, products, title?, followUp? }
 const rules = require('./rules');
 const { ck, pre } = rules;
+const facts = p => (p.highlights || []).slice(0, 2).join(', ');
 const { categories } = require('../products');
 
 const money = n => '$' + (Number.isInteger(n) ? n : n.toFixed(2));
@@ -311,8 +357,8 @@ async function respond(message, ctx = {}) {
   const text = String(message || '').trim();
   const lower = text.toLowerCase();
 
-  if (/\b(are you (a )?(human|real|person|bot|ai|robot)|who are you|what are you|real person)\b/.test(lower)) {
-    return { reply: "I'm Luxora's AI assistant, not a person, but I'm happy to help you find something good. What are you shopping for?", products: [] };
+  if (/\b(am i (talking|chatting|speaking) (to|with) (a |an )?(human|bot|real person|person|ai|robot|machine)|are you (a |an )?(human|real|person|bot|ai|robot|machine)|is this (a |an )?(bot|ai|human|real person)|who are you|what are you|real person)\b/.test(lower)) {
+    return { reply: /talking|chatting|speaking|is this/.test(lower) ? "Yep, I'm Luxora's AI assistant, not a person. Happy to help you find something though. What are you after?" : "I'm Luxora's AI assistant, not a person, but I'm happy to help you find something good. What are you shopping for?", products: [] };
   }
   if (/^(hi|hello|hey|yo|hiya|sup|good (morning|afternoon|evening))\b/.test(lower) && text.split(/\s+/).length <= 4) {
     return { reply: pick(["Hey! What are you on the hunt for today?", "Hi there! Looking for anything in particular? Rings, watches, earbuds, headphones?", "Hey! Tell me what you need and your budget, and I'll find you something nice."]), products: [] };
@@ -326,33 +372,66 @@ async function respond(message, ctx = {}) {
     return { reply: `${which} isn't on Luxora's shelves just yet, so I can't recommend anything there right now. What I can do well is electronics: smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. Want me to pull up the top picks?`, products: [] };
   }
 
+  const productWords = /\b(rings?|watch(es)?|smartwatch(es)?|buds|earbuds?|airpods|headphones?|cans|tablets?|ipads?|kindles?|e-?readers?|echo|speakers?|alexa|oura|garmin|sony|apple|samsung)\b/.test(lower);
+
+  // returns: Luxora doesn't sell, so no return window is promised here
+  if (/\b(returns?|refunds?|exchanges?|send (it )?back)\b/.test(lower)) {
+    return { reply: "Returns go through the store you bought from, since Luxora doesn't sell anything directly. Check the Amazon listing (or the retailer's page) for return details before you buy. Anything else I can help you find?", products: [] };
+  }
+  // shipping time (not tracking)
+  if (/\b(how long|how fast|when will|shipping time|delivery time|ship to|deliver to)\b/.test(lower) && /\b(ship|shipping|deliver|delivery|arrive)\b/.test(lower)) {
+    return { reply: "Luxora doesn't ship orders itself. You buy straight from the retailer, mostly Amazon, so shipping times depend on them. You'll see the delivery date at checkout after you tap Buy now.", products: [] };
+  }
+  // gifts
+  if (/\b(gifts?|present|birthday|christmas|holiday|for my (mom|mum|mother|dad|father|wife|husband|partner|girlfriend|boyfriend|friend|sister|brother|son|daughter|grandma|grandpa|teacher|boss))\b|\bsomething for (my|a|her|him)\b/.test(lower) && !productWords && !/\$\s*\d|\b(under|below|less than)\s*\$?\d/.test(lower)) {
+    const who = (lower.match(/\bfor (?:my )?(mom|mum|mother|dad|father|wife|husband|partner|girlfriend|boyfriend|friend|sister|brother|son|daughter|grandma|grandpa|teacher|boss)\b/) || [])[1];
+    const her = /mom|mum|mother|wife|girlfriend|sister|daughter|grandma/.test(who || ''), him = /dad|father|husband|boyfriend|brother|son|grandpa/.test(who || '');
+    const pr = her ? 'she' : him ? 'he' : 'they';
+    return { reply: who ? `Aw, nice! What's ${pr === 'they' ? 'your ' + who : pr} into: fitness, sleep, music or reading? And roughly what's your budget? A Kindle or a smart ring makes a lovely gift.` : "Love a gift hunt! Who's it for, and roughly what do you want to spend? Smart rings, earbuds and Kindles all make great gifts.", products: [] };
+  }
+
   const out = await rules.respond(text, ctx);
   const p = out.products || [];
+  if (out.keep) { const { keep, ...rest } = out; return rest; }
 
   if (/order status|track|where is|delivery|shipping/.test(lower) && p.length === 0) {
-    return { reply: "Luxora doesn't take or ship orders itself, so there's nothing for me to track here. Use the Buy at button on a product to buy from the retailer, and you can track the order with them.", products: [] };
+    return { reply: "Luxora doesn't take or ship orders itself, so there's no order for me to track. You buy from the retailer with the Buy now button, and you can track the order with them.", products: [] };
   }
   if (p.length === 0) {
-    return { reply: "I can help with smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. Tell me what you'll use it for and roughly what you want to spend, like \"earbuds for my commute under $150\".", products: [] };
+    if (!productWords && /\b(weather|news|joke|time is it|sports?|score|homework|math|movie|song|recipe|cook|politic|game)\b/.test(lower)) {
+      return { reply: "Ha, I'm no good with that one, but I'm great with gadgets! Looking for a smart ring, watch, earbuds, headphones or a tablet?", products: [] };
+    }
+    if (/\b(something|anything|stuff|ideas?|nice|cool|good|help|suggest|recommend|shopping|buy|looking)\b/.test(lower)) {
+      return { reply: "Happy to help! What kind of thing, and what's your budget? I've got smart rings, watches, earbuds, headphones, tablets, Kindles and smart speakers.", products: [] };
+    }
+    return { reply: "Hmm, I'm not sure I caught that. I'm best with smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. Tell me what you need and a rough budget, like \"earbuds for my commute under $150\".", products: [] };
   }
   if (out.title === 'Side by side' && p.length >= 2) {
-    return { ...out, reply: `${pick(['Okay, here is how they stack up.', 'Good pair to compare.', 'Let me line them up for you.'])} ${out.reply}`, followUp: 'Want me to save one for later?' };
+    const [a, b] = p, ios = x => /iphone|apple/i.test((x.highlights || []).join(' ') + ' ' + x.store), android = x => /android|samsung only/i.test((x.highlights || []).join(' '));
+    const cheap = a.price <= b.price ? a : b, dear = cheap === a ? b : a, diff = Math.round(dear.price - cheap.price);
+    const tip = android(a) || android(b) ? ` ${android(a) ? a.name : b.name} only works with Android/Samsung phones, so on iPhone go with ${android(a) ? b.name : a.name}.`
+      : ios(dear) && !ios(cheap) ? ` ${dear.name} is the pick if you're on iPhone; ${cheap.name} costs${diff >= 1 ? ` about $${diff}` : ''} less.`
+      : diff >= 1 ? ` If price matters most, ${cheap.name} saves you about $${diff}.` : '';
+    return { ...out, reply: `Good pair! ${a.name} is ${money(a.price)} (${facts(a)}) and ${b.name} is ${money(b.price)} (${facts(b)}).${tip} Prices checked Nov 3.`, followUp: 'Want me to save one for later?' };
   }
   if (out.title === 'Your pick') {
-    return { ...out, reply: `${pick(['Easy one!', 'Good question.', 'Sure thing.'])} ${out.reply}` };
+    return { ...out, reply: /^(Good question|Yes!|Not |Here we)/.test(out.reply) ? out.reply : `Sure thing. ${out.reply}` };
   }
   if (out.title === 'Closest match') {
-    const c = p[0];
-    return { ...out, reply: `Hmm, nothing quite fits that budget, sorry! The closest I've got is ${c.name} at ${money(c.price)} (${ck(c)}).`, followUp: 'Want me to see what a little more stretch gets you?' };
+    const c = p[0], cat = categories[c.category], label = cat ? cat.label.toLowerCase() : 'these';
+    return { ...out, reply: `${label[0].toUpperCase() + label.slice(1)} start at ${money(c.price)}, so that budget won't quite get there, sorry! The cheapest is ${c.name} at ${money(c.price)}. Prices checked Nov 3.`, followUp: 'Want me to look at something else in your budget instead?' };
   }
 
   const top = p[0];
-  const extra = p.length > 1 ? ` If you want options, ${p.slice(1).map(x => `${x.name} (${money(x.price)})`).join(' and ')} ${p.length > 2 ? 'are' : 'is'} worth a look too.` : '';
-  const opener = pick(['Good call!', 'Ooh, nice.', 'Got you.', 'Love it.']);
+  const extra = p.length > 1 ? ` ${p.slice(1).map(x => `${x.name} (${money(x.price)})`).join(' and ')} ${p.length > 2 ? 'are good options' : 'is a good option'} too.` : '';
+  const budget = (lower.match(/(?:under|below|less than|max|up to)\s*\$?\s*(\d+)/) || lower.match(/\$\s*(\d+)/) || [])[1];
+  const need = (lower.match(/\b(running|workouts?|gym|fitness|sleep|travel|commute|work|music|reading|kids)\b/) || [])[1];
+  const opener = need ? `For ${need}, ` : budget ? `Under $${budget}, ` : '';
+  const why = (top.highlights || [])[0];
   return {
     ...out,
-    reply: `${opener} I'd go with ${top.name}: ${money(top.price)} at ${top.retailer.name} (${ck(top)}).${pre(top)}${extra}`,
-    followUp: pick(['Want me to save it for later?', 'Want to see how it compares with another one?', 'Want me to add it to your cart? (Checkout here is a demo; you buy at the retailer.)'])
+    reply: `${opener ? opener + "I'd" : "I'd"} go with ${top.name} at ${money(top.price)}${why ? ` (${why.toLowerCase()})` : ''}.${pre(top)}${extra} Prices checked Nov 3.`,
+    followUp: pick(['Want me to save it for later?', 'Want to see how it compares with another one?', 'Want me to add it to your demo cart?'])
   };
 }
 

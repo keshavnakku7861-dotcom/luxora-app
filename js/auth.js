@@ -192,7 +192,13 @@
     open(t);
   });
   window.addEventListener('storage', e => { if (e.key === KEY) { mem = null; paint(); } });
-  const init = () => paint();
+  /* sign-in gate: every way into the app (Open App, app.html#/assistant, ?q= links) needs an account, like Get Started.
+     Signed-in users never see it. Closing the dialog without signing in goes back to the landing page. */
+  const gate = () => {
+    if (!inApp() || get()) return;
+    open(); dlg.addEventListener('close', () => { if (!get()) location.replace('index.html'); });
+  };
+  const init = () => { paint(); gate(); };
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
   window.LuxoraAuth = { profile: get, open, EMAIL, normPhone, COUNTRIES, CURRENCY, REGION_LABEL, checkLocation, setCountryPrefs,
     update(p) {   // edit profile; keeps the local account record in step (moves it if the email changed)

@@ -28,7 +28,7 @@
     DEFAULTS, RATES,
     /* Settings only offers theme, language, currency and price-drop alerts now; any other value an older version
        saved is ignored so nothing (budget, favourites, text size, reply length...) keeps changing behaviour invisibly. */
-    get: () => ({ ...DEFAULTS, ...read(), ...FIXED }),
+    get: () => { const v = { ...DEFAULTS, ...read(), ...FIXED }; if (v.language === 'hi-IN') v.language = 'en-US'; return v; },   // Hindi hidden until reviewed
     set(patch) { const v = { ...api.get(), ...patch }; try { localStorage.setItem(KEY, JSON.stringify(v)); } catch {} apply(v); document.dispatchEvent(new CustomEvent('luxora:prefs', { detail: v })); return v; },
     clear() { try { localStorage.removeItem(KEY); } catch {} apply(api.get()); document.dispatchEvent(new CustomEvent('luxora:prefs', { detail: api.get() })); },
     /* format a USD catalogue amount in the chosen currency + language */

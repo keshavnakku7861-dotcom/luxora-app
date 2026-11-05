@@ -92,12 +92,18 @@
   });
 
   /* ---------- detail ---------- */
+  /* "You may also like": same category first, then related categories (tablets <-> e-readers <-> smart home, rings <-> watches, earbuds <-> headphones) */
+  const REL = { 'tablets': ['e-readers', 'smart-home'], 'e-readers': ['tablets', 'smart-home'], 'smart-home': ['tablets', 'e-readers'], 'smart-rings': ['smartwatches'], 'smartwatches': ['smart-rings', 'earbuds'], 'earbuds': ['headphones', 'smartwatches'], 'headphones': ['earbuds'] };
+  function relatedFor(p) {
+    const order = [p.category, ...(REL[p.category] || [])], rank = x => { const i = order.indexOf(x.category); return i < 0 ? 99 : i; };
+    return products.filter(x => x.id !== p.id && rank(x) < 99).sort((a, b) => rank(a) - rank(b)).slice(0, 4);
+  }
   function renderDetail(base, color) {
     const d = { size: S.needsSize(base) ? '' : base.sizes[0], color: base.colors.includes(color) ? color : base.colors[0], qty: 1, view: 0 };
     let p = S.variant(base, d.color);
     const root = $('#detailView');
     const draw = () => {
-      const on = S.isSaved(p.id), related = products.filter(x => x.category === p.category && x.id !== p.id).concat(products.filter(x => x.category !== p.category)).slice(0, 4);
+      const on = S.isSaved(p.id), related = relatedFor(p);
       root.innerHTML = `
         <nav class="crumbs" aria-label="Breadcrumb"><a href="#/shop">Shop</a> / <a href="#/shop?cat=${p.category}">${CATS.find(c => c[0] === p.category)[1]}</a> / <span>${esc(p.name)}</span></nav>
         <div class="detail">
@@ -114,7 +120,7 @@
             <div class="buyat buyat--detail">${S.amazonLink(p, 'btn btn--lg btn--orange', 'Buy now', true, { hint: false }).replace(' data-amazon=', ` data-buy="${esc(p.id)}" data-amazon=`)}</div>
             <p class="onote amzdisc">${S.DISCLOSURE} Amazon's price and availability can differ from the price shown here.</p>
             ${p.optionsNote ? `<p class="onote">${esc(p.optionsNote)}</p>` : ''}
-            <p class="onote">Luxora doesn't sell this. Buy now opens the product's store page in a new tab, where you buy and where shipping, returns and warranty are handled. The cart below is a demo.</p>
+            <p class="onote">Luxora doesn't sell this. ${S.preorder(p) ? 'Pre-order' : 'Buy now'} opens the product's store page in a new tab, where you buy and where shipping, returns and warranty are handled. The cart below is a demo.</p>
             <div class="buyrow"><button class="btn btn--lg btn--ghost" id="dAdd">Add to demo cart</button><button class="btn btn--lg btn--ghost" id="dBuy">Demo checkout</button>
               <button class="heartbtn ${on ? 'on' : ''}" id="dHeart" aria-pressed="${on}" aria-label="${on ? 'Remove from saved' : 'Save for later'}">${heart}</button></div>
             <ul class="perks"><li>Real shipping, returns and warranty come from the seller</li><li>Prices can change; always confirm at the retailer</li><li>Luxora's cart and checkout are a demo: no payment, no delivery</li></ul>
@@ -216,7 +222,7 @@
     const html = summary(), ref = 'DEMO-' + Math.floor(100000 + Math.random() * 900000);
     S.clearCart(); closeDrawer();
     $('#coBody').innerHTML = `<h2 id="coTitle">Demo order placed</h2><p class="ref">Reference ${ref} &mdash; <b>not a real order</b></p>${html}
-      <p class="fine"><b>No payment was taken and nothing will be shipped.</b> This confirmation only demonstrates the Luxora checkout flow. To buy the product for real, use its Buy at link.</p>
+      <p class="fine"><b>No payment was taken and nothing will be shipped.</b> This confirmation only demonstrates the Luxora checkout flow. To buy the product for real, use its Buy now button.</p>
       <div class="demo__btns"><button class="btn btn--lg" id="coDone">Continue shopping</button><a class="btn btn--lg btn--ghost" href="#/saved" id="coSaved">View saved items</a></div>`;
     $('#coDone').onclick = () => { dlg.close(); closeDrawer(); }; $('#coSaved').onclick = () => dlg.close();
   }

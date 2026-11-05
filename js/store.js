@@ -6,6 +6,18 @@
   const catalog = () => Object.fromEntries((window.LuxoraOffline?.products || []).map(p => [p.id, p]));
   const FREE_OVER = 150, STANDARD = 9.99, EXPRESS = 19.99;
 
+  /* drop old cart/saved lines for products no longer in the catalog, and refresh names/brands from it (runs once on load) */
+  function migrate() {
+    const cat = catalog(); if (!Object.keys(cat).length) return;
+    const line = i => { const c = cat[i.id], v = c && c.variants && c.variants[i.color]; return { ...i, name: (v && v.name) || c.name, store: c.store }; };
+    try {
+      const raw = read(KC, []), cart = raw.filter(i => i && cat[i.id]).map(line);
+      if (JSON.stringify(cart) !== JSON.stringify(raw)) localStorage.setItem(KC, JSON.stringify(cart));
+      const sv = read(KS, []), keep = sv.filter(x => cat[typeof x === 'string' ? x : x && x.id]);
+      if (keep.length !== sv.length) localStorage.setItem(KS, JSON.stringify(keep));
+    } catch {}
+  }
+  migrate();
   const Store = {
     FREE_OVER, STANDARD, EXPRESS,
     cart: () => read(KC, []),

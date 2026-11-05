@@ -3,12 +3,12 @@
   const root = document.getElementById('settingsRoot'), jump = document.getElementById('sjump'), note = document.getElementById('savedNote');
   const S = window.LuxoraStore, P = window.LuxoraPrefs, esc = S.esc;
   const VERSION = '1.3.0';
-  const LANGS = [['en-US', 'English (US)'], ['en-GB', 'English (UK)'], ['es-ES', 'Español'], ['fr-FR', 'Français'], ['de-DE', 'Deutsch'], ['hi-IN', 'हिन्दी']];
+  const LANGS = [['en-US', 'English (US)'], ['en-GB', 'English (UK)'], ['es-ES', 'Español'], ['fr-FR', 'Français'], ['de-DE', 'Deutsch']];   // Hindi is hidden until a native speaker reviews it
   const CURR = [['USD', 'US dollar (USD)'], ['EUR', 'Euro (EUR)'], ['GBP', 'British pound (GBP)'], ['CAD', 'Canadian dollar (CAD)'], ['INR', 'Indian rupee (INR)'], ['AUD', 'Australian dollar (AUD)']];
   const FAQ = [
     ['Is Luxora a real store?', 'No. Luxora is a prototype assistant, not a store. The products, brands and prices are real and were checked on Nov 3, 2026, but Luxora does not sell anything: the Buy at button opens the retailer in a new tab. Luxora\'s own cart and checkout are a demo that takes no payment and places no order.'],
     ['Why does the assistant only know about electronics?', 'The catalogue has 13 products: smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. Groceries and fashion are not available yet. The product pictures are illustrative images, not official photos.'],
-    ['How do currency and language work?', 'Prices are stored in US dollars and converted with fixed, approximate rates (not live exchange rates). Language changes number and date formatting and translates the interface into French, Spanish or German; Hindi stays in English for now.']
+    ['How do currency and language work?', 'Prices are stored in US dollars and converted with fixed, approximate rates (not live exchange rates). Language changes number and date formatting and translates the interface into French, Spanish or German.']
   ];
   const $ = s => root.querySelector(s);
   let savedT;
@@ -45,7 +45,7 @@
       sec('appearance', 'Appearance', seg('theme', 'Theme', [['light', 'Light'], ['dark', 'Dark'], ['system', 'System']], f.theme)) +
       sec('region', 'Language & currency',
         `<div class="sgrid">${sel('language', 'Language', LANGS, f.language)}${sel('currency', 'Currency', CURR, f.currency)}</div>
-        <p class="sset__note">Prices are in US dollars at the retailer and convert at fixed, approximate rates (not live exchange rates). Language changes number formatting and translates the interface into French, Spanish or German; Hindi stays in English for now.</p>`) +
+        <p class="sset__note">Prices are in US dollars at the retailer and convert at fixed, approximate rates (not live exchange rates). Language changes number formatting and translates the interface into French, Spanish or German.</p>`) +
       sec('help', 'Help & About',
         `<div class="faq">${FAQ.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div>
         <p class="sset__txt">Luxora is a prototype AI shopping assistant. It shows real products with prices checked on Nov 3, 2026 and links to the retailer to buy. Prices can change. Luxora's own cart and checkout are a demo: no payment is taken and no order is placed. Product pictures are illustrative images, not official photos.</p>
