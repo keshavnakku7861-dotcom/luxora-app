@@ -49,3 +49,6 @@
   --shadow: rgba(0, 0, 0, 0.55);
   --scrim: rgba(0, 0, 0, 0.7);
 }
+
+/* Warm light theme (PAINTER mocks, approved): cream/ivory, charcoal ink, deeper orange */
+:root:not([data-theme="dark"]) {--white:#FFFDF9;--page:#F8F0E6;--gray-50:#F6ECE0;--gray-100:#EEE2D4;--gray-200:#E2D2C0;--gray-400:#A8988A;--gray-600:#6E5E52;--black:#1E1A17;--orange:#EE5F12;--orange-soft:#FCE3D2;--orange-deep:#B8470A;--shadow:rgba(120,60,20,.16);--scrim:rgba(40,24,14,.42)}

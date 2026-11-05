@@ -30,6 +30,7 @@
               <label class="sfield"><span>Phone number</span><input name="phone" type="tel" inputmode="tel" value="${esc(me.phone || '')}" maxlength="20" autocomplete="tel" required></label>
               <label class="sfield"><span>Country</span><select name="country" autocomplete="country" required><option value="">Choose your country</option>${opt(LuxoraAuth.COUNTRIES, me.country || '')}</select></label>
               <label class="sfield"><span>Street address</span><input name="street" value="${esc(me.street || '')}" maxlength="100" autocomplete="address-line1" required></label>
+              <label class="sfield"><span>Apt, suite, unit <i>(optional)</i></span><input name="apt" value="${esc(me.apt || '')}" maxlength="60" autocomplete="address-line2"></label>
               <label class="sfield"><span>${esc(LuxoraAuth.REGION_LABEL[me.country] || 'State / region')}</span><input name="region" value="${esc(me.region || '')}" maxlength="60" autocomplete="address-level1" required></label>
               <label class="sfield"><span>City</span><input name="city" value="${esc(me.city || '')}" maxlength="60" autocomplete="address-level2" required></label>
               <label class="sfield"><span>ZIP / postal code</span><input name="postal" value="${esc(me.postal || '')}" maxlength="12" autocomplete="postal-code" required></label>
@@ -67,7 +68,7 @@
   root.addEventListener('submit', e => {
     if (e.target.id !== 'profileForm') return; e.preventDefault();
     const f = e.target, err = document.getElementById('profErr'), c = x => String(x || '').trim().replace(/\s+/g, ' ');
-    const v = { name: c(f.name.value).slice(0, 60), email: f.email.value.trim().slice(0, 120), country: f.country.value, region: c(f.region.value).slice(0, 60), city: c(f.city.value).slice(0, 60), postal: c(f.postal.value).toUpperCase().slice(0, 12), phone: c(f.phone.value).slice(0, 20), street: c(f.street.value).slice(0, 100) };
+    const v = { name: c(f.name.value).slice(0, 60), email: f.email.value.trim().slice(0, 120), country: f.country.value, region: c(f.region.value).slice(0, 60), city: c(f.city.value).slice(0, 60), postal: c(f.postal.value).toUpperCase().slice(0, 12), phone: c(f.phone.value).slice(0, 20), street: c(f.street.value).slice(0, 100), apt: c(f.apt ? f.apt.value : '').slice(0, 60) };
     const loc = LuxoraAuth.checkLocation(v);
     const bad = !v.name ? ['name', 'Please enter your full name.'] : !LuxoraAuth.EMAIL.test(v.email) ? ['email', 'That email address does not look right.'] : LuxoraAuth.emailTaken(v.email) ? ['email', 'Another account on this device already uses that email.']
       : loc.phone && !loc.country ? ['phone', loc.phone] : loc.country ? ['country', loc.country] : loc.street ? ['street', loc.street] : loc.region ? ['region', loc.region] : loc.city ? ['city', loc.city] : loc.postal ? ['postal', loc.postal] : null;

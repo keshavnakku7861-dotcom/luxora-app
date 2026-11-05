@@ -1,0 +1,28 @@
+/* Luxora warm look (matches PAINTER's approved mocks). Light theme only; dark mode keeps palette.css dark tokens. */
+:root:not([data-theme="dark"]) body{background:radial-gradient(1200px 600px at 85% -10%,#FFE1C8 0%,transparent 60%),radial-gradient(900px 500px at -10% 30%,#FCEBDD 0%,transparent 55%),linear-gradient(180deg,#FFFAF4,#F8EFE4)!important;background-attachment:fixed!important}
+:root:not([data-theme="dark"]) .nav{background:rgba(255,250,244,.75)!important;backdrop-filter:blur(10px)}
+:root:not([data-theme="dark"]) .hero h1{background:linear-gradient(180deg,#1E1A17 40%,#5A3424);-webkit-background-clip:text;background-clip:text;color:transparent}
+:root:not([data-theme="dark"]) .tag{background:linear-gradient(90deg,#FFE7D4,#FFF4EA)!important;color:var(--orange-deep)!important;border-color:#F6CBAE!important}
+:root:not([data-theme="dark"]) .btn:not(.btn--ghost){background:linear-gradient(135deg,#1E1A17,#3A2A22)!important}
+:root:not([data-theme="dark"]) .stage__panel{background:radial-gradient(420px 300px at 50% 55%,#FFD7B5 0%,rgba(255,215,181,0) 70%),radial-gradient(500px 260px at 15% 100%,#F7B98E55,transparent 70%),radial-gradient(500px 260px at 85% 0%,#FFE9D6,transparent 70%),linear-gradient(160deg,#FBE6D3 0%,#F4CDAE 55%,#EDB58C 100%)!important;box-shadow:inset 0 0 0 1px #F0D4BC}
+:root:not([data-theme="dark"]) .stage__panel::before{content:"";position:absolute;width:520px;height:520px;border-radius:50%;left:50%;top:62%;transform:translate(-50%,-50%);border:1px solid rgba(255,255,255,.55);box-shadow:0 0 0 70px rgba(255,255,255,.12),0 0 0 140px rgba(255,255,255,.07)}
+:root:not([data-theme="dark"]) .stage__spark{filter:drop-shadow(0 0 18px #FF9A55)}
+:root:not([data-theme="dark"]) .phone{box-shadow:0 30px 60px rgba(120,55,15,.28)!important}
+:root:not([data-theme="dark"]) .rail{background:linear-gradient(180deg,#FFFAF4,#F7E7D8)!important;border-color:var(--gray-100)!important}
+:root:not([data-theme="dark"]) .rail__btn.on{background:linear-gradient(135deg,#F26B1D,#C4500F)!important;color:#fff!important;box-shadow:0 8px 20px rgba(242,107,29,.35)}
+:root:not([data-theme="dark"]) main,:root:not([data-theme="dark"]) .app,:root:not([data-theme="dark"]) .view{background:transparent!important}
+:root:not([data-theme="dark"]) .modal,:root:not([data-theme="dark"]) .drawer,:root:not([data-theme="dark"]) dialog{box-shadow:0 30px 80px rgba(90,40,10,.25)}
+/* create-account dialog: wide two-column layout */
+dialog.auth.auth--wide{width:min(860px,calc(100vw - 32px));padding:26px 30px 22px}
+.auth--wide .auth__logo{width:36px;margin-bottom:10px}
+.auth__grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 32px}
+.auth__col{display:grid;gap:4px;align-content:start;min-width:0}
+.auth__col h3,.auth__col legend{font-size:15px;font-weight:500;margin-bottom:2px}
+.auth--wide label{margin-top:6px}
+.auth--wide input,.auth--wide select{height:42px;font-size:14px}
+:root:not([data-theme="dark"]) dialog.auth input,:root:not([data-theme="dark"]) dialog.auth select{background:#fff}
+dialog.auth .auth__loc{margin:0}
+.auth__opt{display:block;color:var(--gray-400);font-weight:400;font-size:12px}
+.auth__link{color:var(--orange-deep);text-decoration:none;font-weight:500}
+.auth__swap{color:var(--black);font-size:14px}
+@media (max-width:720px){.auth__grid{grid-template-columns:1fr}dialog.auth.auth--wide{padding:24px 18px 18px}}

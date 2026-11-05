@@ -115,22 +115,26 @@
     const em = field('authEmail', 'Email', { name: 'email', type: 'email', autocomplete: 'email', inputmode: 'email', maxlength: '120', required: '' });
     const pw = field('authPass', 'Password', { name: 'password', type: 'password', autocomplete: mode === 'signup' ? 'new-password' : 'current-password', maxlength: '128', required: '' });
     const formErr = el('p', { class: 'auth__err', id: 'authFormErr', role: 'alert', hidden: '' });
-    let nm, pw2, co, rg, ci, pc, ph, st;
+    let nm, pw2, co, rg, ci, pc, ph, st, ap;
     if (mode === 'signup') {
       nm = field('authName', 'Full name', { name: 'name', type: 'text', autocomplete: 'name', maxlength: '60', required: '' });
-      pw2 = field('authPass2', 'Confirm password', { name: 'password2', type: 'password', autocomplete: 'new-password', maxlength: '128', required: '' });
+      pw2 = field('authPass2', 'Re-enter password', { name: 'password2', type: 'password', autocomplete: 'new-password', maxlength: '128', required: '' });
       const sel = el('select', { id: 'authCountry', name: 'country', autocomplete: 'country', required: '', 'aria-describedby': 'authCountryErr' });
       sel.append(el('option', { value: '', text: 'Choose your country' }), ...COUNTRIES.map(([v, l]) => el('option', { value: v, text: l })));
-      co = field('authCountry', 'Country', null, sel);
+      co = field('authCountry', 'Country / region', null, sel);
       rg = field('authRegion', 'State / region', { name: 'region', type: 'text', autocomplete: 'address-level1', maxlength: '60', required: '' });
-      ph = field('authPhone', 'Phone number', { name: 'phone', type: 'tel', autocomplete: 'tel', inputmode: 'tel', maxlength: '20', required: '' });
+      ph = field('authPhone', 'Mobile phone number', { name: 'phone', type: 'tel', autocomplete: 'tel', inputmode: 'tel', maxlength: '20', required: '' });
       st = field('authStreet', 'Street address', { name: 'street', type: 'text', autocomplete: 'address-line1', maxlength: '100', required: '' });
+      ap = field('authApt', 'Apt, suite, unit', { name: 'apt', type: 'text', autocomplete: 'address-line2', maxlength: '60' });
+      ap.wrap[0].firstChild.append(el('small', { class: 'auth__opt', text: '(optional)' }));
       ci = field('authCity', 'City', { name: 'city', type: 'text', autocomplete: 'address-level2', maxlength: '60', required: '' });
       pc = field('authPostal', 'ZIP / postal code', { name: 'postal', type: 'text', autocomplete: 'postal-code', maxlength: '12', required: '' });
       sel.addEventListener('change', () => { rg.wrap[0].firstChild.textContent = REGION_LABEL[sel.value] || 'State / region'; });
       const pwHint = el('p', { class: 'auth__hint', text: 'At least 8 characters.' });
-      form.append(...nm.wrap, ...em.wrap, ...ph.wrap, ...pw.wrap, pwHint, ...pw2.wrap,
-        el('fieldset', { class: 'auth__loc' }, [el('legend', { text: 'Your address' }), ...co.wrap, ...st.wrap, ...rg.wrap, el('div', { class: 'auth__row' }, [el('div', {}, ci.wrap), el('div', {}, pc.wrap)])]),
+      form.classList.add('auth__form--signup');
+      form.append(el('div', { class: 'auth__grid' }, [
+          el('div', { class: 'auth__col' }, [el('h3', { text: 'Your account' }), ...nm.wrap, ...em.wrap, ...ph.wrap, ...pw.wrap, pwHint, ...pw2.wrap]),
+          el('fieldset', { class: 'auth__loc auth__col' }, [el('legend', { text: 'Your address' }), ...co.wrap, ...st.wrap, ...ap.wrap, el('div', { class: 'auth__row' }, [el('div', {}, ci.wrap), el('div', {}, rg.wrap)]), ...pc.wrap])]),
         formErr, el('button', { type: 'submit', class: 'btn auth__go', text: 'Create account' }),
         el('p', { class: 'auth__fine', text: 'Your account is saved in this browser; the password is stored only as a one-way hash and never leaves this device. Your name, email, phone and city/state/country are also sent to Luxora’s sign-up form provider (Forminit) so Luxora knows who joined. Luxora never asks for a card or PIN.' }));
     } else {
@@ -148,7 +152,7 @@
         if (!a || a.hash !== await hash(pass, a.salt)) { formErr.textContent = 'That email and password do not match an account on this device.'; formErr.hidden = false; return pw.inp.focus(); }
         mem = a.profile; write(a.profile); setCountryPrefs(a.profile.country); paint(); close(); announce(`Signed in as ${a.profile.name}`); toChat(); return;
       }
-      const v = { name: clean(nm.inp.value).slice(0, 60), email: email.slice(0, 120), country: co.inp.value, region: clean(rg.inp.value).slice(0, 60), city: clean(ci.inp.value).slice(0, 60), postal: clean(pc.inp.value).toUpperCase().slice(0, 12), phone: clean(ph.inp.value).slice(0, 20), street: clean(st.inp.value).slice(0, 100) };
+      const v = { name: clean(nm.inp.value).slice(0, 60), email: email.slice(0, 120), country: co.inp.value, region: clean(rg.inp.value).slice(0, 60), city: clean(ci.inp.value).slice(0, 60), postal: clean(pc.inp.value).toUpperCase().slice(0, 12), phone: clean(ph.inp.value).slice(0, 20), street: clean(st.inp.value).slice(0, 100), apt: clean(ap.inp.value).slice(0, 60) };
       const loc = checkLocation(v);
       const errs = [
         [nm, v.name ? '' : 'Please enter your full name.'],
@@ -162,12 +166,13 @@
       v.phone = normPhone(v.phone, v.country); v.createdAt = new Date().toISOString();
       mem = v; write(v); setCountryPrefs(v.country); report(v); paint(); close(); announce(`Account created. Signed in as ${v.name}`); toChat();
     });
+    dlg.classList.toggle('auth--wide', mode === 'signup');
     dlg.append(closeBtn(), logo, el('h2', { id: 'authTitle', text: mode === 'signup' ? 'Create your Luxora account' : 'Sign in to Luxora' }),
-      el('p', { class: 'auth__lead', text: mode === 'signup' ? 'Your name, email and location help Luxora show prices in your currency.' : 'Welcome back. Enter your email and password.' }), form, swap);
+      el('p', { class: 'auth__lead', text: mode === 'signup' ? 'Add your name, phone, and address so Luxora can save your profile.' : 'Welcome back. Enter your email and password.' }), form, swap);
     setTimeout(() => (nm || em).inp.focus(), 0);
   }
   function accountView(p) {
-    dlg.replaceChildren();
+    dlg.replaceChildren(); dlg.classList.remove('auth--wide');
     const out = el('button', { type: 'button', class: 'btn btn--ghost', text: 'Log out' });
     out.addEventListener('click', () => { mem = null; write(null); paint(); close(); announce('Logged out'); });
     const done = el('button', { type: 'button', class: 'btn', text: 'Close' }); done.addEventListener('click', close);
