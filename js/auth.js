@@ -84,6 +84,11 @@
   const clean = x => String(x || '').trim().replace(/\s+/g, ' ');
   const inApp = () => /app\.html$/.test(location.pathname) || !!document.getElementById('viewAssistant');
   function toChat() { inApp() ? (location.hash = '#/assistant') : location.assign('app.html#/assistant'); }
+  /* After sign-in or create-account, show the empty assistant welcome (not leftover chat). */
+  function welcomeAfterAuth() {
+    try { localStorage.removeItem('luxora.chat'); } catch {}
+    document.dispatchEvent(new Event('luxora:clear-chat'));
+  }
   /* new account -> Luxora's Forminit form kbj6dk1nfgl (fire and forget; never the password, street or ZIP) */
   const FORM = 'https://forminit.com/f/kbj6dk1nfgl';
   function report(v) {
@@ -150,7 +155,7 @@
         if (!EMAIL.test(email)) return em.inp.focus(); if (!pass) return pw.inp.focus();
         const a = accts()[key];
         if (!a || a.hash !== await hash(pass, a.salt)) { formErr.textContent = 'That email and password do not match an account on this device.'; formErr.hidden = false; return pw.inp.focus(); }
-        mem = a.profile; write(a.profile); setCountryPrefs(a.profile.country); paint(); close(); announce(`Signed in as ${a.profile.name}`); toChat(); return;
+        mem = a.profile; write(a.profile); setCountryPrefs(a.profile.country); paint(); close(); announce(`Signed in as ${a.profile.name}`); welcomeAfterAuth(); toChat(); return;
       }
       const v = { name: clean(nm.inp.value).slice(0, 60), email: email.slice(0, 120), country: co.inp.value, region: clean(rg.inp.value).slice(0, 60), city: clean(ci.inp.value).slice(0, 60), postal: clean(pc.inp.value).toUpperCase().slice(0, 12), phone: clean(ph.inp.value).slice(0, 20), street: clean(st.inp.value).slice(0, 100), apt: clean(ap.inp.value).slice(0, 60) };
       const loc = checkLocation(v);
@@ -164,7 +169,7 @@
       const bad = errs.find(([, m]) => m); if (bad) return bad[0].inp.focus();
       const salt = newSalt(), all = accts(); all[key] = { salt, hash: await hash(pass, salt), profile: v }; saveAccts(all);
       v.phone = normPhone(v.phone, v.country); v.createdAt = new Date().toISOString();
-      mem = v; write(v); setCountryPrefs(v.country); report(v); paint(); close(); announce(`Account created. Signed in as ${v.name}`); toChat();
+      mem = v; write(v); setCountryPrefs(v.country); report(v); paint(); close(); announce(`Account created. Signed in as ${v.name}`); welcomeAfterAuth(); toChat();
     });
     dlg.classList.toggle('auth--wide', mode === 'signup');
     dlg.append(closeBtn(), logo, el('h2', { id: 'authTitle', text: mode === 'signup' ? 'Create your Luxora account' : 'Sign in to Luxora' }),
