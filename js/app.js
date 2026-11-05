@@ -11,10 +11,10 @@
   const STATIC = window.LUXORA_STATIC || /\.github\.io$/.test(location.hostname);
   const API_URL = window.LUXORA_API_URL || 'https://luxora-api.luxora-ks.workers.dev/api/chat', API_TIMEOUT_MS = 4000;
   const lastIds = () => { for (let i = hist.length - 1; i >= 0; i--) if (hist[i].r === 'b' && hist[i].ids && hist[i].ids.length) return hist[i].ids; return []; };
-  async function remoteChat(url, message, last, ms) {
+  async function remoteChat(url, message, last, ms, history) {
     const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms);
     try {
-      const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message, last, lang: LuxoraPrefs.get().language }), signal: ctl.signal });
+      const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message, last, history: history || [], lang: LuxoraPrefs.get().language }), signal: ctl.signal });
       if (!res.ok) return null;
       const data = await res.json();
       if (!(data && typeof data.reply === 'string' && Array.isArray(data.products))) return null;
@@ -26,8 +26,12 @@
   }
   async function chat(message) {
     const last = lastIds();
-    const data = await remoteChat(STATIC ? API_URL : 'api/chat', message, last, STATIC ? API_TIMEOUT_MS : 15000);
-    return data || window.LuxoraOffline.respond(message, { last, lang: LuxoraPrefs.get().language });
+    // recent user turns (excluding this one) so short follow-ups like "my budget is 1,000" keep context
+    const prior = hist.filter(h => h.r === 'u').map(h => h.t);
+    if (prior.length && prior[prior.length - 1] === message) prior.pop();
+    const history = prior.slice(-6).map(t => ({ role: 'user', content: String(t).slice(0, 300) }));
+    const data = await remoteChat(STATIC ? API_URL : 'api/chat', message, last, STATIC ? API_TIMEOUT_MS : 15000, history);
+    return data || window.LuxoraOffline.respond(message, { last, history, lang: LuxoraPrefs.get().language });
   }
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   function toast(t, link) {

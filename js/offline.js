@@ -348,9 +348,9 @@ module.exports = { ck, pre, respond, name: 'rules' };
 const rules = require('./rules');
 const { ck, pre } = rules;
 const facts = p => (p.highlights || []).slice(0, 2).join(', ');
-const { categories } = require('../products');
+const { categories, products: allProducts } = require('../products');
 
-const money = n => '$' + (Number.isInteger(n) ? n : n.toFixed(2));
+const money = n => '$' + (Number.isInteger(n) ? n.toLocaleString('en-US') : n.toFixed(2));
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
 async function respond(message, ctx = {}) {
@@ -390,6 +390,36 @@ async function respond(message, ctx = {}) {
     return { reply: who ? `Aw, nice! What's ${pr === 'they' ? 'your ' + who : pr} into: fitness, sleep, music or reading? And roughly what's your budget? A Kindle or a smart ring makes a lovely gift.` : "Love a gift hunt! Who's it for, and roughly what do you want to spend? Smart rings, earbuds and Kindles all make great gifts.", products: [] };
   }
 
+  // --- popular / best-selling and budget-only follow-ups (no live sales data: never invent unit counts) ---
+  const histText = (Array.isArray(ctx.history) ? ctx.history : []).map(h => typeof h === 'string' ? h : h && (h.role === 'user' || h.r === 'u' || h.role == null) ? (h.content || h.text || h.t || '') : '').filter(Boolean).slice(-6).join(' ').toLowerCase();
+  const catsIn = s => { const t = ' ' + s.replace(/[^a-z0-9\- ]/g, ' ') + ' '; return Object.keys(categories).filter(k => categories[k].words.some(w => t.includes(' ' + w + ' '))); };
+  const popRe = /\b(most\s+(com+on|coman|comon|comman|commen|popular|populer|bought|sold|liked|wanted|purchased)|popular|populer|best\s*-?\s*sell(ing|ers?)|top\s*sell(ing|ers?)|sold\s+(the\s+)?most|sells?\s+(the\s+)?most|trending|what'?s\s+hot|fan\s+favou?rites?|everyone\s+(buys|wants|gets))\b/;
+  const amt = (() => {
+    const m = lower.match(/\b(?:budget|spend|spending|afford|have|got|around|about|roughly|max|maximum|up to|under|below|less than|within)\b[^\d$]{0,15}\$?\s*(\d[\d,]*(?:\.\d+)?)\s*(k\b)?/) || lower.match(/^\s*(?:like\s+|maybe\s+|about\s+|around\s+)?\$?\s*(\d[\d,]*(?:\.\d+)?)\s*(k\b)?\s*(?:dollars?|bucks|usd|\$)?\s*[.!?]?\s*$/) || lower.match(/\$\s*(\d[\d,]*(?:\.\d+)?)\s*(k\b)?/) || lower.match(/\b(\d[\d,]*(?:\.\d+)?)\s*(k\b)?\s*(?:dollars?|bucks|usd)\b/);
+    if (!m) return null; const n = parseFloat(m[1].replace(/,/g, '')) * (m[2] ? 1000 : 1); return n >= 10 ? n : null;
+  })();
+  const FEATURED = ['aura-ring-4', 'echo-buds-pro', 'studio-cans', 'orbit-watch', 'kindle-16gb-2026', 'drift-buds', 'calm-over-ear', 'pulse-watch-s', 'echo-dot-2026', 'ipad-mini-a20'];
+  const featured = (cats, max) => { const ps = FEATURED.map(id => allProducts.find(p => p.id === id)).filter(Boolean).filter(p => (!cats.length || cats.includes(p.category)) && (max == null || p.price <= max)); const seen = new Set(), out = []; for (const p of ps) if (!seen.has(p.category) || cats.length) { seen.add(p.category); out.push(p); if (out.length === 3) break; } return out; };
+  const list = ps => ps.map(x => `${x.name} (${money(x.price)})`).join(', ').replace(/, ([^,]*)$/, ' and $1');
+  const curCats = catsIn(lower);
+  if (popRe.test(lower)) {
+    const cats = curCats, ps = featured(cats, amt);
+    if (ps.length) {
+      const noData = /\b(sold|sell|sells|selling|bought|purchased|today|this week|right now)\b/.test(lower) ? "I don't have live sales numbers, so I can't tell you exactly what sold the most" + (/\btoday\b/.test(lower) ? ' today' : '') + ". " : '';
+      return { title: 'Popular on Luxora', products: ps, reply: `${noData}${noData ? 'But the' : 'The'} picks Luxora shoppers ask about most${cats.length === 1 ? ' in ' + categories[cats[0]].label.toLowerCase() : ''} are ${list(ps)}. ${ps[0].name} is a real crowd favorite${(ps[0].highlights || [])[0] ? ` (${ps[0].highlights[0].toLowerCase()})` : ''}. Prices checked Nov 3.`, followUp: 'Got a budget in mind? I can narrow it down.' };
+    }
+  }
+  if (amt != null && !productWords && curCats.length === 0 && !/\b(compare|vs|versus)\b/.test(lower)) {
+    const hc = catsIn(histText), wasPop = popRe.test(histText);
+    let ps = hc.length ? allProducts.filter(p => hc.includes(p.category) && p.price <= amt).sort((a, b) => b.price - a.price).slice(0, 3) : featured([], amt);
+    if (!ps.length) {
+      const cheapest = [...allProducts].filter(p => !hc.length || hc.includes(p.category)).sort((a, b) => a.price - b.price)[0];
+      return { title: 'Closest match', products: [cheapest], reply: `Ah, ${money(amt)} is a little tight for what we carry${hc.length ? ' there' : ''}. The most affordable is ${cheapest.name} at ${money(cheapest.price)}. Prices checked Nov 3.`, followUp: 'Want me to look at something else instead?' };
+    }
+    const lead = wasPop ? `Nice, with ${money(amt)} you can grab any of the popular picks` : hc.length ? `Got it, ${money(amt)} for ${categories[hc[0]].label.toLowerCase()}` : `Nice, ${money(amt)} goes a long way here`;
+    return { title: `Picks under ${money(amt)}`, products: ps, reply: `${lead}. I'd look at ${list(ps)}. ${ps[0].name} is my favorite of those${(ps[0].highlights || [])[0] ? ` (${ps[0].highlights[0].toLowerCase()})` : ''}. Prices checked Nov 3.`, followUp: 'Want me to focus on one type, like earbuds or a smartwatch?' };
+  }
+
   const out = await rules.respond(text, ctx);
   const p = out.products || [];
   if (out.keep) { const { keep, ...rest } = out; return rest; }
@@ -404,7 +434,7 @@ async function respond(message, ctx = {}) {
     if (/\b(something|anything|stuff|ideas?|nice|cool|good|help|suggest|recommend|shopping|buy|looking)\b/.test(lower)) {
       return { reply: "Happy to help! What kind of thing, and what's your budget? I've got smart rings, watches, earbuds, headphones, tablets, Kindles and smart speakers.", products: [] };
     }
-    return { reply: "Hmm, I'm not sure I caught that. I'm best with smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. Tell me what you need and a rough budget, like \"earbuds for my commute under $150\".", products: [] };
+    return { reply: pick(["Hmm, I'm not sure I caught that. I'm best with smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. What are you shopping for?", "Sorry, I didn't quite get that one! Could you tell me what kind of gadget you're after, or just a budget? I can pull up good picks either way.", "I might be missing what you mean. Want me to show you what's popular right now, or are you after something specific like earbuds or a smart ring?"]), products: [] };
   }
   if (out.title === 'Side by side' && p.length >= 2) {
     const [a, b] = p, ios = x => /iphone|apple/i.test((x.highlights || []).join(' ') + ' ' + x.store), android = x => /android|samsung only/i.test((x.highlights || []).join(' '));
