@@ -99,7 +99,7 @@
         add.addEventListener('click', e => { e.stopPropagation(); if (S.needsSize(pr)) { open(); sel.sizeErr = true; renderPanel(); toast(`Choose a size for ${pr.name} first`); const sz = $('#size'); if (sz) sz.focus(); } else addToCart(pr); });
         c.append(heart, add);
         const open = () => { show(pr); view.classList.add('panel-open'); cards.querySelectorAll('.card').forEach(x => x.classList.toggle('sel', x === c)); };
-        c.addEventListener('click', open); c.addEventListener('keydown', e => { if (e.key === 'Enter') open(); });
+        c.addEventListener('click', open); c.addEventListener('keydown', e => { if (e.target !== c) return; if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); open(); } });   // role=button: Enter and Space both activate
         cards.append(c);
       });
       m.append(cards);

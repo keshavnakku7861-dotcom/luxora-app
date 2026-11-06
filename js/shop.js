@@ -24,9 +24,17 @@
   const addToCart = (p, o) => { const l = S.addToCart(p, o); if (!l) return null; toast(`Added ${l.qty} × ${p.name} to cart`, ['View cart', openDrawer]); };
 
   /* ---------- list ---------- */
+  /* search: every word of the query must appear in the product's name/brand/category/tags/variant names (punctuation such as "(A20 Pro)" ignored) */
+  const norm = t => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  function matches(p, q) {
+    if (!q) return true;
+    const hay = ' ' + norm([p.name, p.store, p.category.replace('-', ' '), ...(p.tags || []), ...Object.values(p.variants || {}).map(v => v.name + ' ' + (v.label || ''))].join(' ')) + ' ';
+    const words = norm(q).split(' ').filter(Boolean);
+    return words.length > 0 && words.every(w => hay.includes(' ' + w) || hay.includes(w));
+  }
   function filtered() {
     const q = st.q.trim().toLowerCase();
-    let list = products.filter(p => inCat(p, st.cat) && (!q || [p.name, p.store, p.category.replace('-', ' '), ...p.tags].join(' ').toLowerCase().includes(q)));
+    let list = products.filter(p => inCat(p, st.cat) && matches(p, q));
     if (st.cat === 'deals') list = list.map(p => p.deal || !dealKey(p) ? p : S.variant(p, dealKey(p)));   // Deals tab: show the variant that is on sale
     if (st.sort === 'price-asc') list.sort((a, b) => a.price - b.price);
     else if (st.sort === 'price-desc') list.sort((a, b) => b.price - a.price);
@@ -46,9 +54,9 @@
   }
   function renderDeals() {
     const box = $('#dealsBox'), q = st.q.trim().toLowerCase();
-    const items = P().dealAlerts && dealsOn() && st.cat !== 'deals' ? D.list.filter(d => { const p = byId[d.productId]; return p && inCat(p, st.cat) && (!q || [p.name, p.store, p.category.replace('-', ' '), ...p.tags].join(' ').toLowerCase().includes(q)); }) : [];
+    const items = P().dealAlerts && dealsOn() && st.cat !== 'deals' ? D.list.filter(d => { const p = byId[d.productId]; return p && inCat(p, st.cat) && matches(p, q); }) : [];
     box.hidden = !items.length; if (!items.length) { box.innerHTML = ''; return; }
-    box.innerHTML = `<div class="deals__head"><div><h2>Deals</h2><p>Verified lower prices on selected products. <b class="deals__sample">Prices checked Nov 3, 2026; they can change at any time.</b></p></div><button class="btn btn--ghost btn--sm" data-cat="deals">See all deals</button></div>
+    box.innerHTML = `<div class="deals__head"><div><h2>Deals</h2><p>Verified lower prices on selected products. <b class="deals__sample">Prices checked Nov 3–4, 2026; they can change at any time. Each price shows its own checked date.</b></p></div><button class="btn btn--ghost btn--sm" data-cat="deals">See all deals</button></div>
       <div class="deals__grid">${items.map(d => { const p = d.color ? S.variant(byId[d.productId], d.color) : byId[d.productId], href = `#/shop/p/${p.id}${d.color ? '?c=' + d.color : ''}`; return `<article class="dealcard">
         <a class="dealcard__img" href="${href}" aria-label="View ${esc(p.name)}">${Art.product(p, 0)}${P().priceDrops ? `<span class="dealtag">-${d.discountPercent}%</span>` : ''}</a>
         <div class="dealcard__body"><span class="dealcard__flag">Deal at ${esc(d.retailer || p.retailer.name)}</span><h3><a href="${href}">${esc(p.name)}</a></h3>
@@ -164,7 +172,7 @@
     if (!cart.length) { body.innerHTML = `<div class="none"><h3>Your cart is empty</h3><p>Add something you like from the store.</p><button class="btn btn--sm" data-close-drawer>Continue shopping</button></div>`; foot.innerHTML = ''; return; }
     body.innerHTML = cart.map((i, idx) => {
       const f = S.info(i);
-      return `<article class="line"><a class="line__img" href="#/shop/p/${f.id}" data-close-drawer>${Art.product({ id: f.id, name: f.name })}</a>
+      return `<article class="line"><a class="line__img" href="#/shop/p/${f.id}${f.variantKey ? '?c=' + f.variantKey : ''}" data-close-drawer>${Art.product({ id: f.id, name: f.name, imageId: f.imageId })}</a>
         <div><div class="pcard__store">${esc(f.store)}</div><div class="line__name">${esc(f.name)}</div>
           <div class="line__opts">${esc(i.size)} &middot; <i class="dot c-${esc(i.color)}"></i>${cname(i.color)}</div>
           <div class="line__ctl"><div class="qty"><button data-dec="${idx}" aria-label="Decrease quantity of ${esc(f.name)}">&minus;</button><span>${i.qty}</span><button data-inc="${idx}" aria-label="Increase quantity of ${esc(f.name)}">+</button></div><button class="rm" data-rm="${idx}">Remove</button></div></div>

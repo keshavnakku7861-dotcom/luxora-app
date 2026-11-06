@@ -9,7 +9,7 @@
   /* drop old cart/saved lines for products no longer in the catalog, and refresh names/brands from it (runs once on load) */
   function migrate() {
     const cat = catalog(); if (!Object.keys(cat).length) return;
-    const line = i => { const c = cat[i.id], v = c && c.variants && c.variants[i.color]; return { ...i, name: (v && v.name) || c.name, store: c.store }; };
+    const line = i => { const c = cat[i.id], v = c && c.variants && c.variants[i.color]; return { ...i, name: (v && v.name) || c.name, store: c.store, imageId: (v && v.imageId) || i.imageId || c.imageId }; };
     try {
       const raw = read(KC, []), cart = raw.filter(i => i && cat[i.id]).map(line);
       if (JSON.stringify(cart) !== JSON.stringify(raw)) localStorage.setItem(KC, JSON.stringify(cart));
@@ -28,7 +28,11 @@
     /* a finish variant (e.g. Oura Ring 4 Ceramic Midnight) shown through its base product */
     variant(p, color) { const v = p && p.variants && p.variants[color]; return v ? { ...p, ...v, id: p.id, variantOf: p.id, variantKey: color, colors: [color], deal: v.deal || null, listPrice: v.listPrice } : p; },
     colorName: (p, c) => (p && p.colorNames && p.colorNames[c]) || (c ? c[0].toUpperCase() + c.slice(1) : ''),
-    info(item) { const c = catalog()[item.id] || {}; return { id: item.id, name: item.name || c.name || 'Product', store: item.store || c.store || 'Luxora', price: item.price ?? c.price ?? 0, retailer: c.retailer }; },
+    /* the catalog product a saved/cart line points at, resolved to its finish variant (color) when it has one */
+    resolve(item) { const c = item && catalog()[item.id]; return c ? Store.variant(c, item.color) : null; },
+    /* the identity a line keeps from the product the shopper actually picked (variant name, image, price, date, link) */
+    snapshot(p) { return { name: p.name, price: p.price, imageId: p.imageId || p.id, checkedAt: p.checkedAt || null, variantKey: p.variantKey || null, retailer: p.retailer ? p.retailer.name : null, url: (p.amazon && p.amazon.url) || (p.retailer && p.retailer.url) || null, asin: (p.amazon && p.amazon.asin) || null }; },
+    info(item) { const c = Store.resolve(item) || {}; return { id: item.id, name: item.name || c.name || 'Product', store: item.store || c.store || 'Luxora', price: item.price ?? c.price ?? 0, retailer: c.retailer, imageId: item.imageId || c.imageId || item.id, checkedAt: item.checkedAt || c.checkedAt, url: item.url || null, asin: item.asin || null, variantKey: item.variantKey || c.variantKey || null }; },
     /* "Buy at <retailer>" link: new tab, noopener, sponsored */
     buyLink(p, cls = 'btn', label) {
       const r = p && p.retailer; if (!r || !/^https:/.test(r.url)) return '';
@@ -52,7 +56,7 @@
     needsSize: p => (p.sizes || []).some(x => x !== 'One size'),
     addToCart(p, opts = {}) {
       if (Store.needsSize(p) && !opts.size) return null;   // a size must be chosen first
-      const cart = Store.cart(), line = { id: p.id, name: p.name, store: p.store, price: p.price, size: opts.size || (Store.needsSize(p) ? '' : p.sizes[0]), color: opts.color || p.colors[0], qty: opts.qty || 1 };
+      const cart = Store.cart(), line = { ...Store.snapshot(p), id: p.id, store: p.store, size: opts.size || (Store.needsSize(p) ? '' : p.sizes[0]), color: opts.color || p.colors[0], qty: opts.qty || 1 };
       const hit = cart.find(i => i.id === line.id && i.size === line.size && i.color === line.color);
       if (hit) hit.qty = Math.min(9, hit.qty + line.qty); else cart.push(line);
       write(KC, cart); return line;
@@ -63,7 +67,7 @@
     clearCart() { write(KC, []); },
     toggleSaved(p, opts = {}) {
       let s = Store.saved(); const on = s.some(x => x.id === p.id);
-      s = on ? s.filter(x => x.id !== p.id) : [...s, { id: p.id, size: opts.size || (Store.needsSize(p) ? '' : p.sizes[0]), color: opts.color || p.colors[0] }];
+      s = on ? s.filter(x => x.id !== p.id) : [...s, { ...Store.snapshot(p), id: p.id, size: opts.size || (Store.needsSize(p) ? '' : p.sizes[0]), color: opts.color || p.colors[0] }];
       write(KS, s); return !on;
     },
     clearSaved() { write(KS, []); },

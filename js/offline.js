@@ -388,7 +388,7 @@ function fallback() {
   };
 }
 
-module.exports = { ck, pre, parseBudget, detectCategories, respond, name: 'rules' };
+module.exports = { ck, pre, parseBudget, detectCategories, namedProducts, respond, name: 'rules' };
 
   };
   defs.sender = function (module, exports, require) {
@@ -416,6 +416,24 @@ async function respondCore(message, ctx = {}) {
     return { reply: pick(["Anytime! Shout if you need anything else.", "Happy to help! Enjoy your new gear."]), products: [] };
   }
 
+  const SCOPE = 'smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers';
+  const productWords0 = /\b(rings?|watch(es)?|smartwatch(es)?|buds|earbuds?|airpods|headphones?|cans|tablets?|ipads?|kindles?|e-?readers?|echo|speakers?|alexa|oura|garmin|sony|apple|samsung)\b/.test(lower);
+  // health questions: never give medical advice or name a medicine; flag urgent symptoms first
+  const urgentMed = /\b(chest pains?|heart attack|stroke|can'?t breathe|cannot breathe|trouble breathing|short(ness)? of breath|overdos(e|ed)|unconscious|seizure|severe bleeding|suicid\w*)\b/.test(lower);
+  if (urgentMed || /\b(medicines?|medications?|meds|pills?|dosage|dose|prescriptions?|painkillers?|antibiotics?|ibuprofen|aspirin|tylenol|diagnos\w*)\b/.test(lower) || (!productWords0 && /\b(pain|fever|symptoms?|sick|ill|hurts?|injur(y|ed)|doctor)\b/.test(lower))) {
+    return { title: 'Health question', reply: `I'm Luxora's shopping assistant, so I can't give medical advice or recommend any medicine.${urgentMed ? ' Chest pain and symptoms like it can be a sign of something urgent, so please call 911 (or your local emergency number) or get medical help right away.' : ' Please ask a doctor or pharmacist about that.'} If you'd like help with shopping later, I can help you find ${SCOPE}.`, products: [] };
+  }
+  // off-topic writing (poems, stories, essays...): stay in scope, do not write it
+  if (!productWords0 && /\b(poems?|poetry|haikus?|limericks?|stor(y|ies)|essays?|lyrics|rap|sonnet|jokes?|homework|code|translate)\b/.test(lower) && /\b(write|compose|make|create|tell|give|generate|do|translate)\b/.test(lower)) {
+    return { title: 'Shopping only', reply: `I'm Luxora's shopping assistant, so I can't write that for you. I can help you shop for ${SCOPE}. What are you looking for?`, products: [] };
+  }
+  // product types Luxora does not carry win over a budget ("a laptop under $1000" is not a budget search)
+  const notCarried = (lower.match(/\b(laptops?|computers?|pcs?|macbooks?|chromebooks?|desktops?|smartphones?|phones?|iphones?|tvs?|televisions?|cameras?|consoles?|xbox|playstation|ps5|nintendo|monitors?|printers?|keyboards?|mice|mouse|drones?|furniture|toys?|cars?|bikes?)\b/) || [])[1];
+  if (notCarried && !productWords0 && rules.detectCategories(lower).length === 0 && !rules.namedProducts(lower).length && !/\b(work(s|ing)?\s+with|compatible|pair)\b/.test(lower)) {
+    const plural = notCarried.replace(/s?$/, 's').replace(/ss$/, 's').replace(/^mices$/, 'mice').replace(/^mouses$/, 'mice').replace(/^pcs$/, 'PCs').replace(/^tvs$/, 'TVs').replace(/^ps5s$/, 'PS5s');
+    return { title: 'Not in the catalog', reply: `Luxora doesn't carry ${plural} yet, sorry! Right now I can help with ${SCOPE}. Want me to show you something from those?`, products: [] };
+  }
+
   if (!/\b(rings?|watch(es)?|buds|earbuds?|headphones?|cans|tablets?|ipads?|kindles?|e-?readers?|echo|speakers?)\b/.test(lower) && /\b(grocer(y|ies)|food|snacks?|fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower)) {
     const which = /\b(fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower) ? 'Fashion' : 'Groceries';
     return { reply: `${which} isn't on Luxora's shelves just yet, so I can't recommend anything there right now. What I can do well is electronics: smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. Want me to pull up the top picks?`, products: [] };
@@ -423,13 +441,22 @@ async function respondCore(message, ctx = {}) {
 
   const productWords = /\b(rings?|watch(es)?|smartwatch(es)?|buds|earbuds?|airpods|headphones?|cans|tablets?|ipads?|kindles?|e-?readers?|echo|speakers?|alexa|oura|garmin|sony|apple|samsung)\b/.test(lower);
 
-  // returns: Luxora doesn't sell, so no return window is promised here
-  if (/\b(returns?|refunds?|exchanges?|send (it )?back)\b/.test(lower)) {
-    return { reply: "Returns go through the store you bought from, since Luxora doesn't sell anything directly. Check the Amazon listing (or the retailer's page) for return details before you buy. Anything else I can help you find?", products: [] };
-  }
-  // shipping time (not tracking)
-  if (/\b(how long|how fast|when will|shipping time|delivery time|ship to|deliver to)\b/.test(lower) && /\b(ship|shipping|deliver|delivery|arrive)\b/.test(lower)) {
-    return { reply: "Luxora doesn't ship orders itself. You buy straight from the retailer, mostly Amazon, so shipping times depend on them. You'll see the delivery date at checkout after you tap Buy now.", products: [] };
+  // returns / shipping: name the product's actual retailer from the catalog (never assume Amazon)
+  const histProduct = () => { for (const h of [...(Array.isArray(ctx.history) ? ctx.history : [])].reverse()) { const t = typeof h === 'string' ? h : h && (h.role === 'user' || h.r === 'u' || h.role == null) ? h.content || h.text || h.t || '' : ''; const hit = rules.namedProducts(String(t).toLowerCase())[0]; if (hit) return hit; } return null; };
+  const about = () => rules.namedProducts(lower)[0] || (Array.isArray(ctx.last) ? ctx.last : []).map(id => allProducts.find(p => p.id === id)).find(Boolean) || histProduct();
+  const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
+  const seller = p => { const r = p.retailer || {}; return r.name === 'Amazon' ? 'Amazon' : `${r.name}${host(r.url) ? ' (' + host(r.url) + ')' : ''}`; };
+  const variantNote = (p, what) => Object.values(p.variants || {}).filter(v => v.retailer && v.retailer.name !== (p.retailer || {}).name).map(v => ` The ${v.label} finish is listed on ${v.retailer.name}, so ${v.retailer.name}'s ${what} applies to that one.`).join('');
+  const isReturn = /\b(returns?|refunds?|exchanges?|send (it )?back)\b/.test(lower);
+  const isShip = /\b(how long|how fast|when will|shipping time|delivery time|ship to|deliver to)\b/.test(lower) && /\b(ship|shipping|deliver|delivery|arrive)\b/.test(lower);
+  if (isReturn || isShip) {
+    const p = about();
+    if (isReturn) {
+      if (p) return { title: 'Returns', reply: `Luxora doesn't sell anything directly, so returns for ${p.name} go through the store you buy it from. Its main retailer here is ${seller(p)}, so check ${p.retailer.name}'s return policy before you buy.${variantNote(p, 'return policy')}${(p.alsoAt || []).length ? ` If you buy it at ${p.alsoAt.map(a => a.name).join(' or ')} instead, that store's policy applies.` : ''} Anything else I can help you find?`, products: [] };
+      return { reply: "Returns go through the store you bought from, since Luxora doesn't sell anything directly. Each product's Buy button shows its retailer, so check that store's return policy before you buy. Which product are you asking about?", products: [] };
+    }
+    if (p) return { title: 'Shipping', reply: `Luxora doesn't ship orders itself. ${p.name} is sold by ${seller(p)}, so shipping times depend on ${p.retailer.name}. You'll see the delivery estimate at ${p.retailer.name}'s checkout after you tap ${p.retailer.name === 'Amazon' ? (pre(p) ? 'Pre-order' : 'Buy now') : 'Buy at ' + p.retailer.name}.${pre(p)}${variantNote(p, 'shipping')}`, products: [] };
+    return { reply: "Luxora doesn't ship orders itself. You buy straight from each product's retailer (it's shown on the Buy button), so shipping times depend on that store. Which product are you asking about?", products: [] };
   }
   // gifts
   if (/\b(gifts?|present|birthday|christmas|holiday|for my (mom|mum|mother|dad|father|wife|husband|partner|girlfriend|boyfriend|friend|sister|brother|son|daughter|grandma|grandpa|teacher|boss))\b|\bsomething for (my|a|her|him)\b/.test(lower) && !productWords && !/\$\s*\d|\b(under|below|less than)\s*\$?\d/.test(lower)) {

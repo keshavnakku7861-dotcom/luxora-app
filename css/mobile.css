@@ -1,5 +1,8 @@
 /* Phone-only refinements. Keep desktop/tablet composition and all product behavior intact. */
 @media (max-width: 560px) {
+  /* Settings: keep the last lines readable above the bottom navigation and the safe area */
+  #viewSettings .settings { padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
+  #viewSettings { scroll-padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
   /* Consistent touch sizing and no iOS input zoom; do not disable pinch zoom. */
   input, select, textarea { font-size: 16px !important; }
   .btn { min-height: 44px; height: auto; padding-block: 10px; line-height: 1.25; text-align: center; }
