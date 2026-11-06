@@ -35,7 +35,7 @@
   function build() {
     dlg = el('dialog', { class: 'auth', 'aria-labelledby': 'authTitle' });
     dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });           // click on backdrop
-    dlg.addEventListener('close', () => { if (opener && document.contains(opener)) opener.focus(); });
+    dlg.addEventListener('close', () => { if (dlg.dataset.completing) { delete dlg.dataset.completing; if (!get()) fbSignOut(); } if (opener && document.contains(opener)) opener.focus(); });
     document.body.append(dlg);
   }
   function close() { dlg.close(); }
@@ -102,6 +102,104 @@
     } catch {}
   }
   function setCountryPrefs(country) { if (window.LuxoraPrefs && CURRENCY[country]) LuxoraPrefs.set({ country, currency: CURRENCY[country] }); }
+
+
+  /* ---- Google sign-in (Firebase Auth + Firestore users/{uid}); loaded from the Firebase CDN only when used ---- */
+  const FB_CFG = { apiKey: 'AIzaSyAzKowqZae7eP3bHEWRZi3LaMPWVN54WKE', authDomain: 'luxora-app-2026.firebaseapp.com', projectId: 'luxora-app-2026',
+    storageBucket: 'luxora-app-2026.firebasestorage.app', messagingSenderId: '566518224342', appId: '1:566518224342:web:d0acbf4995c0f9c9f64077' };
+  const FB_V = 'https://www.gstatic.com/firebasejs/10.14.1/';
+  const GFLAG = 'luxora.google';
+  let fbP = null;
+  function fb() {
+    if (!fbP) fbP = Promise.all([import(FB_V + 'firebase-app.js'), import(FB_V + 'firebase-auth.js'), import(FB_V + 'firebase-firestore.js')])
+      .then(([A, U, F]) => { const app = A.getApps().length ? A.getApp() : A.initializeApp(FB_CFG); return { U, F, auth: U.getAuth(app), db: F.getFirestore(app) }; })
+      .catch(e => { fbP = null; throw e; });
+    return fbP;
+  }
+  async function fbSignOut() { try { localStorage.removeItem(GFLAG); } catch {} try { const f = await fb(); await f.U.signOut(f.auth); } catch {} }
+  const complete = p => !!(p && p.name && p.email && p.phone && p.country && p.street && p.city && p.region && p.postal);
+  function finishAuth(p, msg) { mem = p; write(p); setCountryPrefs(p.country); paint(); close(); announce(msg); welcomeAfterAuth(); toChat(); }
+  function googleBtn(formErr) {
+    const b = el('button', { type: 'button', class: 'btn btn--ghost auth__google', id: 'authGoogle' });
+    b.innerHTML = '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
+    b.append(el('span', { text: 'Continue with Google' }));
+    b.addEventListener('click', async () => {
+      formErr.hidden = true; b.disabled = true;
+      try {
+        const f = await fb(); const res = await f.U.signInWithPopup(f.auth, new f.U.GoogleAuthProvider());
+        try { localStorage.setItem(GFLAG, '1'); } catch {}
+        const u = res.user, email = (u.email || '').slice(0, 120), key = email.toLowerCase();
+        let cloud = null; try { const d = await f.F.getDoc(f.F.doc(f.db, 'users', u.uid)); cloud = d.exists() ? d.data() : null; } catch {}
+        const local = key && accts()[key] && accts()[key].profile;
+        const have = complete(cloud) ? { ...cloud } : complete(local) ? { ...local } : null;
+        if (have) {
+          delete have.updatedAt; have.uid = u.uid; have.provider = 'google';
+          const all = accts(); all[key] = { ...(all[key] || {}), uid: u.uid, google: true, profile: have }; saveAccts(all);
+          if (!complete(cloud)) { try { await f.F.setDoc(f.F.doc(f.db, 'users', u.uid), { ...have, updatedAt: f.F.serverTimestamp() }, { merge: true }); } catch {} }
+          return finishAuth(have, `Signed in as ${have.name}`);
+        }
+        completeView(u, cloud || local || {});
+      } catch (e) {
+        const c = e && e.code || '';
+        if (c === 'auth/popup-closed-by-user' || c === 'auth/cancelled-popup-request') { b.disabled = false; return; }
+        formErr.textContent = c === 'auth/popup-blocked' ? 'Your browser blocked the Google window. Allow pop-ups for this site and try again.'
+          : c === 'auth/unauthorized-domain' ? 'Google sign-in is not enabled for this website yet.' : 'Google sign-in did not work. Please try again or use your email and password.';
+        formErr.hidden = false;
+      }
+      b.disabled = false;
+    });
+    return [b, el('p', { class: 'auth__or', 'aria-hidden': 'true' }, [el('span', { text: 'or' })])];
+  }
+  /* after Google: the shopper must still add phone + address (and name if Google had none) before entering the app */
+  function completeView(u, seed) {
+    dlg.replaceChildren(); dlg.classList.add('auth--wide'); dlg.dataset.completing = '1';
+    const logo = el('span', { class: 'auth__logo', 'aria-hidden': 'true' }); logo.innerHTML = window.LuxoraArt ? LuxoraArt.logo() : '';
+    const form = el('form', { novalidate: '', autocomplete: 'on', class: 'auth__form--signup' });
+    const nm = field('authName', 'Full name', { name: 'name', type: 'text', autocomplete: 'name', maxlength: '60', required: '' });
+    const em = field('authEmail', 'Email', { name: 'email', type: 'email', readonly: '', maxlength: '120' });
+    nm.inp.value = clean(seed.name || u.displayName || '').slice(0, 60); em.inp.value = u.email || '';
+    const sel = el('select', { id: 'authCountry', name: 'country', autocomplete: 'country', required: '', 'aria-describedby': 'authCountryErr' });
+    sel.append(el('option', { value: '', text: 'Choose your country' }), ...COUNTRIES.map(([v, l]) => el('option', { value: v, text: l })));
+    const co = field('authCountry', 'Country / region', null, sel);
+    const rg = field('authRegion', 'State / region', { name: 'region', type: 'text', autocomplete: 'address-level1', maxlength: '60', required: '' });
+    const ph = field('authPhone', 'Mobile phone number', { name: 'phone', type: 'tel', autocomplete: 'tel', inputmode: 'tel', maxlength: '20', required: '' });
+    const st = field('authStreet', 'Street address', { name: 'street', type: 'text', autocomplete: 'address-line1', maxlength: '100', required: '' });
+    const ap = field('authApt', 'Apt, suite, unit', { name: 'apt', type: 'text', autocomplete: 'address-line2', maxlength: '60' });
+    ap.wrap[0].firstChild.append(el('small', { class: 'auth__opt', text: '(optional)' }));
+    const ci = field('authCity', 'City', { name: 'city', type: 'text', autocomplete: 'address-level2', maxlength: '60', required: '' });
+    const pc = field('authPostal', 'ZIP / postal code', { name: 'postal', type: 'text', autocomplete: 'postal-code', maxlength: '12', required: '' });
+    [[sel, seed.country], [rg.inp, seed.region], [ph.inp, seed.phone], [st.inp, seed.street], [ap.inp, seed.apt], [ci.inp, seed.city], [pc.inp, seed.postal]].forEach(([i, v]) => { if (v) i.value = v; });
+    sel.addEventListener('change', () => { rg.wrap[0].firstChild.textContent = REGION_LABEL[sel.value] || 'State / region'; });
+    const formErr = el('p', { class: 'auth__err', id: 'authFormErr', role: 'alert', hidden: '' });
+    const cancel = el('button', { type: 'button', class: 'auth__link', text: 'Use a different account' });
+    cancel.addEventListener('click', async () => { await fbSignOut(); delete dlg.dataset.completing; formView('signin'); });
+    form.append(el('div', { class: 'auth__grid' }, [
+        el('div', { class: 'auth__col' }, [el('h3', { text: 'Your account' }), ...nm.wrap, ...em.wrap, ...ph.wrap]),
+        el('fieldset', { class: 'auth__loc auth__col' }, [el('legend', { text: 'Your address' }), ...co.wrap, ...st.wrap, ...ap.wrap, el('div', { class: 'auth__row' }, [el('div', {}, ci.wrap), el('div', {}, rg.wrap)]), ...pc.wrap])]),
+      formErr, el('button', { type: 'submit', class: 'btn auth__go', text: 'Finish account' }),
+      el('p', { class: 'auth__fine', text: 'You signed in with Google, so no Luxora password is needed. Your profile is saved to your Luxora cloud account and this browser. Your name, email, phone and city/state/country are also sent to Luxora’s sign-up form provider (Forminit) so Luxora knows who joined. Luxora never asks for a card or PIN.' }));
+    form.addEventListener('submit', async e => {
+      e.preventDefault(); formErr.hidden = true;
+      const email = (u.email || '').slice(0, 120), key = email.toLowerCase();
+      const v = { name: clean(nm.inp.value).slice(0, 60), email, country: sel.value, region: clean(rg.inp.value).slice(0, 60), city: clean(ci.inp.value).slice(0, 60), postal: clean(pc.inp.value).toUpperCase().slice(0, 12), phone: clean(ph.inp.value).slice(0, 20), street: clean(st.inp.value).slice(0, 100), apt: clean(ap.inp.value).slice(0, 60) };
+      const loc = checkLocation(v);
+      const errs = [[nm, v.name ? '' : 'Please enter your full name.'], [ph, loc.phone], [co, loc.country], [st, loc.street], [rg, loc.region], [ci, loc.city], [pc, loc.postal]];
+      errs.forEach(([f, m]) => flag(f, m));
+      const bad = errs.find(([, m]) => m); if (bad) return bad[0].inp.focus();
+      if (!email) { formErr.textContent = 'Your Google account has no email address, so it cannot be used for Luxora.'; formErr.hidden = false; return; }
+      const isNew = !seed.createdAt;
+      v.phone = normPhone(v.phone, v.country); v.createdAt = seed.createdAt || new Date().toISOString(); v.uid = u.uid; v.provider = 'google';
+      try { const f = await fb(); await f.F.setDoc(f.F.doc(f.db, 'users', u.uid), { ...v, updatedAt: f.F.serverTimestamp() }, { merge: true }); }
+      catch { formErr.textContent = 'Could not save your profile to the cloud. Check your connection and try again.'; formErr.hidden = false; return; }
+      const all = accts(); all[key] = { ...(all[key] || {}), uid: u.uid, google: true, profile: v }; saveAccts(all);
+      delete dlg.dataset.completing;
+      if (isNew) report(v);
+      finishAuth(v, `Account created. Signed in as ${v.name}`);
+    });
+    dlg.append(closeBtn(), logo, el('h2', { id: 'authTitle', text: 'Finish your Luxora account' }),
+      el('p', { class: 'auth__lead', text: 'You’re signed in with Google. Add your phone number and address to finish.' }), form, el('p', { class: 'auth__swap' }, [cancel]));
+    setTimeout(() => (nm.inp.value ? ph : nm).inp.focus(), 0);
+  }
 
   function field(id, label, attrs, input) {
     const inp = input || el('input', { id, ...attrs, 'aria-describedby': id + 'Err' });
@@ -173,7 +271,7 @@
     });
     dlg.classList.toggle('auth--wide', mode === 'signup');
     dlg.append(closeBtn(), logo, el('h2', { id: 'authTitle', text: mode === 'signup' ? 'Create your Luxora account' : 'Sign in to Luxora' }),
-      el('p', { class: 'auth__lead', text: mode === 'signup' ? 'Add your name, phone, and address so Luxora can save your profile.' : 'Welcome back. Enter your email and password.' }), form, swap);
+      el('p', { class: 'auth__lead', text: mode === 'signup' ? 'Add your name, phone, and address so Luxora can save your profile.' : 'Welcome back. Enter your email and password.' }), ...googleBtn(formErr), form, swap);
     setTimeout(() => (nm || em).inp.focus(), 0);
   }
   function accountView(p) {
@@ -190,7 +288,7 @@
   }
   /* log out takes effect at once: the chat and product pane are cleared and the app goes back behind the sign-in gate */
   function logOut() {
-    mem = null; write(null);
+    mem = null; write(null); fbSignOut();
     try { localStorage.removeItem('luxora.chat'); localStorage.removeItem('luxora.chatOwner'); } catch {}
     document.dispatchEvent(new Event('luxora:clear-chat'));
     paint(); announce('Logged out');
