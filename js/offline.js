@@ -142,8 +142,8 @@ products.forEach(p => {
 const categories = {
   'smart-rings': { label: 'smart rings', words: ['ring', 'rings', 'oura', 'smart ring', 'galaxy ring', 'bague', 'bagues', 'anillo', 'anillos'] },
   'smartwatches': { label: 'smartwatches', words: ['watch', 'watches', 'smartwatch', 'smartwatches', 'wearable', 'wearables', 'garmin', 'forerunner', 'montre', 'montres', 'reloj', 'relojes', 'uhr'] },
-  'earbuds': { label: 'earbuds', words: ['earbud', 'earbuds', 'buds', 'airpods', 'earphones'] },
-  'headphones': { label: 'headphones', words: ['headphone', 'headphones', 'cans', 'over-ear', 'overear', 'casque', 'casques', 'auriculares'] },
+  'earbuds': { label: 'earbuds', words: ['earbud', 'earbuds', 'buds', 'airpods', 'earphones', 'écouteurs', 'écouteur', 'ecouteurs', 'ecouteur', 'ohrhörer', 'ohrhoerer', 'in-ear'] },
+  'headphones': { label: 'headphones', words: ['headphone', 'headphones', 'cans', 'over-ear', 'overear', 'casque', 'casques', 'auriculares', 'auricular', 'kopfhörer', 'kopfhoerer'] },
   'tablets': { label: 'tablets', words: ['tablet', 'tablets', 'ipad', 'ipads', 'ipad mini', 'alexa tablet', 'fire tablet', 'tablette', 'tablettes', 'tableta', 'tabletas'] },
   'e-readers': { label: 'e-readers', words: ['kindle', 'kindles', 'e-reader', 'e-readers', 'ereader', 'ereaders', 'e-book', 'ebook', 'ebooks', 'reader', 'liseuse', 'liseuses', 'lector', 'lectores'] },
   'smart-home': { label: 'smart home devices', words: ['echo', 'echo dot', 'smart speaker', 'smart speakers', 'speaker', 'speakers', 'smart home', 'alexa speaker', 'home assistant', 'enceinte', 'enceintes', 'altavoz', 'altavoces', 'lautsprecher']}
@@ -162,16 +162,21 @@ const pre = p => p && p.preorder && Date.now() < Date.parse(p.preorder.releases 
 
 const money = n => '$' + (Number.isInteger(n) ? n : n.toFixed(2));   // one price format everywhere: $349, $324.99
 
+// Catalog prices and budget comparisons are in USD; a euro-marked budget is not an exchange-rate quote.
 function parseBudget(text) {
-  const m = text.match(/(?:under|below|less than|max(?:imum)?|up to|<)\s*\$?\s*(\d+(?:[.,]\d+)?)/i)
-         || text.match(/\$\s*(\d+(?:[.,]\d+)?)/);
-  return m ? parseFloat(m[1].replace(',', '')) : null;
+  const m = text.match(/(?:under|below|less than|max(?:imum)?|up to|menos de|moins de|sous|unter|hasta|bis zu|<)\s*[$€]?\s*(\d[\d.,]*)/i)
+         || text.match(/[$€]\s*(\d[\d.,]*)/)
+         || text.match(/(\d[\d.,]*)\s*(?:euros?|€)/i);
+  if (!m) return null;
+  const raw = m[1].replace(/[.,]+$/, '');
+  const n = Number(/^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(raw) ? raw.replace(/,/g, '') : raw.replace(',', '.'));
+  return Number.isFinite(n) && n > 0 ? n : null;
 }
-
+const normalize = text => text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 function detectCategories(text) {
-  const t = ' ' + text.toLowerCase().replace(/[^a-z0-9\-$ ]/g, ' ') + ' ';
+  const t = ' ' + normalize(text).replace(/[^a-z0-9\-$ ]/g, ' ') + ' ';
   return Object.entries(categories)
-    .filter(([, c]) => c.words.some(w => t.includes(' ' + w + ' ')))
+    .filter(([, c]) => c.words.some(w => t.includes(' ' + normalize(w) + ' ')))
     .map(([key]) => key);
 }
 
@@ -252,6 +257,48 @@ function sizeOrColor(lower, p) {
   return null;
 }
 
+/* Resolve device compatibility before name dumps, follow-ups and workplace tag scoring.
+   Keep unverified ring compatibility explicit; never infer it from a brand or price. */
+function compatibility(lower, ctx, cats, named, budget) {
+  const phrase = lower.match(/\b(work(?:s|ing)?\s+(?:well\s+)?with|compatible\s+with|works?\s+on)\b/);
+  if (!phrase) return null;
+  // Read the device after the compatibility phrase, not 'Samsung' in the product name.
+  const device = (lower.slice(phrase.index + phrase[0].length).match(/\b(iphone|android|samsung|galaxy|pixel|ipad)\b/) || [])[1];
+  if (!device) return null;
+  const ios = /iphone|ipad/.test(device), phone = { iphone: 'an iPhone', ipad: 'an iPad', samsung: 'a Samsung phone', galaxy: 'a Samsung Galaxy phone', pixel: 'a Google Pixel', android: 'an Android phone' }[device];
+  let target = named[0];
+  if (!target) {
+    target = (Array.isArray(ctx.last) ? ctx.last : []).map(id => products.find(p => p.id === id)).find(p => p && (!cats.length || cats.includes(p.category)));
+    // The client sends last IDs plus the last six user messages. History alone also works.
+    if (!target) for (const h of [...(Array.isArray(ctx.history) ? ctx.history : [])].reverse()) {
+      const text = typeof h === 'string' ? h : h && (h.role === 'user' || h.r === 'u' || h.role == null) ? h.content || h.text || h.t || '' : '';
+      target = namedProducts(String(text).toLowerCase()).find(p => !cats.length || cats.includes(p.category));
+      if (target) break;
+    }
+  }
+  const answer = (reply, ps) => ({ keep: true, title: 'Phone compatibility', reply, products: ps, followUp: 'Check the retailer’s compatibility requirements for your exact phone model before buying.' });
+  const bluetoothAudio = p => ['studio-cans', 'calm-over-ear', 'drift-buds'].includes(p.id);
+  if (target) {
+    const androidOnly = /android.*samsung only/i.test((target.highlights || []).join(' '));
+    if (androidOnly) return answer(ios ? `${target.name} is listed as Android / Samsung only, so it won't work with ${phone}.` : `${target.name} is listed as Android / Samsung only. For ${phone}, check the retailer’s supported models and Android version before buying.`, [target]);
+    if (bluetoothAudio(target)) return answer(`${target.name} pairs with ${phone} over Bluetooth for audio. That does not guarantee every app feature; check the retailer’s requirements for your exact phone.`, [target]);
+    if (target.id === 'echo-buds-pro' && ios) return answer(`${target.name} is an iPhone-focused pick in our catalog. Check Apple’s supported devices and software versions for your exact ${device}.`, [target]);
+    const alternative = !ios && products.find(p => p.category === target.category && /android.*samsung only/i.test((p.highlights || []).join(' ')));
+    return answer(`I don't have verified ${device === 'samsung' ? 'Samsung' : device} compatibility details for ${target.name} in our catalog, so I can't confirm that it works with ${phone}. Check ${target.store}’s compatibility requirements.${alternative ? ` ${alternative.name} does have an Android / Samsung only note in our catalog, if you'd like an alternative.` : ''}`, [target, ...(alternative ? [alternative] : [])]);
+  }
+  if (cats.some(c => c === 'headphones' || c === 'earbuds')) {
+    let ps = products.filter(p => cats.includes(p.category) && (budget == null || p.price <= budget));
+    if (!ios) ps = ps.filter(p => p.id !== 'echo-buds-pro');
+    ps.sort((a, b) => (ios ? Number(b.tags.includes('iphone')) - Number(a.tags.includes('iphone')) : 0) || dealPct(b) - dealPct(a));
+    ps = ps.slice(0, 3);
+    if (!ps.length) return answer(`I don't have a matching audio pick within that budget for ${phone}. Would you like to change the budget?`, []);
+    const bluetooth = ps.filter(bluetoothAudio);
+    const intro = bluetooth.length ? `These Bluetooth ${cats.includes('headphones') ? 'headphones' : 'earbuds'} pair with ${phone} for audio.` : `For ${phone}, AirPods are the iPhone-focused option in our catalog.`;
+    return answer(`${intro} I'd look at ${ps.map(p => `${p.name} at ${money(p.price)}`).join(' or ')}. Some app features depend on your phone and software version; check the retailer’s requirements before buying. Prices checked Nov 3.`, ps);
+  }
+  return answer(`Which product would you like to use with ${phone}? Tell me the product name so I can check the catalog's compatibility notes.`, []);
+}
+
 function score(p, words) {
   let s = dealPct(p) / 100;
   for (const w of words) if (p.tags.includes(w)) s += 1.5;
@@ -263,7 +310,9 @@ async function respond(message, ctx = {}) {
   const lower = text.toLowerCase();
   const budget = parseBudget(text);
   const cats = detectCategories(text);
-  const words = lower.split(/[^a-z]+/).filter(Boolean);
+  const words = normalize(lower).replace(/\b(work(?:s|ing)?\s+(?:well\s+)?with|compatible\s+with|works?\s+on)\b/g, ' ').split(/[^a-z]+/).filter(Boolean);
+  const compat = compatibility(lower, ctx, cats, namedProducts(lower), budget);
+  if (compat) return compat;
 
   if (cats.length === 0 && /\b(grocer(y|ies)|food|snacks?|fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower)) {
     const which = /\b(fashion|clothes|clothing|something to wear|shoes|sneakers|dress(es)?|shirts?|jackets?)\b/.test(lower) ? 'Fashion' : 'Groceries';
@@ -339,7 +388,7 @@ function fallback() {
   };
 }
 
-module.exports = { ck, pre, respond, name: 'rules' };
+module.exports = { ck, pre, parseBudget, detectCategories, respond, name: 'rules' };
 
   };
   defs.sender = function (module, exports, require) {
@@ -353,7 +402,7 @@ const { categories, products: allProducts } = require('../products');
 const money = n => '$' + (Number.isInteger(n) ? n.toLocaleString('en-US') : n.toFixed(2));
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
-async function respond(message, ctx = {}) {
+async function respondCore(message, ctx = {}) {
   const text = String(message || '').trim();
   const lower = text.toLowerCase();
 
@@ -392,7 +441,7 @@ async function respond(message, ctx = {}) {
 
   // --- popular / best-selling and budget-only follow-ups (no live sales data: never invent unit counts) ---
   const histText = (Array.isArray(ctx.history) ? ctx.history : []).map(h => typeof h === 'string' ? h : h && (h.role === 'user' || h.r === 'u' || h.role == null) ? (h.content || h.text || h.t || '') : '').filter(Boolean).slice(-6).join(' ').toLowerCase();
-  const catsIn = s => { const t = ' ' + s.replace(/[^a-z0-9\- ]/g, ' ') + ' '; return Object.keys(categories).filter(k => categories[k].words.some(w => t.includes(' ' + w + ' '))); };
+  const catsIn = s => rules.detectCategories(s);
   const popRe = /\b(most\s+(com+on|coman|comon|comman|commen|popular|populer|bought|sold|liked|wanted|purchased)|popular|populer|best\s*-?\s*sell(ing|ers?)|top\s*sell(ing|ers?)|sold\s+(the\s+)?most|sells?\s+(the\s+)?most|trending|what'?s\s+hot|fan\s+favou?rites?|everyone\s+(buys|wants|gets))\b/;
   const amt = (() => {
     const m = lower.match(/\b(?:budget|spend|spending|afford|have|got|around|about|roughly|max|maximum|up to|under|below|less than|within)\b[^\d$]{0,15}\$?\s*(\d[\d,]*(?:\.\d+)?)\s*(k\b)?/) || lower.match(/^\s*(?:like\s+|maybe\s+|about\s+|around\s+)?\$?\s*(\d[\d,]*(?:\.\d+)?)\s*(k\b)?\s*(?:dollars?|bucks|usd|\$)?\s*[.!?]?\s*$/) || lower.match(/\$\s*(\d[\d,]*(?:\.\d+)?)\s*(k\b)?/) || lower.match(/\b(\d[\d,]*(?:\.\d+)?)\s*(k\b)?\s*(?:dollars?|bucks|usd)\b/);
@@ -454,9 +503,9 @@ async function respond(message, ctx = {}) {
 
   const top = p[0];
   const extra = p.length > 1 ? ` ${p.slice(1).map(x => `${x.name} (${money(x.price)})`).join(' and ')} ${p.length > 2 ? 'are good options' : 'is a good option'} too.` : '';
-  const budget = (lower.match(/(?:under|below|less than|max|up to)\s*\$?\s*(\d+)/) || lower.match(/\$\s*(\d+)/) || [])[1];
+  const budget = rules.parseBudget(text);
   const need = (lower.replace(/\bworks?\s+(?:well\s+)?with\b/g, 'compatible with').match(/\b(running|workouts?|gym|fitness|sleep|travel|commute|work|music|reading|kids)\b/) || [])[1];
-  const opener = need ? `For ${need}, ` : budget ? `Under $${budget}, ` : '';
+  const opener = need ? `For ${need}, ` : budget ? `Under ${money(budget)}, ` : '';
   const why = (top.highlights || [])[0];
   return {
     ...out,
@@ -465,6 +514,53 @@ async function respond(message, ctx = {}) {
   };
 }
 
+// Localized recommendation prose: product names and USD prices remain catalog facts.
+// An explicit FR/ES/DE preference wins; otherwise recognize the language of the new audio asks.
+function replyLanguage(text, ctx) {
+  const lang = String(ctx.lang || '').split('-')[0];
+  if (['fr', 'es', 'de'].includes(lang)) return lang;
+  if (/auriculares?|menos de/i.test(text)) return 'es';
+  if (/écouteurs?|ecouteurs?|\b(casques?|sous|moins de)\b/i.test(text)) return 'fr';
+  if (/kopfhörer|kopfhoerer|ohrhörer|ohrhoerer|\b(unter|bis zu)\b/i.test(text)) return 'de';
+  return 'en';
+}
+function localizedRecommendation(out, text, ctx) {
+  const lang = replyLanguage(text, ctx), ps = out.products || [];
+  if (lang === 'en' || !ps.length || !/^(Top suggested|Picks under|Closest match)/.test(out.title || '')) return out;
+  const budget = rules.parseBudget(text), closest = out.title === 'Closest match';
+  const locale = { es: 'es-ES', fr: 'fr-FR', de: 'de-DE' }[lang];
+  const price = n => new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD' }).format(n);
+  const date = [...new Set(ps.map(p => p.checkedAt || '2026-11-03'))].sort().map(d => new Date(d + 'T12:00:00Z').toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })).join(' / ');
+  const names = ps.map(p => `${p.name} (${price(p.price)})`).join('; ');
+  const euro = /€|euros?/i.test(text);
+  const t = {
+    es: {
+      title: closest ? 'La opción más económica' : 'Mis recomendaciones',
+      lead: closest ? `No encontré opciones dentro de ese presupuesto. La opción más económica cuesta ${price(ps[0].price)}: ` : budget != null ? `Por un máximo de ${price(budget)}, te recomiendo ` : 'Te recomiendo ',
+      checked: `Precios en dólares estadounidenses, comprobados el ${date}.`,
+      currency: 'El catálogo está en USD; no he convertido el presupuesto en euros.',
+      follow: '¿Quieres que los compare o que guarde uno para después?'
+    },
+    fr: {
+      title: closest ? 'Le choix le moins cher' : 'Mes recommandations',
+      lead: closest ? `Je n’ai rien trouvé dans ce budget. Le choix le moins cher coûte ${price(ps[0].price)} : ` : budget != null ? `Pour un maximum de ${price(budget)}, je recommande ` : 'Je recommande ',
+      checked: `Prix en dollars américains, vérifiés le ${date}.`,
+      currency: 'Le catalogue est en USD ; je n’ai pas converti le budget en euros.',
+      follow: 'Voulez-vous les comparer ou en enregistrer un pour plus tard ?'
+    },
+    de: {
+      title: closest ? 'Die günstigste Option' : 'Meine Empfehlungen',
+      lead: closest ? `In diesem Budget habe ich nichts gefunden. Die günstigste Option kostet ${price(ps[0].price)}: ` : budget != null ? `Für höchstens ${price(budget)} empfehle ich ` : 'Ich empfehle ',
+      checked: `Preise in US-Dollar, geprüft am ${date}.`,
+      currency: 'Der Katalog ist in USD; das Euro-Budget habe ich nicht umgerechnet.',
+      follow: 'Soll ich sie vergleichen oder eines für später speichern?'
+    }
+  }[lang];
+  return { ...out, title: t.title, reply: `${t.lead}${names}. ${t.checked}${euro ? ' ' + t.currency : ''}`, followUp: t.follow };
+}
+async function respond(message, ctx = {}) {
+  return localizedRecommendation(await respondCore(message, ctx), String(message || ''), ctx);
+}
 module.exports = { respond };
 
   };
