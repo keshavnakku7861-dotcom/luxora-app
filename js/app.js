@@ -9,7 +9,7 @@
   // with a short timeout; if it is unreachable, slow or returns something unexpected, the bundled js/offline.js answers instead.
   // Anywhere else (the local Node server) the same-origin api/chat is tried first, then the offline responder.
   const STATIC = window.LUXORA_STATIC || /\.github\.io$/.test(location.hostname);
-  const API_URL = window.LUXORA_API_URL || 'https://luxora-api.luxora-ks.workers.dev/api/chat', API_TIMEOUT_MS = 4000;
+  const API_URL = window.LUXORA_API_URL || 'https://luxora-api.keshavnakku7861.workers.dev/api/chat', API_TIMEOUT_MS = 4000;
   const lastIds = () => { for (let i = hist.length - 1; i >= 0; i--) if (hist[i].r === 'b' && hist[i].ids && hist[i].ids.length) return hist[i].ids; return []; };
   async function remoteChat(url, message, last, ms, history) {
     const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms);
