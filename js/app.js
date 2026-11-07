@@ -14,7 +14,26 @@
   async function remoteChat(url, message, last, ms, history) {
     const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms);
     try {
-      const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message, last, history: history || [], lang: LuxoraPrefs.get().language }), signal: ctl.signal });
+      const res = await fetch(url, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({
+    message,
+    last,
+    history: history || [],
+    lang: LuxoraPrefs.get().language,
+    catalog: window.LuxoraOffline.products.map(p => ({
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      price: p.price,
+      description: p.description,
+      highlights: p.highlights || [],
+      tags: p.tags || []
+    }))
+  }),
+  signal: ctl.signal
+});
       if (!res.ok) return null;
       const data = await res.json();
       if (!(data && typeof data.reply === 'string' && Array.isArray(data.products))) return null;
