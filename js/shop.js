@@ -206,37 +206,242 @@
   /* ---------- demo checkout (nothing is stored or sent anywhere) ---------- */
   const dlg = $('#checkout');
   let method = 'standard';
+  let checkoutData = {};
   function openCheckout() { if (!S.cart().length) return; method = 'standard'; stepDetails(); if (!dlg.open) dlg.showModal(); }
   const summary = () => {
     const sub = S.subtotal(), ship = S.shipping(method);
     return `<div class="sum">${S.cart().map(i => `<div><span>${i.qty} × ${esc(S.info(i).name)} <small>${esc(i.size)}, ${cname(i.color)}</small></span><span>${money(S.info(i).price * i.qty)}</span></div>`).join('')}
       <div><span>Subtotal</span><span>${money(sub)}</span></div><div><span>Shipping</span><span>${ship === 0 ? 'Free' : money(ship)}</span></div><div class="t"><span>Total</span><span>${money(sub + ship)}</span></div></div>`;
   };
-  function stepDetails() {
-    $('#coBody').innerHTML = `<h2 id="coTitle">Checkout</h2>
-      <form id="coForm" autocomplete="off">
-        <p class="fine">These fields are optional and are <b>never saved or sent anywhere</b>. Do not enter real personal or card details.</p>
-        <label>Full name<input name="n" placeholder="Demo Shopper" autocomplete="off"></label>
-        <label>Email<input name="e" type="text" inputmode="email" placeholder="demo@example.com" autocomplete="off"></label>
-        <label>Shipping address<input name="a" placeholder="123 Sample Street" autocomplete="off"></label>
-        <fieldset><legend>Delivery</legend>
-          <label class="radio"><input type="radio" name="m" value="standard" ${method === 'standard' ? 'checked' : ''}> Standard (3-5 days) <b>${S.subtotal() >= S.FREE_OVER ? 'Free' : money(S.STANDARD)}</b></label>
-          <label class="radio"><input type="radio" name="m" value="express" ${method === 'express' ? 'checked' : ''}> Express (1-2 days) <b>${money(S.EXPRESS)}</b></label></fieldset>
-        <div class="paybox"><b>Payment</b><span>Demo payment. No card is requested and nothing is charged.</span></div>
-        <div id="coSum">${summary()}</div>
-        <div class="demo__btns"><button type="submit" class="btn btn--lg">Place demo order</button><button type="button" class="btn btn--lg btn--ghost" id="coCancel">Back to cart</button></div>
-      </form>`;
-    $('#coForm').onsubmit = e => { e.preventDefault(); placeOrder(); };
-    $('#coForm').onchange = e => { if (e.target.name === 'm') { method = e.target.value; $('#coSum').innerHTML = summary(); } };
-    $('#coCancel').onclick = () => dlg.close();
-  }
-  function placeOrder() {
-    const html = summary(), ref = 'DEMO-' + Math.floor(100000 + Math.random() * 900000);
-    S.clearCart(); closeDrawer();
-    $('#coBody').innerHTML = `<h2 id="coTitle">Demo order placed</h2><p class="ref">Reference ${ref} &mdash; <b>not a real order</b></p>${html}
-      <p class="fine"><b>No payment was taken and nothing will be shipped.</b> This confirmation only demonstrates the Luxora checkout flow. To buy the product for real, use its Buy now button.</p>
-      <div class="demo__btns"><button class="btn btn--lg" id="coDone">Continue shopping</button><a class="btn btn--lg btn--ghost" href="#/saved" id="coSaved">View saved items</a></div>`;
-    $('#coDone').onclick = () => { dlg.close(); closeDrawer(); }; $('#coSaved').onclick = () => dlg.close();
-  }
+function stepDetails() {
+  $('#coBody').innerHTML = `<h2 id="coTitle">Checkout</h2>
 
+    <form id="coForm" autocomplete="on">
+
+      <h3>Contact information</h3>
+
+      <label>Full name
+        <input name="name" required autocomplete="name" placeholder="Full name">
+      </label>
+
+      <label>Email
+        <input name="email" type="email" required autocomplete="email" placeholder="you@example.com">
+      </label>
+
+      <label>Phone number
+        <input name="phone" type="tel" required autocomplete="tel" placeholder="Phone number">
+      </label>
+
+      <h3>Shipping address</h3>
+
+      <label>Street address
+        <input name="address1" required autocomplete="address-line1" placeholder="Street address">
+      </label>
+
+      <label>Apartment, suite, unit (optional)
+        <input name="address2" autocomplete="address-line2" placeholder="Apartment, suite, unit">
+      </label>
+
+      <label>City
+        <input name="city" required autocomplete="address-level2" placeholder="City">
+      </label>
+
+      <label>State
+        <input name="state" required autocomplete="address-level1" placeholder="State">
+      </label>
+
+      <label>ZIP code
+        <input name="zip" required autocomplete="postal-code" placeholder="ZIP code">
+      </label>
+
+      <label>Country
+        <select name="country" required autocomplete="country">
+          <option value="US">United States</option>
+          <option value="CA">Canada</option>
+          <option value="IN">India</option>
+          <option value="GB">United Kingdom</option>
+        </select>
+      </label>
+
+      <fieldset>
+        <legend>Delivery</legend>
+
+        <label class="radio">
+          <input type="radio" name="m" value="standard"
+            ${method === 'standard' ? 'checked' : ''}>
+          Standard delivery (3–5 days)
+          <b>${S.subtotal() >= S.FREE_OVER ? 'Free' : money(S.STANDARD)}</b>
+        </label>
+
+        <label class="radio">
+          <input type="radio" name="m" value="express"
+            ${method === 'express' ? 'checked' : ''}>
+          Express delivery (1–2 days)
+          <b>${money(S.EXPRESS)}</b>
+        </label>
+      </fieldset>
+
+      <div class="paybox">
+        <b>Payment</b>
+        <span>Secure payment will be selected on the next step.</span>
+      </div>
+
+      <h3>Order summary</h3>
+      <div id="coSum">${summary()}</div>
+
+      <div class="demo__btns">
+        <button type="submit" class="btn btn--lg">
+          Continue to payment
+        </button>
+
+        <button type="button" class="btn btn--lg btn--ghost" id="coCancel">
+          Back to cart
+        </button>
+      </div>
+
+    </form>`;
+
+  $('#coForm').onsubmit = e => {
+  e.preventDefault();
+  checkoutData = Object.fromEntries(new FormData(e.target).entries());
+  stepPayment();
+};
+
+  $('#coForm').onchange = e => {
+    if (e.target.name === 'm') {
+      method = e.target.value;
+      $('#coSum').innerHTML = summary();
+    }
+  };
+
+  $('#coCancel').onclick = () => dlg.close();
+}
+  
+    function stepPayment() {
+  $('#coBody').innerHTML = `
+    <h2 id="coTitle">Payment & Review</h2>
+
+    <h3>Ship to</h3>
+    <div class="paybox">
+      <b>${esc(checkoutData.name)}</b>
+      <span>
+        ${esc(checkoutData.address1)}
+        ${checkoutData.address2 ? ', ' + esc(checkoutData.address2) : ''}<br>
+        ${esc(checkoutData.city)}, ${esc(checkoutData.state)} ${esc(checkoutData.zip)}<br>
+        ${esc(checkoutData.country)}
+      </span>
+    </div>
+
+    <h3>Contact</h3>
+    <div class="paybox">
+      <span>${esc(checkoutData.email)}<br>${esc(checkoutData.phone)}</span>
+    </div>
+
+    <h3>Payment method</h3>
+
+    <form id="paymentForm">
+      <label class="radio">
+        <input type="radio" name="payment" value="card" checked>
+        Credit or debit card
+      </label>
+
+      <label class="radio">
+        <input type="radio" name="payment" value="wallet">
+        Digital wallet
+      </label>
+
+      <p class="fine">
+        Secure payment processing will be connected separately.
+        Do not enter card numbers directly into Luxora yet.
+      </p>
+
+      <h3>Review your order</h3>
+      ${summary()}
+
+      <div class="demo__btns">
+        <button type="submit" class="btn btn--lg">
+          Review order
+        </button>
+
+        <button type="button" class="btn btn--lg btn--ghost" id="backDetails">
+          Back
+        </button>
+      </div>
+    </form>
+  `;
+
+  $('#paymentForm').onsubmit = e => {
+    e.preventDefault();
+    checkoutData.payment =
+      new FormData(e.target).get('payment');
+    placeOrder();
+  };
+
+  $('#backDetails').onclick = () => stepDetails();
+}
+  
+  function placeOrder() {
+  const paymentName =
+    checkoutData.payment === 'wallet'
+      ? 'Digital wallet'
+      : 'Credit or debit card';
+
+  $('#coBody').innerHTML = `
+    <h2 id="coTitle">Review your order</h2>
+
+    <h3>Shipping address</h3>
+    <div class="paybox">
+      <b>${esc(checkoutData.name)}</b>
+      <span>
+        ${esc(checkoutData.address1)}
+        ${checkoutData.address2 ? ', ' + esc(checkoutData.address2) : ''}<br>
+        ${esc(checkoutData.city)}, ${esc(checkoutData.state)} ${esc(checkoutData.zip)}<br>
+        ${esc(checkoutData.country)}
+      </span>
+    </div>
+
+    <h3>Contact information</h3>
+    <div class="paybox">
+      <span>
+        ${esc(checkoutData.email)}<br>
+        ${esc(checkoutData.phone)}
+      </span>
+    </div>
+
+    <h3>Delivery</h3>
+    <div class="paybox">
+      <span>
+        ${method === 'express'
+          ? 'Express delivery (1–2 days)'
+          : 'Standard delivery (3–5 days)'}
+      </span>
+    </div>
+
+    <h3>Payment method</h3>
+    <div class="paybox">
+      <span>${paymentName}</span>
+    </div>
+
+    <h3>Order total</h3>
+    ${summary()}
+
+    <div class="demo__btns">
+      <button type="button" class="btn btn--lg" id="finalPayment">
+        Continue to secure payment
+      </button>
+
+      <button type="button" class="btn btn--lg btn--ghost" id="backPayment">
+        Back
+      </button>
+    </div>
+  `;
+
+  $('#backPayment').onclick = () => stepPayment();
+
+  $('#finalPayment').onclick = () => {
+    alert(
+      'Secure payment is not connected yet. No payment has been taken and no order has been placed.'
+    );
+  };
+}
 })();
