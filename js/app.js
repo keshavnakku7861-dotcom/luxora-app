@@ -46,9 +46,33 @@
   async function chat(message) {
     const last = lastIds();
     // recent user turns (excluding this one) so short follow-ups like "my budget is 1,000" keep context
-    const prior = hist.filter(h => h.r === 'u').map(h => h.t);
-    if (prior.length && prior[prior.length - 1] === message) prior.pop();
-    const history = prior.slice(-6).map(t => ({ role: 'user', content: String(t).slice(0, 300) }));
+    const recent = hist.slice();
+
+if (
+  recent.length &&
+  recent[recent.length - 1].r === 'u' &&
+  recent[recent.length - 1].t === message
+) {
+  recent.pop();
+}
+
+const history = recent.slice(-8).flatMap(h => {
+  if (h.r === 'u' && h.t) {
+    return [{
+      role: 'user',
+      content: String(h.t).slice(0, 400)
+    }];
+  }
+
+  if (h.r === 'b' && h.reply) {
+    return [{
+      role: 'assistant',
+      content: String(h.reply).slice(0, 500)
+    }];
+  }
+
+  return [];
+});
     const data = await remoteChat(STATIC ? API_URL : 'api/chat', message, last, STATIC ? API_TIMEOUT_MS : 15000, history);
     return data || window.LuxoraOffline.respond(message, { last, history, lang: LuxoraPrefs.get().language });
   }
