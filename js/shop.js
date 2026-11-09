@@ -203,6 +203,9 @@
   document.addEventListener('luxora:external', () => { if (!drawer.hidden) renderDrawer(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !drawer.hidden && !dlg.open) closeDrawer(); });
 
+  const STRIPE_PUBLISHABLE_KEY = 'pk_test_51UPOleR1DYbWyYrQZemSSGasBAbAVI9chWFiqeOfO6d73RCBpaUL2UPtHtzE7qzEJinqL2ugtvJWKio7uzfUlYHD004r2XwVyp';
+const STRIPE_PAYMENT_URL = 'https://luxora-api.keshavnakku7861.workers.dev/api/create-payment-intent';
+const stripe = Stripe(STRIPE_PUBLISHABLE_KEY)
   /* ---------- demo checkout (nothing is stored or sent anywhere) ---------- */
   const dlg = $('#checkout');
   let method = 'standard';
@@ -438,10 +441,94 @@ function stepDetails() {
 
   $('#backPayment').onclick = () => stepPayment();
 
-  $('#finalPayment').onclick = () => {
-    alert(
-      'Secure payment is not connected yet. No payment has been taken and no order has been placed.'
-    );
-  };
+  $('#finalPayment').onclick = () => openStripePayment();
+}
+  async function openStripePayment() {
+  const amount = Math.round(
+    (S.subtotal() + S.shipping(method)) * 100
+  );
+
+  $('#coBody').innerHTML = `
+    <h2 id="coTitle">Secure payment</h2>
+
+    <p class="fine">
+      Stripe test mode — no real money will be charged.
+    </p>
+
+    <div id="stripePaymentElement"></div>
+
+    <p id="stripeError" class="fine" role="alert"></p>
+
+    <div class="demo__btns">
+      <button type="button" class="btn btn--lg" id="payWithStripe">
+        Pay ${money(amount / 100)}
+      </button>
+
+      <button type="button" class="btn btn--lg btn--ghost" id="backReview">
+        Back
+      </button>
+    </div>
+  `;
+
+  try {
+    const response = await fetch(STRIPE_PAYMENT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ amount })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.clientSecret) {
+      throw new Error(data.error || 'Unable to start payment.');
+    }
+
+    const elements = stripe.elements({
+      clientSecret: data.clientSecret
+    });
+
+    const paymentElement = elements.create('payment');
+    paymentElement.mount('#stripePaymentElement');
+
+    $('#payWithStripe').onclick = async () => {
+      $('#payWithStripe').disabled = true;
+      $('#stripeError').textContent = '';
+
+      const result = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.href
+        },
+        redirect: 'if_required'
+      });
+
+      if (result.error) {
+        $('#stripeError').textContent = result.error.message;
+        $('#payWithStripe').disabled = false;
+        return;
+      }
+
+      $('#coBody').innerHTML = `
+        <h2 id="coTitle">Payment successful</h2>
+        <div class="paybox">
+          <b>Stripe test payment completed.</b>
+          <span>No real money was charged.</span>
+        </div>
+        <button type="button" class="btn btn--lg" id="finishOrder">
+          Done
+        </button>
+      `;
+
+      $('#finishOrder').onclick = () => dlg.close();
+    };
+
+    $('#backReview').onclick = () => placeOrder();
+
+  } catch (error) {
+    $('#stripeError').textContent =
+      error.message || 'Unable to load Stripe payment.';
+  }
 }
 })();
