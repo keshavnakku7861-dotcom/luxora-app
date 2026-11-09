@@ -521,7 +521,10 @@ function stepDetails() {
         </button>
       `;
 
-      $('#finishOrder').onclick = () => dlg.close();
+      $('#finishOrder').onclick = () => {
+  S.clearCart();
+  dlg.close();
+};
     };
 
     $('#backReview').onclick = () => placeOrder();
