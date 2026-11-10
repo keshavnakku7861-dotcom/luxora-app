@@ -193,7 +193,7 @@
       <div class="row"><span>Shipping</span><b>${ship === 0 ? 'Free' : money(ship)}</b></div>
       ${ship > 0 ? `<p class="hint">Add <b>${money(S.FREE_OVER - sub)}</b> more for free shipping.</p>` : ''}
       <div class="row total"><span>Total</span><b>${money(sub + ship)}</b></div>
-      <button class="btn btn--lg" id="goCheckout">Checkout (demo)</button>
+      <button class="btn btn--lg" id="goCheckout">Checkout</button>
       <button class="btn btn--lg btn--ghost" data-close-drawer>Continue shopping</button>`;
   }
   drawer.addEventListener('click', e => {
