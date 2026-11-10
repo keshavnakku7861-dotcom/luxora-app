@@ -360,8 +360,8 @@ function stepDetails() {
       </label>
 
       <p class="fine">
-        Secure payment processing will be connected separately.
-        Do not enter card numbers directly into Luxora yet.
+        Secure payment is processed by Stripe.
+Use test payment details while Luxora is in test mode.
       </p>
 
       <h3>Review your order</h3>
