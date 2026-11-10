@@ -128,7 +128,7 @@
             <div class="buyat buyat--detail"><button type="button" class="btn btn--lg btn--orange" id="dBuyNow">Buy now</button></div>
             <p class="onote amzdisc">${S.DISCLOSURE} Amazon's price and availability can differ from the price shown here.</p>
             ${p.optionsNote ? `<p class="onote">${esc(p.optionsNote)}</p>` : ''}
-            <p class="onote">Luxora doesn't sell this. ${S.preorder(p) ? 'Pre-order' : 'Buy now'} opens the product's store page in a new tab, where you buy and where shipping, returns and warranty are handled. The cart below is a demo.</p>
+            <p class="onote">Luxora checkout is currently in Stripe test mode. Test payments do not create a real order, and no product will be shipped.</p>
             <div class="buyrow"><button class="btn btn--lg btn--ghost" id="dAdd">Add to cart</button><button class="btn btn--lg btn--ghost" id="dBuy">Checkout</button>
               <button class="heartbtn ${on ? 'on' : ''}" id="dHeart" aria-pressed="${on}" aria-label="${on ? 'Remove from saved' : 'Save for later'}">${heart}</button></div>
             <ul class="perks"><li>Real shipping, returns and warranty come from the seller</li><li>Prices can change; always confirm at the retailer</li><li>Luxora's cart and checkout are a demo: no payment, no delivery</li></ul>
