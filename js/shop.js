@@ -131,7 +131,7 @@
             <p class="onote">Luxora checkout is currently in Stripe test mode. Test payments do not create a real order, and no product will be shipped.</p>
             <div class="buyrow"><button class="btn btn--lg btn--ghost" id="dAdd">Add to cart</button><button class="btn btn--lg btn--ghost" id="dBuy">Checkout</button>
               <button class="heartbtn ${on ? 'on' : ''}" id="dHeart" aria-pressed="${on}" aria-label="${on ? 'Remove from saved' : 'Save for later'}">${heart}</button></div>
-            <ul class="perks"><li>Real shipping, returns and warranty come from the seller</li><li>Prices can change; always confirm at the retailer</li><li>Luxora's cart and checkout are a demo: no payment, no delivery</li></ul>
+            <ul class="perks"><li>Real shipping, returns and warranty come from the seller</li><li>Prices can change; always confirm at the retailer</li><li>Stripe test mode: no real charge or delivery</li></ul>
           </div></div>
         <h2 class="rel__t">You may also like</h2><div class="grid grid--4">${related.map(cardHtml).join('')}</div>`;
     };
