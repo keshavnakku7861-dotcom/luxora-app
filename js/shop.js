@@ -145,7 +145,13 @@
       if (e.target.closest('#dPlus')) { d.qty = Math.min(9, d.qty + 1); $('#dQ').textContent = d.qty; }
       const sizeOk = () => { const sz = $('#dSize'), bad = S.needsSize(p) && !sz.value; $('#dSizeErr').hidden = !bad; bad ? sz.setAttribute('aria-invalid', 'true') : sz.removeAttribute('aria-invalid'); if (bad) sz.focus(); return !bad; };
       if (e.target.closest('#dBuyNow') && sizeOk()) {
-  S.addToCart(p, { size: $('#dSize').value, color: d.color, qty: d.qty });
+  const size = $('#dSize').value;
+  const cart = S.cart().filter(i =>
+    !(i.id === p.id && i.size === size && i.color === d.color)
+  );
+
+  S.setCart(cart);
+  S.addToCart(p, { size, color: d.color, qty: d.qty });
   openCheckout();
 }
       if (e.target.closest('#dAdd') && sizeOk()) addToCart(p, { size: $('#dSize').value, color: d.color, qty: d.qty });
