@@ -515,12 +515,13 @@ Use test payment details while Luxora is in test mode.
         $('#payWithStripe').disabled = false;
         return;
       }
-
+const paymentRef = result.paymentIntent?.id || 'Test payment';
       $('#coBody').innerHTML = `
         <h2 id="coTitle">Payment successful</h2>
         <div class="paybox">
           <b>Stripe test payment completed.</b>
           <span>No real money was charged.</span>
+          <span>Test payment reference: ${paymentRef}</span>
         </div>
         <button type="button" class="btn btn--lg" id="finishOrder">
           Done
