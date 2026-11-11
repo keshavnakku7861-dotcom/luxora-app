@@ -214,7 +214,8 @@ const STRIPE_PAYMENT_URL = 'https://luxora-api.keshavnakku7861.workers.dev/api/c
 const stripe = Stripe(STRIPE_PUBLISHABLE_KEY)
   /* ---------- Stripe test checkout ---------- */
   const dlg = $('#checkout');
-  const usd = n => '
+  const usd = n => '$' + Number(n).toFixed(2);
+  let method = 'standard';
   let checkoutData = {};
   function openCheckout() { if (!S.cart().length) return; method = 'standard'; stepDetails(); if (!dlg.open) dlg.showModal(); }
   const summary = () => {
