@@ -233,7 +233,7 @@ const history = recent.slice(-8).flatMap(h => {
     if (!S.cart().some(i => i.id === current.id && i.size === c.size && i.color === c.color)) S.addToCart(current, c);
     const n = S.count(), total = S.subtotal();
     $('#empty')?.remove(); view.classList.remove('is-empty', 'panel-open');
-    botMsg({ cartLink: true, reply: `Great choice. Your cart now has ${n} item${n > 1 ? 's' : ''} (${money(total)}). Open the shop to review your cart and check out. Checkout here is a demo, so nothing is ordered or charged. To buy for real, use the Buy now (or Pre-order) button on the product.`, products: [] });
+    botMsg({ cartLink: true, reply: `Great choice. Your cart now has ${n} item${n > 1 ? 's' : ''} (${money(total)}). Open the shop to review your cart and check out. Luxora checkout is currently in Stripe test mode, so no real order, charge or shipment is created.`, products: [] });
     const last = feed.lastElementChild?.querySelector('.msg__body'); if (last) { const a = el('a', 'btn btn--sm cart-link', window.LuxoraI18n ? LuxoraI18n.t('Go to cart') : 'Go to cart'); a.href = '#/cart'; a.style.alignSelf = 'flex-start'; last.append(a); scroll(); }
   }
   window.LuxoraAssistant = { refresh() { renderPanel(); document.querySelectorAll('.card[data-id]').forEach(c => { const on = S.isSaved(c.dataset.id), hb = c.querySelector('.card__heart'); if (hb) { hb.classList.toggle('on', on); hb.setAttribute('aria-pressed', on); } }); } };
