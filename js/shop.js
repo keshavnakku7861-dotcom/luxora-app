@@ -482,7 +482,14 @@ Use test payment details while Luxora is in test mode.
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ amount })
+      body: JSON.stringify({
+  items: S.cart().map(i => ({
+    id: i.id,
+    qty: i.qty,
+    color: i.color
+  })),
+  method
+})
     });
 
     const data = await response.json();
