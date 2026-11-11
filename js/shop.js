@@ -1,4 +1,4 @@
-/* Luxora shop: plain e-commerce store (no assistant). Product list, detail view, cart drawer, demo checkout. */
+/* Luxora shop: plain e-commerce store (no assistant). Product list, detail view, cart drawer, Stripe test checkout. */
 (() => {
   const $ = s => document.querySelector(s);
   const S = window.LuxoraStore, money = S.money, esc = S.esc, Art = window.LuxoraArt;
@@ -212,15 +212,16 @@
   const STRIPE_PUBLISHABLE_KEY = 'pk_test_51UPOleR1DYbWyYrQZemSSGasBAbAVI9chWFiqeOfO6d73RCBpaUL2UPtHtzE7qzEJinqL2ugtvJWKio7uzfUlYHD004r2XwVyp';
 const STRIPE_PAYMENT_URL = 'https://luxora-api.keshavnakku7861.workers.dev/api/create-payment-intent';
 const stripe = Stripe(STRIPE_PUBLISHABLE_KEY)
-  /* ---------- demo checkout (nothing is stored or sent anywhere) ---------- */
+  /* ---------- Stripe test checkout ---------- */
   const dlg = $('#checkout');
+  const usd = n => '$' + Number(n).toFixed(2);
   let method = 'standard';
   let checkoutData = {};
   function openCheckout() { if (!S.cart().length) return; method = 'standard'; stepDetails(); if (!dlg.open) dlg.showModal(); }
   const summary = () => {
     const sub = S.subtotal(), ship = S.shipping(method);
-    return `<div class="sum">${S.cart().map(i => `<div><span>${i.qty} × ${esc(S.info(i).name)} <small>${esc(i.size)}, ${cname(i.color)}</small></span><span>${money(S.info(i).price * i.qty)}</span></div>`).join('')}
-      <div><span>Subtotal</span><span>${money(sub)}</span></div><div><span>Shipping</span><span>${ship === 0 ? 'Free' : money(ship)}</span></div><div class="t"><span>Total</span><span>${money(sub + ship)}</span></div></div>`;
+    return `<div class="sum">${S.cart().map(i => `<div><span>${i.qty} × ${esc(S.info(i).name)} <small>${esc(i.size)}, ${cname(i.color)}</small></span><span>${usd(S.info(i).price * i.qty)}</span></div>`).join('')}
+      <div><span>Subtotal</span><span>${usd(sub)}</span></div><div><span>Shipping</span><span>${ship === 0 ? 'Free' : usd(ship)}</span></div><div class="t"><span>Total (USD)</span><span>${usd(sub + ship)}</span></div></div>`;
   };
 function stepDetails() {
   $('#coBody').innerHTML = `<h2 id="coTitle">Checkout</h2>
@@ -278,21 +279,21 @@ function stepDetails() {
         <label class="radio">
           <input type="radio" name="m" value="standard"
             ${method === 'standard' ? 'checked' : ''}>
-          Standard delivery (3–5 days)
-          <b>${S.subtotal() >= S.FREE_OVER ? 'Free' : money(S.STANDARD)}</b>
+          Standard test shipping (3–5 day estimate)
+          <b>${S.subtotal() >= S.FREE_OVER ? 'Free' : usd(S.STANDARD)}</b>
         </label>
 
         <label class="radio">
           <input type="radio" name="m" value="express"
             ${method === 'express' ? 'checked' : ''}>
-          Express delivery (1–2 days)
-          <b>${money(S.EXPRESS)}</b>
+          Express test shipping (1–2 day estimate)
+          <b>${usd(S.EXPRESS)}</b>
         </label>
       </fieldset>
 
       <div class="paybox">
-        <b>Payment</b>
-        <span>Secure payment will be selected on the next step.</span>
+        <b>Test checkout</b>
+        <span>Shipping rates and delivery times shown here are test values. No shipment will occur. Stripe test payments are processed in USD.</span>
       </div>
 
       <h3>Order summary</h3>
@@ -346,43 +347,28 @@ function stepDetails() {
       <span>${esc(checkoutData.email)}<br>${esc(checkoutData.phone)}</span>
     </div>
 
-    <h3>Payment method</h3>
+    <h3>Payment</h3>
+    <div class="paybox">
+      <b>Stripe test mode</b>
+      <span>Secure payment options will be shown by Stripe after you review the order. Use Stripe test payment details only.</span>
+    </div>
 
-    <form id="paymentForm">
-      <label class="radio">
-        <input type="radio" name="payment" value="card" checked>
-        Credit or debit card
-      </label>
+    <h3>Review your order</h3>
+    ${summary()}
 
-      <label class="radio">
-        <input type="radio" name="payment" value="wallet">
-        Digital wallet
-      </label>
+    <div class="demo__btns">
+      <button type="button" class="btn btn--lg" id="reviewOrder">
+        Review order
+      </button>
 
-      <p class="fine">
-        Secure payment is processed by Stripe.
-Use test payment details while Luxora is in test mode.
-      </p>
-
-      <h3>Review your order</h3>
-      ${summary()}
-
-      <div class="demo__btns">
-        <button type="submit" class="btn btn--lg">
-          Review order
-        </button>
-
-        <button type="button" class="btn btn--lg btn--ghost" id="backDetails">
-          Back
-        </button>
-      </div>
-    </form>
+      <button type="button" class="btn btn--lg btn--ghost" id="backDetails">
+        Back
+      </button>
+    </div>
   `;
 
-  $('#paymentForm').onsubmit = e => {
-    e.preventDefault();
-    checkoutData.payment =
-      new FormData(e.target).get('payment');
+  $('#reviewOrder').onclick = () => {
+    checkoutData.payment = 'stripe';
     placeOrder();
   };
 
@@ -390,10 +376,7 @@ Use test payment details while Luxora is in test mode.
 }
   
   function placeOrder() {
-  const paymentName =
-    checkoutData.payment === 'wallet'
-      ? 'Digital wallet'
-      : 'Credit or debit card';
+  const paymentName = 'Stripe secure test checkout';
 
   $('#coBody').innerHTML = `
     <h2 id="coTitle">Review your order</h2>
@@ -421,8 +404,8 @@ Use test payment details while Luxora is in test mode.
     <div class="paybox">
       <span>
         ${method === 'express'
-          ? 'Express delivery (1–2 days)'
-          : 'Standard delivery (3–5 days)'}
+          ? 'Express test shipping (1–2 day estimate)'
+          : 'Standard test shipping (3–5 day estimate)'}
       </span>
     </div>
 
@@ -436,7 +419,7 @@ Use test payment details while Luxora is in test mode.
 
     <div class="demo__btns">
       <button type="button" class="btn btn--lg" id="finalPayment">
-        Continue to secure payment
+        Continue to Stripe test payment
       </button>
 
       <button type="button" class="btn btn--lg btn--ghost" id="backPayment">
@@ -467,7 +450,7 @@ Use test payment details while Luxora is in test mode.
 
     <div class="demo__btns">
       <button type="button" class="btn btn--lg" id="payWithStripe">
-        Pay ${money(amount / 100)}
+        Pay ${usd(amount / 100)} USD
       </button>
 
       <button type="button" class="btn btn--lg btn--ghost" id="backReview">

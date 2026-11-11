@@ -135,11 +135,6 @@ const history = recent.slice(-8).flatMap(h => {
       data.products.forEach(pr => {
         const c = el('div', 'card'); c.dataset.id = pr.id; c.tabIndex = 0; c.setAttribute('role', 'button'); c.setAttribute('aria-label', `View ${pr.name}`);
         c.innerHTML = `<div class="card__art">${LuxoraArt.product(pr)}${LuxoraArt.illus}</div><div class="card__name">${esc(pr.name)}</div>${S.preorderTag(pr)}<div class="card__price">${money(pr.price)}</div>`;
-        const buy = el('a', 'card__amz', 'Buy now');
-buy.href = `#/shop/p/${pr.id}${pr.variantKey ? '?c=' + pr.variantKey : ''}`;
-buy.setAttribute('aria-label', `View ${pr.name} in Luxora`);
-buy.addEventListener('click', e => e.stopPropagation());
-c.append(buy);
         const heart = el('button', 'card__heart' + (S.isSaved(pr.id) ? ' on' : ''), heartSvg); heart.type = 'button'; heart.setAttribute('aria-label', `Save ${pr.name}`); heart.setAttribute('aria-pressed', S.isSaved(pr.id));
         heart.addEventListener('click', e => { e.stopPropagation(); const on = toggleSave(pr); heart.classList.toggle('on', on); heart.setAttribute('aria-pressed', on); if (current && current.id === pr.id) renderPanel(); });
         const add = el('button', 'card__add', '+'); add.setAttribute('aria-label', `Add ${pr.name} to cart`); add.type = 'button';
@@ -238,7 +233,7 @@ c.append(buy);
     if (!S.cart().some(i => i.id === current.id && i.size === c.size && i.color === c.color)) S.addToCart(current, c);
     const n = S.count(), total = S.subtotal();
     $('#empty')?.remove(); view.classList.remove('is-empty', 'panel-open');
-    botMsg({ cartLink: true, reply: `Great choice. Your cart now has ${n} item${n > 1 ? 's' : ''} (${money(total)}). Open the shop to review your cart and check out. Checkout here is a demo, so nothing is ordered or charged. To buy for real, use the Buy now (or Pre-order) button on the product.`, products: [] });
+    botMsg({ cartLink: true, reply: `Great choice. Your cart now has ${n} item${n > 1 ? 's' : ''} (${money(total)}). Open the shop to review your cart and check out. Luxora checkout is currently in Stripe test mode, so no real order, charge or shipment is created.`, products: [] });
     const last = feed.lastElementChild?.querySelector('.msg__body'); if (last) { const a = el('a', 'btn btn--sm cart-link', window.LuxoraI18n ? LuxoraI18n.t('Go to cart') : 'Go to cart'); a.href = '#/cart'; a.style.alignSelf = 'flex-start'; last.append(a); scroll(); }
   }
   window.LuxoraAssistant = { refresh() { renderPanel(); document.querySelectorAll('.card[data-id]').forEach(c => { const on = S.isSaved(c.dataset.id), hb = c.querySelector('.card__heart'); if (hb) { hb.classList.toggle('on', on); hb.setAttribute('aria-pressed', on); } }); } };

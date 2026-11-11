@@ -326,7 +326,7 @@ async function respond(message, ctx = {}) {
     return { reply: "Hi! I'm Luxora, your AI shopping assistant. Tell me what you're shopping for, your budget, or a brand, and I'll recommend the best options. Try “best smart ring under $500”.", products: [] };
   }
   if (/\b(track|where is|delivery|shipping|order status)\b/.test(lower)) {
-    return { reply: "Luxora doesn't take or ship orders, so there's nothing for me to track. You buy from the retailer with the Buy now button, and you can track the order with them.", products: [] };
+    return { reply: "Luxora checkout is currently in Stripe test mode, so test payments do not create a real order or shipment to track yet.", products: [] };
   }
   const named = namedProducts(lower);
   const last = (ctx && Array.isArray(ctx.last) ? ctx.last : []).map(id => products.find(p => p.id === id)).filter(Boolean);
@@ -452,11 +452,11 @@ async function respondCore(message, ctx = {}) {
   if (isReturn || isShip) {
     const p = about();
     if (isReturn) {
-      if (p) return { title: 'Returns', reply: `Luxora doesn't sell anything directly, so returns for ${p.name} go through the store you buy it from. Its main retailer here is ${seller(p)}, so check ${p.retailer.name}'s return policy before you buy.${variantNote(p, 'return policy')}${(p.alsoAt || []).length ? ` If you buy it at ${p.alsoAt.map(a => a.name).join(' or ')} instead, that store's policy applies.` : ''} Anything else I can help you find?`, products: [] };
-      return { reply: "Returns go through the store you bought from, since Luxora doesn't sell anything directly. Each product's Buy button shows its retailer, so check that store's return policy before you buy. Which product are you asking about?", products: [] };
+      if (p) return { title: 'Returns', reply: `Luxora checkout is in Stripe test mode, so test payments do not create a real order to return. For a future real purchase of ${p.name}, check the seller's return policy before buying. The main retailer listed in Luxora is ${seller(p)}.`, products: [] };
+      return { reply: "Luxora checkout is in Stripe test mode, so there is no real order to return yet. For a future real purchase, check the seller's return policy before buying. Which product are you asking about?", products: [] };
     }
-    if (p) return { title: 'Shipping', reply: `Luxora doesn't ship orders itself. ${p.name} is sold by ${seller(p)}, so shipping times depend on ${p.retailer.name}. You'll see the delivery estimate at ${p.retailer.name}'s checkout after you tap ${p.retailer.name === 'Amazon' ? (pre(p) ? 'Pre-order' : 'Buy now') : 'Buy at ' + p.retailer.name}.${pre(p)}${variantNote(p, 'shipping')}`, products: [] };
-    return { reply: "Luxora doesn't ship orders itself. You buy straight from each product's retailer (it's shown on the Buy button), so shipping times depend on that store. Which product are you asking about?", products: [] };
+    if (p) return { title: 'Shipping', reply: `Luxora checkout is currently in Stripe test mode, so it does not create a real shipment. The main retailer listed for ${p.name} is ${seller(p)}; real delivery timing will need to be confirmed when Luxora enables live ordering.`, products: [] };
+    return { reply: "Luxora checkout is currently in Stripe test mode, so it does not create real shipments. Which product are you asking about?", products: [] };
   }
   // gifts
   if (/\b(gifts?|present|birthday|christmas|holiday|for my (mom|mum|mother|dad|father|wife|husband|partner|girlfriend|boyfriend|friend|sister|brother|son|daughter|grandma|grandpa|teacher|boss))\b|\bsomething for (my|a|her|him)\b/.test(lower) && !productWords && !/\$\s*\d|\b(under|below|less than)\s*\$?\d/.test(lower)) {
@@ -501,7 +501,7 @@ async function respondCore(message, ctx = {}) {
   if (out.keep) { const { keep, ...rest } = out; return rest; }
 
   if (/order status|track|where is|delivery|shipping/.test(lower) && p.length === 0) {
-    return { reply: "Luxora doesn't take or ship orders itself, so there's no order for me to track. You buy from the retailer with the Buy now button, and you can track the order with them.", products: [] };
+    return { reply: "Luxora checkout is currently in Stripe test mode, so test payments do not create a real order or shipment to track yet.", products: [] };
   }
   if (p.length === 0) {
     if (!productWords && /\b(weather|news|joke|time is it|sports?|score|homework|math|movie|song|recipe|cook|politic|game)\b/.test(lower)) {
@@ -537,7 +537,7 @@ async function respondCore(message, ctx = {}) {
   return {
     ...out,
     reply: `${opener ? opener + "I'd" : "I'd"} go with ${top.name} at ${money(top.price)}${why ? ` (${why.toLowerCase()})` : ''}.${pre(top)}${extra} Prices checked Nov 3.`,
-    followUp: pick(['Want me to save it for later?', 'Want to see how it compares with another one?', 'Want me to add it to your demo cart?'])
+    followUp: pick(['Want me to save it for later?', 'Want to see how it compares with another one?', 'Want me to add it to your cart?'])
   };
 }
 
