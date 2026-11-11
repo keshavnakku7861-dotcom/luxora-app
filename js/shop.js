@@ -212,7 +212,7 @@
   const STRIPE_PUBLISHABLE_KEY = 'pk_test_51UPOleR1DYbWyYrQZemSSGasBAbAVI9chWFiqeOfO6d73RCBpaUL2UPtHtzE7qzEJinqL2ugtvJWKio7uzfUlYHD004r2XwVyp';
 const STRIPE_PAYMENT_URL = 'https://luxora-api.keshavnakku7861.workers.dev/api/create-payment-intent';
 const stripe = Stripe(STRIPE_PUBLISHABLE_KEY)
-  /* ---------- demo checkout (nothing is stored or sent anywhere) ---------- */
+  /* ---------- Stripe test checkout ---------- */
   const dlg = $('#checkout');
   let method = 'standard';
   let checkoutData = {};
@@ -278,21 +278,21 @@ function stepDetails() {
         <label class="radio">
           <input type="radio" name="m" value="standard"
             ${method === 'standard' ? 'checked' : ''}>
-          Standard delivery (3–5 days)
+          Standard test shipping (3–5 day estimate)
           <b>${S.subtotal() >= S.FREE_OVER ? 'Free' : money(S.STANDARD)}</b>
         </label>
 
         <label class="radio">
           <input type="radio" name="m" value="express"
             ${method === 'express' ? 'checked' : ''}>
-          Express delivery (1–2 days)
+          Express test shipping (1–2 day estimate)
           <b>${money(S.EXPRESS)}</b>
         </label>
       </fieldset>
 
       <div class="paybox">
-        <b>Payment</b>
-        <span>Secure payment will be selected on the next step.</span>
+        <b>Test checkout</b>
+        <span>Shipping rates and delivery times shown here are test values. No shipment will occur.</span>
       </div>
 
       <h3>Order summary</h3>
@@ -346,43 +346,28 @@ function stepDetails() {
       <span>${esc(checkoutData.email)}<br>${esc(checkoutData.phone)}</span>
     </div>
 
-    <h3>Payment method</h3>
+    <h3>Payment</h3>
+    <div class="paybox">
+      <b>Stripe test mode</b>
+      <span>Secure payment options will be shown by Stripe after you review the order. Use Stripe test payment details only.</span>
+    </div>
 
-    <form id="paymentForm">
-      <label class="radio">
-        <input type="radio" name="payment" value="card" checked>
-        Credit or debit card
-      </label>
+    <h3>Review your order</h3>
+    ${summary()}
 
-      <label class="radio">
-        <input type="radio" name="payment" value="wallet">
-        Digital wallet
-      </label>
+    <div class="demo__btns">
+      <button type="button" class="btn btn--lg" id="reviewOrder">
+        Review order
+      </button>
 
-      <p class="fine">
-        Secure payment is processed by Stripe.
-Use test payment details while Luxora is in test mode.
-      </p>
-
-      <h3>Review your order</h3>
-      ${summary()}
-
-      <div class="demo__btns">
-        <button type="submit" class="btn btn--lg">
-          Review order
-        </button>
-
-        <button type="button" class="btn btn--lg btn--ghost" id="backDetails">
-          Back
-        </button>
-      </div>
-    </form>
+      <button type="button" class="btn btn--lg btn--ghost" id="backDetails">
+        Back
+      </button>
+    </div>
   `;
 
-  $('#paymentForm').onsubmit = e => {
-    e.preventDefault();
-    checkoutData.payment =
-      new FormData(e.target).get('payment');
+  $('#reviewOrder').onclick = () => {
+    checkoutData.payment = 'stripe';
     placeOrder();
   };
 
@@ -390,10 +375,7 @@ Use test payment details while Luxora is in test mode.
 }
   
   function placeOrder() {
-  const paymentName =
-    checkoutData.payment === 'wallet'
-      ? 'Digital wallet'
-      : 'Credit or debit card';
+  const paymentName = 'Stripe secure test checkout';
 
   $('#coBody').innerHTML = `
     <h2 id="coTitle">Review your order</h2>
@@ -421,8 +403,8 @@ Use test payment details while Luxora is in test mode.
     <div class="paybox">
       <span>
         ${method === 'express'
-          ? 'Express delivery (1–2 days)'
-          : 'Standard delivery (3–5 days)'}
+          ? 'Express test shipping (1–2 day estimate)'
+          : 'Standard test shipping (3–5 day estimate)'}
       </span>
     </div>
 
@@ -436,7 +418,7 @@ Use test payment details while Luxora is in test mode.
 
     <div class="demo__btns">
       <button type="button" class="btn btn--lg" id="finalPayment">
-        Continue to secure payment
+        Continue to Stripe test payment
       </button>
 
       <button type="button" class="btn btn--lg btn--ghost" id="backPayment">
