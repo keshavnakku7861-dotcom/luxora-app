@@ -6,7 +6,7 @@
   const LANGS = [['en-US', 'English (US)'], ['en-GB', 'English (UK)'], ['es-ES', 'Español'], ['fr-FR', 'Français'], ['de-DE', 'Deutsch']];   // Hindi is hidden until a native speaker reviews it
   const CURR = [['USD', 'US dollar (USD)'], ['EUR', 'Euro (EUR)'], ['GBP', 'British pound (GBP)'], ['CAD', 'Canadian dollar (CAD)'], ['INR', 'Indian rupee (INR)'], ['AUD', 'Australian dollar (AUD)']];
   const FAQ = [
-    ['Is Luxora a real store?', 'No. Luxora is a prototype assistant, not a store. The products, brands and prices are real and were checked on Nov 3–4, 2026, but Luxora does not sell anything: the Buy at button opens the retailer in a new tab. Luxora\'s own cart and checkout are a demo that takes no payment and places no order. Each price shows its own checked date.'],
+    ['Is Luxora a real store?', 'Luxora is currently a prototype shopping app. Its checkout uses Stripe test mode: test payments are handled by Stripe, but no real money is charged, no real order is created, and nothing is shipped. Product prices were checked on Nov 3–4, 2026 and may change.'],
     ['Why does the assistant only know about electronics?', 'The catalogue has 13 products: smart rings, smartwatches, earbuds, headphones, tablets, e-readers and smart speakers. Groceries and fashion are not available yet. The product pictures are illustrative images, not official photos.'],
     ['How do currency and language work?', 'Prices are stored in US dollars and converted with fixed, approximate rates (not live exchange rates). Language changes number and date formatting and translates the interface into French, Spanish or German.']
   ];
@@ -49,8 +49,8 @@
         <p class="sset__note">Prices are in US dollars at the retailer and convert at fixed, approximate rates (not live exchange rates). Language changes number formatting and translates the interface into French, Spanish or German.</p>`) +
       sec('help', 'Help & About',
         `<div class="faq">${FAQ.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div>
-        <p class="sset__txt">Luxora is a prototype AI shopping assistant. It shows real products with prices checked on Nov 3–4, 2026 and links to the retailer to buy. Prices can change. Luxora's own cart and checkout are a demo: no payment is taken and no order is placed. Product pictures are illustrative images, not official photos. Each price shows its own checked date.</p>
-        <p class="sset__txt">As an Amazon Associate, Luxora earns from qualifying purchases. &ldquo;Buy now&rdquo; buttons open Amazon.com and carry Luxora&rsquo;s Amazon Associates tag; the price you pay is the same.</p>
+        <p class="sset__txt">Luxora is a prototype AI shopping assistant. It shows real products with prices checked on Nov 3–4, 2026. Prices can change. Luxora checkout currently uses Stripe test mode: test payments do not create real orders and nothing is shipped. Product pictures are illustrative images, not official photos. Each price shows its own checked date.</p>
+        <p class="sset__txt">As an Amazon Associate, Luxora earns from qualifying purchases. Where Amazon or retailer links are shown, the retailer&rsquo;s current price, availability and terms apply.</p>
         <dl class="about"><div><dt>Version</dt><dd>${VERSION}</dd></div></dl>
         <p class="sset__links"><a href="terms.html">Terms of use</a><a href="privacy.html">Privacy policy</a></p>`);
     jump.innerHTML = [...root.querySelectorAll('.sset')].map(s => `<button type="button" data-go="${s.id}">${esc(s.querySelector('h2').textContent)}</button>`).join('');
