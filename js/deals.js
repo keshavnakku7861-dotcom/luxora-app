@@ -1,5 +1,6 @@
 /* Luxora deals: loads deals.json (also read by the EMAIL bot), applies live deals to the catalog in place
-   (price -> dealPrice, listPrice, deal) and announces 'luxora:deals'. Deals with an endsAt in the past are ignored; endsAt may be null (price checked on checkedAt). */
+   (price -> dealPrice, listPrice, deal) and announces 'luxora:deals'. Only deals whose dealPrice equals the Worker's price
+   (js/prices.js) are applied, so a deal can never become a cart/checkout price the Worker would not charge. Deals with an endsAt in the past are ignored; endsAt may be null (price checked on checkedAt). */
 (() => {
   const products = window.LuxoraOffline.products;
   const D = window.LuxoraDeals = { list: [], loaded: false, feed: null, byProduct: id => D.list.find(d => d.productId === id) };
@@ -12,6 +13,10 @@
       /* a deal on a finish variant (matched by its Amazon ASIN in the deal link) applies to that variant only */
       const key = Object.keys(p.variants || {}).find(k => [d.url, d.sourceUrl].some(u => u && u.includes(p.variants[k].asin)));
       const t = key ? p.variants[key] : p;
+      /* pricing integrity: a deal is only shown when the official Worker would charge exactly the deal price for this
+         product/finish. Otherwise the shop would show a price that checkout does not charge, so the deal is skipped. */
+      const charged = window.LuxoraPrices ? window.LuxoraPrices.unitPrice(p.id, key || (p.colors || [])[0]) : null;
+      if (charged == null || Math.round(d.dealPrice * 100) !== Math.round(charged * 100)) { console.info('Luxora: deal not shown (Worker price differs)', d.id, d.dealPrice, charged); return null; }
       const list = Number.isFinite(d.listPrice) && d.listPrice > 0 ? d.listPrice : (t.listPrice || t.price);   // the feed's list price wins
       const pct = Math.round((1 - d.dealPrice / list) * 100);
       if (pct < 1) return null;

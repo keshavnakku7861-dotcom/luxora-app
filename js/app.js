@@ -3,7 +3,7 @@
   const $ = s => document.querySelector(s);
   const S = window.LuxoraStore, money = S.money, esc = S.esc;
   const feed = $('#feed'), panel = $('#panel'), toastEl = $('#toast');
-  let current = null, sel = { size: '', kit: true, color: '', qty: 1, view: 0 };
+  let current = null, sel = { size: '', color: '', qty: 1, view: 0 };
   S.bind();
   // Chat backend. On the static GitHub Pages site the assistant first asks the hosted Luxora API (a free Cloudflare Worker)
   // with a short timeout; if it is unreachable, slow or returns something unexpected, the bundled js/offline.js answers instead.
@@ -178,13 +178,16 @@ const history = recent.slice(-8).flatMap(h => {
   feed.addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) send(b.dataset.q); });
 
   /* ---------- recommended panel ---------- */
-  function show(p) { current = p; sel = { size: '', kit: false, sizeErr: false, color: p.colors[0], qty: 1, view: 0 }; renderPanel(); }
-  const chosen = () => ({ size: sel.size || (sel.kit ? 'Sizing kit' : (S.needsSize(current) ? '' : current.sizes[0])), color: sel.color, qty: sel.qty });
+  function show(p) { current = p; sel = { size: '', sizeErr: false, color: p.colors[0], qty: 1, view: 0 }; renderPanel(); }
+  /* a ring size is required; "Sizing kit" is never a cart size (it comes from the brand, not Luxora checkout) */
+  const chosen = () => ({ size: sel.size || (S.needsSize(current) ? '' : current.sizes[0]), color: sel.color, qty: sel.qty });
+  /* the product as picked: the finish variant (e.g. Oura Ring 4 Ceramic Midnight, $399) carries its own price and name */
+  const picked = () => S.variant(current, sel.color);
   /* a size must be picked before anything is added: show the error and focus the select */
   function needSize() { if (!S.needsSize(current) || chosen().size) return false; sel.sizeErr = true; renderPanel(); const s = $('#size'); if (s) s.focus(); return true; }
   function renderPanel() {
-    const p = current; if (!p || !p.colors) return;
-    const views = LuxoraArt.VIEWS, isOn = S.isSaved(p.id), hasKit = p.sizes.includes('Sizing kit');
+    const base = current; if (!base || !base.colors) return;
+    const p = picked(), views = LuxoraArt.VIEWS, isOn = S.isSaved(base.id), hasKit = base.sizes.some(S.isSizingKit);
     panel.innerHTML = `
       <div class="panel__head"><button class="panel__back" id="pback" type="button" aria-label="Back to chat">&#8592;</button><div class="panel__title">Recommended for you</div><button class="panel__back" id="pclose" type="button" aria-label="Close">&#10005;</button></div>
       <div class="car">
@@ -200,10 +203,10 @@ const history = recent.slice(-8).flatMap(h => {
       </div>
       <div class="opts">
         ${S.needsSize(p) ? `<div class="field"><span class="lbl" id="sizeLbl">Size <small class="req">(required)</small></span>
-          ${hasKit ? `<button class="kit" id="kit" type="button" aria-pressed="${sel.kit}"><span>Sizing kit</span><span class="tick ${sel.kit ? '' : 'off'}">&#10003;</span></button>` : ''}
-          <select id="size" aria-label="Select your size" aria-required="true" aria-describedby="sizeErr" ${sel.sizeErr ? 'aria-invalid="true"' : ''}><option value="">Select your size</option>${p.sizes.filter(s => s !== 'Sizing kit').map(s => `<option ${s === sel.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>
-          <p class="sizeerr" id="sizeErr" role="alert" ${sel.sizeErr ? '' : 'hidden'}>Please select a size before adding this to your cart.</p></div>` : ''}
-        ${p.colors[0] === 'standard' ? '' : `<div class="field"><span class="lbl">Select color</span><div class="sw" id="sw">${p.colors.map(c => `<button type="button" class="c-${c} ${c === sel.color ? 'on' : ''}" data-c="${c}" aria-label="${c}" aria-pressed="${c === sel.color}">${c === sel.color ? '&#10003;' : ''}</button>`).join('')}</div></div>`}
+          <select id="size" aria-label="Select your size" aria-required="true" aria-describedby="sizeErr" ${sel.sizeErr ? 'aria-invalid="true"' : ''}><option value="">Select your size</option>${S.sellableSizes(base).map(s => `<option ${s === sel.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>
+          <p class="sizeerr" id="sizeErr" role="alert" ${sel.sizeErr ? '' : 'hidden'}>Please select a size before adding this to your cart.</p>
+          ${hasKit ? `<p class="onote kitnote">Not sure of your size? Get a sizing kit from ${esc(base.store)} first. Luxora checkout sells the ring in your size only, never a sizing kit.</p>` : ''}</div>` : ''}
+        ${base.colors[0] === 'standard' ? '' : `<div class="field"><span class="lbl">Select color</span><div class="sw" id="sw">${base.colors.map(c => `<button type="button" class="c-${c} ${c === sel.color ? 'on' : ''}" data-c="${c}" aria-label="${c}" aria-pressed="${c === sel.color}">${c === sel.color ? '&#10003;' : ''}</button>`).join('')}</div></div>`}
       </div>
       ${p.optionsNote ? `<p class="onote">${esc(p.optionsNote)}</p>` : ''}
       <div class="buy">
@@ -217,21 +220,20 @@ const history = recent.slice(-8).flatMap(h => {
     const go = d => { sel.view = (sel.view + d + views) % views; $('#art').innerHTML = LuxoraArt.product(p, sel.view); $('#dots').querySelectorAll('i').forEach((x, i) => x.classList.toggle('on', i === sel.view)); };
     $('#prev').onclick = () => go(-1); $('#next').onclick = () => go(1);
     $('#dots').onclick = e => { const i = e.target.dataset.i; if (i != null) go(Number(i) - sel.view); };
-    if ($('#kit')) $('#kit').onclick = () => { sel.kit = !sel.kit; if (sel.kit) sel.size = ''; sel.sizeErr = false; renderPanel(); };
-    if ($('#size')) $('#size').onchange = e => { sel.size = e.target.value; if (sel.size) sel.kit = false; sel.sizeErr = false; renderPanel(); };
+    if ($('#size')) $('#size').onchange = e => { sel.size = e.target.value; sel.sizeErr = false; renderPanel(); };
     if ($('#sw')) $('#sw').onclick = e => { const b = e.target.closest('button'); if (b) { sel.color = b.dataset.c; renderPanel(); } };
     $('#minus').onclick = () => { sel.qty = Math.max(1, sel.qty - 1); $('#q').textContent = sel.qty; };
     $('#plus').onclick = () => { sel.qty = Math.min(9, sel.qty + 1); $('#q').textContent = sel.qty; };
     $('#add').onclick = () => { if (!needSize()) addToCart(p, chosen()); };
-    $('#heart').onclick = () => { toggleSave(p, chosen()); renderPanel(); document.querySelectorAll('.card').forEach(c => { const hb = c.querySelector('.card__heart'); if (hb && c.getAttribute('aria-label') === `View ${p.name}`) { hb.classList.toggle('on', S.isSaved(p.id)); hb.setAttribute('aria-pressed', S.isSaved(p.id)); } }); };
+    $('#heart').onclick = () => { toggleSave(p, chosen()); renderPanel(); document.querySelectorAll('.card').forEach(c => { const hb = c.querySelector('.card__heart'); if (hb && c.dataset.id === base.id) { hb.classList.toggle('on', S.isSaved(base.id)); hb.setAttribute('aria-pressed', S.isSaved(base.id)); } }); };
     $('#confirm').onclick = confirmOrder;
     $('#pback').onclick = $('#pclose').onclick = () => { view.classList.remove('panel-open'); feed.querySelectorAll('.card.sel').forEach(x => x.classList.remove('sel')); };
   }
   function confirmOrder() {
     if (!current || needSize()) return;
     const c = chosen();
-    if (!S.cart().some(i => i.id === current.id && i.size === c.size && i.color === c.color)) S.addToCart(current, c);
-    const n = S.count(), total = S.subtotal();
+    if (!S.cart().some(i => i.id === current.id && i.size === c.size && i.color === c.color) && !S.addToCart(picked(), c)) return;
+    S.reprice(); const n = S.count(), total = S.subtotal();
     $('#empty')?.remove(); view.classList.remove('is-empty', 'panel-open');
     botMsg({ cartLink: true, reply: `Great choice. Your cart now has ${n} item${n > 1 ? 's' : ''} (${money(total)}). Open the shop to review your cart and check out. Luxora checkout is currently in Stripe test mode, so no real order, charge or shipment is created.`, products: [] });
     const last = feed.lastElementChild?.querySelector('.msg__body'); if (last) { const a = el('a', 'btn btn--sm cart-link', window.LuxoraI18n ? LuxoraI18n.t('Go to cart') : 'Go to cart'); a.href = '#/cart'; a.style.alignSelf = 'flex-start'; last.append(a); scroll(); }

@@ -22,6 +22,10 @@
     el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 3500);
   }
   const addToCart = (p, o) => { const l = S.addToCart(p, o); if (!l) return null; toast(`Added ${l.qty} × ${p.name} to cart`, ['View cart', openDrawer]); };
+  /* pricing integrity: cart lines are re-priced from js/prices.js (the Worker's catalog); tell the shopper what changed */
+  let cartNotes = [];
+  function repriceCart() { S.reprice(); const n = S.takeNotices(); if (n.length) { cartNotes = n.map(x => x.message); toast(cartNotes.length === 1 ? cartNotes[0] : `${cartNotes.length} cart items were updated to current prices or options.`); } return n; }
+  const notesHtml = () => cartNotes.length ? `<div class="paybox reprice" role="status"><b>Your cart was updated</b>${cartNotes.map(m => `<span>${esc(m)}</span>`).join('')}</div>` : '';
 
   /* ---------- list ---------- */
   /* search: every word of the query must appear in the product's name/brand/category/tags/variant names (punctuation such as "(A20 Pro)" ignored) */
@@ -122,7 +126,7 @@
             <div class="rate">${S.checked(p)} &middot; at ${esc(p.retailer.name)}</div>${S.preorderTag(p) ? `<div class="preline">${S.preorderTag(p)}</div>` : ''}
             <div class="price">${p.priceFrom ? '<small class="from">From</small> ' : ''}${priceHtml(p)}</div>${p.deal && P().priceDrops ? `<div class="dealnote"><span class="dealtag dealtag--inline">-${p.deal.discountPercent}%</span> <b>Deal.</b> ${esc(D.endsText(p.deal))}. ${esc(p.deal.headline)} <span class="dealnote__src">Compared with ${esc(p.deal.listPriceSource || 'the listed price')}.${p.deal.sourceUrl ? ` <a href="${esc(p.deal.sourceUrl)}" target="_blank" rel="noopener noreferrer sponsored">Source<span class="sr-only"> (opens in a new tab)</span></a>` : ''}</span></div>` : ''}
             <p class="desc">${esc(p.description || '')}</p>
-            <div class="opt"><span class="lbl">Size${S.needsSize(p) ? ' <small class="req">(required)</small>' : ''}</span><select id="dSize" aria-label="Size" ${S.needsSize(p) ? 'aria-required="true" aria-describedby="dSizeErr"' : ''}>${S.needsSize(p) ? '<option value="">Select a size</option>' : ''}${p.sizes.map(s => `<option ${s === d.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><p class="sizeerr" id="dSizeErr" role="alert" hidden>Please select a size before adding this to your cart.</p></div>
+            <div class="opt"><span class="lbl">Size${S.needsSize(p) ? ' <small class="req">(required)</small>' : ''}</span><select id="dSize" aria-label="Size" ${S.needsSize(p) ? 'aria-required="true" aria-describedby="dSizeErr"' : ''}>${S.needsSize(p) ? '<option value="">Select a size</option>' : ''}${S.sellableSizes(p).map(s => `<option ${s === d.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><p class="sizeerr" id="dSizeErr" role="alert" hidden>Please select a size before adding this to your cart.</p>${p.sizes.some(S.isSizingKit) ? `<p class="onote kitnote">Not sure of your size? Get a sizing kit from ${esc(p.store)} first. Luxora checkout sells the ring in your size only, never a sizing kit.</p>` : ''}</div>
             ${base.colors[0] === 'standard' ? '' : `<div class="opt"><span class="lbl">Color: <b>${cname(d.color)}</b></span><div class="sw" id="dSw">${base.colors.map(c => `<button type="button" class="c-${c} ${c === d.color ? 'on' : ''}" data-c="${c}" aria-label="${cname(c)}" aria-pressed="${c === d.color}">${c === d.color ? '&#10003;' : ''}</button>`).join('')}</div></div>`}
             <div class="opt"><span class="lbl">Quantity</span><div class="qty"><button id="dMinus" aria-label="Decrease">&minus;</button><span id="dQ">${d.qty}</span><button id="dPlus" aria-label="Increase">+</button></div></div>
             <div class="buyat buyat--detail"><button type="button" class="btn btn--lg btn--orange" id="dBuyNow">Buy now</button></div>
@@ -151,7 +155,7 @@
   );
 
   S.setCart(cart);
-  S.addToCart(p, { size, color: d.color, qty: d.qty });
+  if (!S.addToCart(p, { size, color: d.color, qty: d.qty })) { toast(`Choose a ring size for ${p.name} first`); return; }
   openCheckout();
 }
       if (e.target.closest('#dAdd') && sizeOk()) addToCart(p, { size: $('#dSize').value, color: d.color, qty: d.qty });
@@ -163,20 +167,21 @@
   /* ---------- views (the app router in router.js calls these) ---------- */
   let shown = false;
   function show(pid, query = {}) {
-    shown = true;
+    shown = true; repriceCart();
     if (query.cat && CATS.some(c => c[0] === query.cat)) { st.cat = query.cat; st.q = ''; $('#shopQ').value = ''; }
     const p = pid && byId[pid], box = $('#viewShop');
     if (p) { $('#listView').hidden = true; $('#detailView').hidden = false; renderDetail(p, query.c); document.title = `${p.name} - Luxora`; box.scrollTop = 0; }
     else { $('#detailView').hidden = true; $('#listView').hidden = false; document.title = 'Shop - Luxora'; renderList(); }
   }
   const drawer = $('#drawer');
-  function setDrawer(open) { if (open === !drawer.hidden) return; drawer.hidden = !open; if (open) { renderDrawer(); drawer.querySelector('.x').focus(); } }
+  function setDrawer(open) { if (open === !drawer.hidden) return; drawer.hidden = !open; if (open) { renderDrawer(); drawer.querySelector('.x').focus(); } else if (!dlg.open) cartNotes = []; }
   window.LuxoraShop = { show, setDrawer, isShown: () => shown, setReturn: h => { returnTo = h; }, checkout: () => openCheckout() };
 
   /* ---------- cart drawer ---------- */
   const openDrawer = () => { if (location.hash !== '#/cart') location.hash = '#/cart'; else setDrawer(true); };
   const closeDrawer = () => { if (location.hash === '#/cart') location.hash = returnTo; else setDrawer(false); };
   function renderDrawer() {
+    if (!drawer.hidden) repriceCart();
     const cart = S.cart(), body = $('#drawerBody'), foot = $('#drawerFoot');
     $('#drawerCount').textContent = cart.length ? `(${S.count()})` : '';
     if (!cart.length) { body.innerHTML = `<div class="none"><h3>Your cart is empty</h3><p>Add something you like from the store.</p><button class="btn btn--sm" data-close-drawer>Continue shopping</button></div>`; foot.innerHTML = ''; return; }
@@ -189,7 +194,7 @@
         <div class="line__price">${money(f.price * i.qty)}</div></article>`;
     }).join('');
     const sub = S.subtotal(), ship = S.shipping();
-    foot.innerHTML = `<div class="row"><span>Subtotal</span><b>${money(sub)}</b></div>
+    foot.innerHTML = `${notesHtml()}<div class="row"><span>Subtotal</span><b>${money(sub)}</b></div>
       <div class="row"><span>Shipping</span><b>${ship === 0 ? 'Free' : money(ship)}</b></div>
       ${ship > 0 ? `<p class="hint">Add <b>${money(S.FREE_OVER - sub)}</b> more for free shipping.</p>` : ''}
       <div class="row total"><span>Total</span><b>${money(sub + ship)}</b></div>
@@ -214,13 +219,15 @@ const STRIPE_PAYMENT_URL = 'https://luxora-api.keshavnakku7861.workers.dev/api/c
 const stripe = Stripe(STRIPE_PUBLISHABLE_KEY)
   /* ---------- Stripe test checkout ---------- */
   const dlg = $('#checkout');
+  dlg.addEventListener('close', () => { cartNotes = []; });   // cart-update notes are shown for one checkout only
   const usd = n => '$' + Number(n).toFixed(2);
   let method = 'standard';
   let checkoutData = {};
-  function openCheckout() { if (!S.cart().length) return; method = 'standard'; stepDetails(); if (!dlg.open) dlg.showModal(); }
+  function openCheckout() { repriceCart(); if (!S.cart().length) return; method = 'standard'; stepDetails(); if (!dlg.open) dlg.showModal(); }
+  /* totals = the exact Worker quote (js/prices.js), in cents */
   const summary = () => {
-    const sub = S.subtotal(), ship = S.shipping(method);
-    return `<div class="sum">${S.cart().map(i => `<div><span>${i.qty} × ${esc(S.info(i).name)} <small>${esc(i.size)}, ${cname(i.color)}</small></span><span>${usd(S.info(i).price * i.qty)}</span></div>`).join('')}
+    const q = S.quote(method), sub = q.subtotalCents / 100, ship = q.shippingCents / 100;
+    return `${notesHtml()}<div class="sum">${S.cart().map(i => `<div><span>${i.qty} × ${esc(S.info(i).name)} <small>${esc(i.size)}, ${cname(i.color)}</small></span><span>${usd(S.info(i).price * i.qty)}</span></div>`).join('')}
       <div><span>Subtotal</span><span>${usd(sub)}</span></div><div><span>Shipping</span><span>${ship === 0 ? 'Free' : usd(ship)}</span></div><div class="t"><span>Total (USD)</span><span>${usd(sub + ship)}</span></div></div>`;
   };
 function stepDetails() {
@@ -433,9 +440,11 @@ function stepDetails() {
   $('#finalPayment').onclick = () => openStripePayment();
 }
   async function openStripePayment() {
-  const amount = Math.round(
-    (S.subtotal() + S.shipping(method)) * 100
-  );
+  /* re-price right before paying: if anything changed, go back to the review step and show what changed */
+  if (repriceCart().length) { placeOrder(); return; }
+  const q = S.quote(method);
+  if (!q.ok) { cartNotes = ['Your cart has an item Luxora checkout cannot sell. Please review your cart.']; placeOrder(); return; }
+  const amount = q.totalCents;
 
   $('#coBody').innerHTML = `
     <h2 id="coTitle">Secure payment</h2>
@@ -459,28 +468,45 @@ function stepDetails() {
     </div>
   `;
 
+  $('#backReview').onclick = () => placeOrder();
   try {
     const response = await fetch(STRIPE_PAYMENT_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
+      /* id/color/qty are what the current Worker reads; size, unitPriceCents and expectedTotalCents are extra fields the
+         current Worker ignores and the updated Worker (work/.../worker.proposed.js) validates (409 if prices differ) */
       body: JSON.stringify({
-  items: S.cart().map(i => ({
+  items: q.lines.map(i => ({
     id: i.id,
     qty: i.qty,
-    color: i.color
+    color: i.color,
+    size: i.size,
+    unitPriceCents: i.unitCents
   })),
-  method
+  method,
+  currency: 'usd',
+  expectedTotalCents: q.totalCents
 })
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
 
+    if (response.status === 409) {
+      /* the server's prices differ from what the shopper saw: never charge, re-price and show the review again */
+      S.reprice(); S.takeNotices();
+      cartNotes = [data.message || 'Prices changed. Please review your updated total before paying.'];
+      placeOrder(); return;
+    }
     if (!response.ok || !data.clientSecret) {
-      throw new Error(data.error || 'Unable to start payment.');
+      throw new Error(data.message || data.error || 'Unable to start payment.');
+    }
+    if (typeof data.amount === 'number' && data.amount !== q.totalCents) {
+      throw new Error('The payment amount did not match your order total, so payment was not started. Please review your cart and try again.');
     }
 
+    cartNotes = [];
     const elements = stripe.elements({
       clientSecret: data.clientSecret
     });
@@ -523,8 +549,6 @@ const paymentRef = result.paymentIntent?.id || 'Test payment';
   dlg.close();
 };
     };
-
-    $('#backReview').onclick = () => placeOrder();
 
   } catch (error) {
     $('#stripeError').textContent =

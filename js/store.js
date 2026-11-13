@@ -1,10 +1,17 @@
-/* Luxora shared store: cart + saved items in localStorage (used by assistant, shop and saved pages). */
+/* Luxora shared store: cart + saved items in localStorage (used by assistant, shop and saved pages).
+   Prices: every cart amount comes from js/prices.js (LuxoraPrices, a mirror of the official Worker's PRICE_CATALOG),
+   never from a price stored in the cart line. reprice() corrects stored line prices and reports what changed. */
 (() => {
   const KC = 'luxora.cart', KS = 'luxora.saved';
   const read = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v : d; } catch { return d; } };
   const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} document.dispatchEvent(new Event('luxora:change')); };
   const catalog = () => Object.fromEntries((window.LuxoraOffline?.products || []).map(p => [p.id, p]));
-  const FREE_OVER = 150, STANDARD = 9.99, EXPRESS = 19.99;
+  const Pr = window.LuxoraPrices;
+  const FREE_OVER = Pr.SHIPPING.freeOver, STANDARD = Pr.SHIPPING.standard, EXPRESS = Pr.SHIPPING.express;
+  /* product data always shows the Worker's prices (a drift in js/offline.js is corrected here and logged) */
+  try { const fixed = Pr.syncProducts(window.LuxoraOffline && window.LuxoraOffline.products); if (fixed.length) console.warn('Luxora: product prices corrected to the Worker catalog', fixed); } catch {}
+  let notices = [];
+  const fmtUsd = n => '$' + Number(n).toFixed(2);
 
   /* drop old cart/saved lines for products no longer in the catalog, and refresh names/brands from it (runs once on load) */
   function migrate() {
@@ -18,6 +25,34 @@
     } catch {}
   }
   migrate();
+  /* check every cart line against the Worker catalog: fix stored prices, drop lines Luxora checkout cannot sell
+     (unknown product/colour, sizing kit, missing ring size) and clamp quantities. Returns the notices it produced. */
+  function reprice() {
+    const raw = read(KC, []), out = [], found = [];
+    const label = i => { const c = catalog()[i && i.id], v = c && c.variants && c.variants[i.color]; return (v && v.name) || (c && c.name) || (i && i.name) || 'An item'; };
+    raw.forEach(i => {
+      if (!i || typeof i !== 'object') return;
+      const line = { ...i };
+      if (typeof line.qty !== 'number' || !Number.isInteger(line.qty) || line.qty < 1 || line.qty > Pr.MAX_QTY) {
+        const q = Math.max(1, Math.min(Pr.MAX_QTY, Math.round(Number(line.qty)) || 1));
+        found.push({ type: 'qty', id: line.id, message: `${label(line)}: quantity changed to ${q}.` }); line.qty = q;
+      }
+      const why = Pr.lineProblem(line);
+      if (why === 'sizing-kit') { found.push({ type: 'removed', id: line.id, message: `${label(line)} (Sizing kit) was removed: a sizing kit can't be bought through Luxora checkout. Get the sizing kit from the brand, then add the ring in your size.` }); return; }
+      if (why === 'size-required') { found.push({ type: 'removed', id: line.id, message: `${label(line)} was removed because no ring size was chosen. Add it again with your size.` }); return; }
+      if (why) { found.push({ type: 'removed', id: line.id, message: `${label(line)} was removed because Luxora can no longer sell that option.` }); return; }
+      const unit = Pr.unitPrice(line.id, line.color);
+      if (line.price !== unit) {
+        if (typeof line.price === 'number') found.push({ type: 'price', id: line.id, from: line.price, to: unit, message: `Price updated: ${label(line)} is ${fmtUsd(unit)} (was ${fmtUsd(line.price)}).` });
+        line.price = unit;
+      }
+      out.push(line);
+    });
+    if (JSON.stringify(out) !== JSON.stringify(raw)) write(KC, out);
+    if (found.length) notices = notices.concat(found);   // shown once via takeNotices()
+    return found;
+  }
+  reprice();
   const Store = {
     FREE_OVER, STANDARD, EXPRESS,
     cart: () => read(KC, []),
@@ -32,7 +67,8 @@
     resolve(item) { const c = item && catalog()[item.id]; return c ? Store.variant(c, item.color) : null; },
     /* the identity a line keeps from the product the shopper actually picked (variant name, image, price, date, link) */
     snapshot(p) { return { name: p.name, price: p.price, imageId: p.imageId || p.id, checkedAt: p.checkedAt || null, variantKey: p.variantKey || null, retailer: p.retailer ? p.retailer.name : null, url: (p.amazon && p.amazon.url) || (p.retailer && p.retailer.url) || null, asin: (p.amazon && p.amazon.asin) || null }; },
-    info(item) { const c = Store.resolve(item) || {}; return { id: item.id, name: item.name || c.name || 'Product', store: item.store || c.store || 'Luxora', price: item.price ?? c.price ?? 0, retailer: c.retailer, imageId: item.imageId || c.imageId || item.id, checkedAt: item.checkedAt || c.checkedAt, url: item.url || null, asin: item.asin || null, variantKey: item.variantKey || c.variantKey || null }; },
+    /* price = what the Worker charges for this id + colour (never the price stored in the line) */
+    info(item) { const c = Store.resolve(item) || {}, unit = Pr.unitPrice(item.id, item.color); return { id: item.id, name: item.name || c.name || 'Product', store: item.store || c.store || 'Luxora', price: unit ?? 0, sellable: unit != null, retailer: c.retailer, imageId: item.imageId || c.imageId || item.id, checkedAt: item.checkedAt || c.checkedAt, url: item.url || null, asin: item.asin || null, variantKey: item.variantKey || c.variantKey || null }; },
     /* "Buy at <retailer>" link: new tab, noopener, sponsored */
     buyLink(p, cls = 'btn', label) {
       const r = p && p.retailer; if (!r || !/^https:/.test(r.url)) return '';
@@ -54,9 +90,16 @@
     defaults(p) { return { size: p.sizes[0], color: p.colors[0] }; },
     /* sizes the shopper must pick (rings, watches...). "One size" products need no choice. */
     needsSize: p => (p.sizes || []).some(x => x !== 'One size'),
+    /* sizes Luxora checkout can sell for this product ("Sizing kit" is never one of them) */
+    sellableSizes: p => (p && Pr.SIZES[p.id]) || (p && p.sizes || []).filter(s => !Pr.isSizingKit(s)),
+    validSize: (p, size) => !!p && Pr.validSize(p.id, size),
+    isSizingKit: Pr.isSizingKit,
     addToCart(p, opts = {}) {
       if (Store.needsSize(p) && !opts.size) return null;   // a size must be chosen first
-      const cart = Store.cart(), line = { ...Store.snapshot(p), id: p.id, store: p.store, size: opts.size || (Store.needsSize(p) ? '' : p.sizes[0]), color: opts.color || p.colors[0], qty: opts.qty || 1 };
+      const size = opts.size || (Store.needsSize(p) ? '' : p.sizes[0]), color = opts.color || p.colors[0];
+      if (!Pr.validSize(p.id, size)) return null;          // e.g. "Sizing kit": never sold as a ring
+      const unit = Pr.unitPrice(p.id, color); if (unit == null) return null;
+      const cart = Store.cart(), line = { ...Store.snapshot(p), price: unit, id: p.id, store: p.store, size, color, qty: Math.max(1, Math.min(Pr.MAX_QTY, opts.qty || 1)) };
       const hit = cart.find(i => i.id === line.id && i.size === line.size && i.color === line.color);
       if (hit) hit.qty = Math.min(9, hit.qty + line.qty); else cart.push(line);
       write(KC, cart); return line;
@@ -72,8 +115,13 @@
     },
     clearSaved() { write(KS, []); },
     removeSaved(id) { write(KS, Store.saved().filter(x => x.id !== id)); },
-    subtotal: () => Store.cart().reduce((s, i) => s + Store.info(i).price * i.qty, 0),
-    shipping(method = 'standard') { const sub = Store.subtotal(); if (!sub) return 0; return method === 'express' ? EXPRESS : (sub >= FREE_OVER ? 0 : STANDARD); },
+    /* the exact Worker quote for the current cart (cents) */
+    quote: (method = 'standard') => Pr.quote(Store.cart(), method),
+    subtotal: () => Pr.quote(Store.cart().filter(i => !Pr.lineProblem(i))).subtotalCents / 100,
+    shipping(method = 'standard') { return Pr.quote(Store.cart().filter(i => !Pr.lineProblem(i)), method).shippingCents / 100; },
+    reprice,
+    /* notices from reprice() not yet shown to the shopper (shown once by the shop / assistant) */
+    takeNotices() { const n = notices; notices = []; return n; },
     money: n => window.LuxoraPrefs ? LuxoraPrefs.fmt(n) : '$' + Number(n).toFixed(2),
     esc: s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])),
     bind() {

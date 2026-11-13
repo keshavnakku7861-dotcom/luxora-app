@@ -18,22 +18,23 @@
     }
     box.className = 'lines';
     box.innerHTML = items.map(x => {
-      const p = S.variant(byId[x.id], x.color), f = S.info(x), q = p.variantKey ? '?c=' + p.variantKey : '', size = x.size || (S.needsSize(p) ? 'not chosen yet' : p.sizes[0]), color = x.color || p.colors[0];
+      const p = S.variant(byId[x.id], x.color), f = S.info(x), q = p.variantKey ? '?c=' + p.variantKey : '', size = S.needsSize(p) && !S.validSize(p, x.size) ? 'not chosen yet' : (x.size || p.sizes[0]), color = x.color || p.colors[0];
       return `<article class="line">
         <a class="line__img" href="#/shop/p/${p.id}${q}" aria-label="View ${esc(f.name)}">${LuxoraArt.product({ ...p, name: f.name, imageId: f.imageId })}</a>
         <div><div class="line__store">${esc(p.store)}</div><h2 class="line__name"><a href="#/shop/p/${p.id}${q}">${esc(f.name)}</a></h2>
           <div class="line__opts"><span>Size: ${esc(size)}</span><span><i class="dot c-${esc(color)}"></i>${cname(color)}</span><span>${esc(S.checked({ checkedAt: f.checkedAt }).replace('Price checked', 'Checked'))}</span></div>
-          <div class="line__ctl"><button class="btn btn--sm" data-move="${p.id}">${S.needsSize(p) && !x.size ? 'Choose size' : 'Move to cart'}</button><button class="rm" data-unsave="${p.id}">Remove</button></div></div>
+          <div class="line__ctl"><button class="btn btn--sm" data-move="${p.id}">${S.needsSize(p) && !S.validSize(p, x.size) ? 'Choose size' : 'Move to cart'}</button><button class="rm" data-unsave="${p.id}">Remove</button></div></div>
         <div class="line__price">${money(f.price)}</div></article>`;
     }).join('');
   }
   function move(id) {
     const x = S.saved().find(s => s.id === id); if (!x || !byId[id]) return;
     const v = S.variant(byId[id], x.color), f = S.info(x);
-    if (S.needsSize(v) && !x.size) return { needSize: v };
+    if (S.needsSize(v) && !S.validSize(v, x.size)) return { needSize: v };   // e.g. an old "Sizing kit" pick: a real ring size is needed
     /* keep the saved variant's identity (name, image, price, date, link) instead of rebuilding the base product */
     const p = { ...v, name: f.name, price: f.price, imageId: f.imageId, checkedAt: f.checkedAt, amazon: f.url && /amazon\.com/.test(f.url) ? { ...(v.amazon || {}), url: f.url, asin: f.asin || (v.amazon && v.amazon.asin) } : v.amazon };
-    S.addToCart(p, { size: x.size, color: x.color }); S.removeSaved(id); return p;
+    if (!S.addToCart(p, { size: x.size, color: x.color })) return { needSize: v };   // keep it saved if it can't be sold as picked
+    S.removeSaved(id); return p;
   }
   document.addEventListener('click', e => {
     const m = e.target.closest('[data-move]'), r = e.target.closest('[data-unsave]');

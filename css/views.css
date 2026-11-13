@@ -314,3 +314,7 @@
 .pretag { display: inline-block; font-weight: 600; font-size: 11px; color: var(--orange-deep); background: var(--orange-soft); border-radius: 4px; padding: 1px 6px; margin-left: 6px; letter-spacing: 0; }
 .card .pretag, .preline .pretag { margin-left: 0; }
 .preline { margin: 6px 0 2px; }
+/* cart re-pricing notice (js/shop.js: prices re-checked against the Worker catalog) */
+.drawer__foot .reprice, #checkout .reprice { display: grid; gap: 4px; font-size: 13px; line-height: 1.45; background: var(--orange-soft); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+.drawer__foot .reprice b, #checkout .reprice b { color: var(--orange-deep); }
+.kitnote { margin-top: 6px; }
