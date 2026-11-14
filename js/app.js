@@ -124,6 +124,8 @@ const history = recent.slice(-8).flatMap(h => {
     if (!b || /\$\s*\d|under|below|less than|max|up to|<\s*\d/i.test(text) || /^(hi|hello|hey|yo|thanks|thank)\b/i.test(text.trim())) return text;
     return text + ' under $' + b;
   }
+  /* chat card price: promo price with the struck base price on full-price items; deal items keep their deal price */
+  function cardPrice(pr) { const pp = S.promoPrice(pr); return pp.promoApplied ? `${money(pp.price)} <s class="was">${money(pp.base)}</s> ${S.promoTag(pp)}` : `${money(pr.price)}${pp.dealExcluded && pp.code ? ' ' + S.promoTag(pp) : ''}`; }
   function botMsg(raw) {
     const P = LuxoraPrefs.get(), data = shape(raw, P);
     const [wrap, m] = botWrap();
@@ -134,7 +136,7 @@ const history = recent.slice(-8).flatMap(h => {
       const cards = el('div', 'cards');
       data.products.forEach(pr => {
         const c = el('div', 'card'); c.dataset.id = pr.id; c.tabIndex = 0; c.setAttribute('role', 'button'); c.setAttribute('aria-label', `View ${pr.name}`);
-        c.innerHTML = `<div class="card__art">${LuxoraArt.product(pr)}${LuxoraArt.illus}</div><div class="card__name">${esc(pr.name)}</div>${S.preorderTag(pr)}<div class="card__price">${money(pr.price)}</div>`;
+        c.innerHTML = `<div class="card__art">${LuxoraArt.product(pr)}${LuxoraArt.illus}</div><div class="card__name">${esc(pr.name)}</div>${S.preorderTag(pr)}<div class="card__price">${cardPrice(pr)}</div>`;
         const heart = el('button', 'card__heart' + (S.isSaved(pr.id) ? ' on' : ''), heartSvg); heart.type = 'button'; heart.setAttribute('aria-label', `Save ${pr.name}`); heart.setAttribute('aria-pressed', S.isSaved(pr.id));
         heart.addEventListener('click', e => { e.stopPropagation(); const on = toggleSave(pr); heart.classList.toggle('on', on); heart.setAttribute('aria-pressed', on); if (current && current.id === pr.id) renderPanel(); });
         const add = el('button', 'card__add', '+'); add.setAttribute('aria-label', `Add ${pr.name} to cart`); add.type = 'button';
@@ -199,7 +201,7 @@ const history = recent.slice(-8).flatMap(h => {
       <div class="prod__top">
         <div class="prod__id"><div class="store">${esc(p.store)}</div><div class="prod__name">${esc(p.name)}</div>
           <div class="pnote">${S.checked(p)} &middot; ${esc(p.retailer.name)}</div></div>
-        <div class="prod__price">${p.priceFrom ? '<small>From</small> ' : ''}${money(p.price)}${p.listPrice && LuxoraPrefs.get().priceDrops ? ` <s class="was">${money(p.listPrice)}</s>` : ''}</div>
+        <div class="prod__price">${p.priceFrom ? '<small>From</small> ' : ''}${(() => { const pp = S.promoPrice(p, sel.color); return pp.promoApplied ? `${money(pp.price)} <s class="was">${money(pp.base)}</s>${S.promoTag(pp, 'promotag--block')}` : `${money(p.price)}${p.listPrice && LuxoraPrefs.get().priceDrops ? ` <s class="was">${money(p.listPrice)}</s>` : ''}${S.promoTag(pp, 'promotag--block')}`; })()}</div>
       </div>
       <div class="opts">
         ${S.needsSize(p) ? `<div class="field"><span class="lbl" id="sizeLbl">Size <small class="req">(required)</small></span>
@@ -242,6 +244,12 @@ const history = recent.slice(-8).flatMap(h => {
   document.addEventListener('luxora:external', renderPanel);
   document.addEventListener('luxora:prefs', () => { if (current) renderPanel(); });
   document.addEventListener('luxora:deals', () => window.LuxoraAssistant.refresh());
+  /* promo code applied / removed in the top bar: re-price the open panel and every product card in the chat */
+  document.addEventListener('luxora:promo', () => {
+    if (current) renderPanel();
+    const byId = Object.fromEntries(window.LuxoraOffline.products.map(x => [x.id, x]));
+    feed.querySelectorAll('.card[data-id]').forEach(c => { const pr = byId[c.dataset.id], el = c.querySelector('.card__price'); if (pr && el) el.innerHTML = cardPrice(pr); });
+  });
 
   /* Settings > Your data > Clear chat history */
   document.addEventListener('luxora:clear-chat', () => {

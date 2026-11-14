@@ -1,8 +1,11 @@
 /* Luxora shared store: cart + saved items in localStorage (used by assistant, shop and saved pages).
    Prices: every cart amount comes from js/prices.js (LuxoraPrices, a mirror of the official Worker's PRICE_CATALOG),
-   never from a price stored in the cart line. reprice() corrects stored line prices and reports what changed. */
+   never from a price stored in the cart line. reprice() corrects stored line prices and reports what changed.
+   Promo code: one active code in localStorage 'luxora.promo' (validated against LuxoraPrices.PROMO_CODES on every read).
+   Cart lines keep the BASE Worker price; the promo discount is applied in quote()/info()/promoPrice() only, exactly like
+   the Worker. Changing it dispatches 'luxora:promo' and 'luxora:change'. */
 (() => {
-  const KC = 'luxora.cart', KS = 'luxora.saved';
+  const KC = 'luxora.cart', KS = 'luxora.saved', KP = 'luxora.promo';
   const read = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v : d; } catch { return d; } };
   const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} document.dispatchEvent(new Event('luxora:change')); };
   const catalog = () => Object.fromEntries((window.LuxoraOffline?.products || []).map(p => [p.id, p]));
@@ -53,8 +56,34 @@
     return found;
   }
   reprice();
+  /* the active promo code ('' when none); a stored code that is no longer valid is dropped */
+  function promo() {
+    let raw = ''; try { raw = localStorage.getItem(KP) || ''; } catch {}
+    const v = Pr.validatePromo(raw);
+    if (!v.ok) { try { localStorage.removeItem(KP); } catch {} return ''; }
+    return v.code;
+  }
+  const promoChanged = message => { document.dispatchEvent(message ? new CustomEvent('luxora:promo', { detail: { message } }) : new Event('luxora:promo')); document.dispatchEvent(new Event('luxora:change')); };
   const Store = {
     FREE_OVER, STANDARD, EXPRESS,
+    promo,
+    promoPercent: () => { const c = promo(); return c ? Pr.PROMO_CODES[c].discountPercent : 0; },
+    /* apply a typed code: { ok, code, discountPercent } or { ok: false, reason: 'invalid-promo' | 'empty' } (nothing stored) */
+    setPromo(code) {
+      const v = Pr.validatePromo(code);
+      if (!v.code) return { ok: false, code: '', reason: 'empty' };
+      if (!v.ok) return v;
+      try { localStorage.setItem(KP, v.code); } catch {}
+      promoChanged(); return v;
+    },
+    /* message (optional): why it was removed, shown in the promo bar (e.g. the Worker said the code expired) */
+    clearPromo(message) { const had = !!promo(); try { localStorage.removeItem(KP); } catch {} if (had) promoChanged(message); return had; },
+    /* price of a product/finish with the active promo: { price, base (USD), promoApplied, dealExcluded, code, percent } */
+    promoPrice(p, color) {
+      const c = color || (p && (p.variantKey || (p.colors || [])[0])), u = p && Pr.promoUnit(p.id, c, promo());
+      if (!u) return { price: p ? p.price : 0, base: p ? p.price : 0, promoApplied: false, dealExcluded: false, code: promo(), percent: 0 };
+      return { price: u.unitCents / 100, base: u.baseUnitCents / 100, promoApplied: u.promoApplied, dealExcluded: u.dealExcluded, code: promo(), percent: u.discountPercent };
+    },
     cart: () => read(KC, []),
     saved: () => read(KS, []).map(x => typeof x === 'string' ? { id: x } : x).filter(x => x && x.id),   // old format was a list of ids
     count: () => Store.cart().reduce((n, i) => n + i.qty, 0),
@@ -68,7 +97,7 @@
     /* the identity a line keeps from the product the shopper actually picked (variant name, image, price, date, link) */
     snapshot(p) { return { name: p.name, price: p.price, imageId: p.imageId || p.id, checkedAt: p.checkedAt || null, variantKey: p.variantKey || null, retailer: p.retailer ? p.retailer.name : null, url: (p.amazon && p.amazon.url) || (p.retailer && p.retailer.url) || null, asin: (p.amazon && p.amazon.asin) || null }; },
     /* price = what the Worker charges for this id + colour (never the price stored in the line) */
-    info(item) { const c = Store.resolve(item) || {}, unit = Pr.unitPrice(item.id, item.color); return { id: item.id, name: item.name || c.name || 'Product', store: item.store || c.store || 'Luxora', price: unit ?? 0, sellable: unit != null, retailer: c.retailer, imageId: item.imageId || c.imageId || item.id, checkedAt: item.checkedAt || c.checkedAt, url: item.url || null, asin: item.asin || null, variantKey: item.variantKey || c.variantKey || null }; },
+    info(item) { const c = Store.resolve(item) || {}, unit = Pr.unitPrice(item.id, item.color), u = unit == null ? null : Pr.promoUnit(item.id, item.color, promo()); return { id: item.id, name: item.name || c.name || 'Product', store: item.store || c.store || 'Luxora', price: u ? u.unitCents / 100 : 0, basePrice: unit ?? 0, promoApplied: !!(u && u.promoApplied), dealExcluded: !!(u && u.dealExcluded), sellable: unit != null, retailer: c.retailer, imageId: item.imageId || c.imageId || item.id, checkedAt: item.checkedAt || c.checkedAt, url: item.url || null, asin: item.asin || null, variantKey: item.variantKey || c.variantKey || null }; },
     /* "Buy at <retailer>" link: new tab, noopener, sponsored */
     buyLink(p, cls = 'btn', label) {
       const r = p && p.retailer; if (!r || !/^https:/.test(r.url)) return '';
@@ -115,10 +144,19 @@
     },
     clearSaved() { write(KS, []); },
     removeSaved(id) { write(KS, Store.saved().filter(x => x.id !== id)); },
-    /* the exact Worker quote for the current cart (cents) */
-    quote: (method = 'standard') => Pr.quote(Store.cart(), method),
-    subtotal: () => Pr.quote(Store.cart().filter(i => !Pr.lineProblem(i))).subtotalCents / 100,
-    shipping(method = 'standard') { return Pr.quote(Store.cart().filter(i => !Pr.lineProblem(i)), method).shippingCents / 100; },
+    /* the exact Worker quote for the current cart (cents), with the active promo code */
+    quote: (method = 'standard') => Pr.quote(Store.cart(), method, promo()),
+    subtotal: () => Pr.quote(Store.cart().filter(i => !Pr.lineProblem(i)), 'standard', promo()).subtotalCents / 100,
+    shipping(method = 'standard') { return Pr.quote(Store.cart().filter(i => !Pr.lineProblem(i)), method, promo()).shippingCents / 100; },
+    /* promo savings on the current cart (USD) */
+    promoSavings: () => Pr.quote(Store.cart().filter(i => !Pr.lineProblem(i)), 'standard', promo()).discountCents / 100,
+    /* small price-tag HTML shared by every view: promo tag on eligible items, "deal price" note on deal items while a code is active */
+    promoTag(pp, cls = '') {
+      if (!pp || !pp.code) return '';
+      if (pp.promoApplied) return `<span class="promotag ${cls}" title="Promo code ${Store.esc(pp.code)} applied">${Store.esc(pp.code)} &minus;${pp.percent}%</span>`;
+      if (pp.dealExcluded) return `<span class="promotag promotag--off ${cls}" title="Already on deal: promo codes do not apply">On deal &middot; code not applied</span>`;
+      return '';
+    },
     reprice,
     /* notices from reprice() not yet shown to the shopper (shown once by the shop / assistant) */
     takeNotices() { const n = notices; notices = []; return n; },
@@ -128,7 +166,7 @@
       if (Store._bound) return; Store._bound = true;
       const set = (sel, n) => document.querySelectorAll(sel).forEach(b => { b.textContent = n; b.hidden = n === 0; });
       const upd = () => { set('[data-cart-badge]', Store.count()); set('[data-saved-badge]', Store.savedCount()); };
-      upd(); document.addEventListener('luxora:change', upd); window.addEventListener('storage', e => { if (e.key === KC || e.key === KS) { upd(); document.dispatchEvent(new Event('luxora:external')); } });
+      upd(); document.addEventListener('luxora:change', upd); window.addEventListener('storage', e => { if (e.key === KC || e.key === KS) { upd(); document.dispatchEvent(new Event('luxora:external')); } if (e.key === KP) { document.dispatchEvent(new Event('luxora:promo')); document.dispatchEvent(new Event('luxora:external')); } });
     }
   };
   window.LuxoraStore = Store;

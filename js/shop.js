@@ -5,7 +5,13 @@
   const products = window.LuxoraOffline.products, byId = Object.fromEntries(products.map(p => [p.id, p]));
   const CATS = [['all', 'All'], ['smart-rings', 'Smart rings'], ['smartwatches', 'Smartwatches'], ['earbuds', 'Earbuds'], ['headphones', 'Headphones'], ['tablets', 'Tablets'], ['e-readers', 'E-readers'], ['smart-home', 'Smart home'], ['deals', 'Deals']];
   const D = window.LuxoraDeals, dealKey = p => Object.keys(p.variants || {}).find(k => p.variants[k].deal), inCat = (p, k) => k === 'all' || (k === 'deals' ? !!(p.deal || dealKey(p)) : p.category === k), dealsOn = () => D.list.length > 0;
-  const priceHtml = p => p.deal && P().priceDrops ? `<span class="pr"><strong class="pr__now">${money(p.price)}</strong> <s>${money(p.listPrice)}</s></span>` : `<strong>${money(p.price)}</strong>`;
+  /* price shown = what the Worker charges: promo price (struck base + code tag) on full-price items, deal price on deal items */
+  const priceHtml = (p, color) => {
+    const pp = S.promoPrice(p, color);
+    if (pp.promoApplied) return `<span class="pr pr--promo"><strong class="pr__now">${money(pp.price)}</strong> <s>${money(pp.base)}</s>${S.promoTag(pp)}</span>`;
+    const tag = S.promoTag(pp);
+    return p.deal && P().priceDrops ? `<span class="pr"><strong class="pr__now">${money(p.price)}</strong> <s>${money(p.listPrice)}</s>${tag}</span>` : tag ? `<span class="pr"><strong>${money(p.price)}</strong>${tag}</span>` : `<strong>${money(p.price)}</strong>`;
+  };
   const P = () => window.LuxoraPrefs.get();
   const st = { cat: 'all', sort: ['price-asc', 'price-desc'].includes(P().sort) ? P().sort : 'featured', q: '' };
   $('#sort').value = st.sort;
@@ -65,7 +71,7 @@
         <a class="dealcard__img" href="${href}" aria-label="View ${esc(p.name)}">${Art.product(p, 0)}${P().priceDrops ? `<span class="dealtag">-${d.discountPercent}%</span>` : ''}</a>
         <div class="dealcard__body"><span class="dealcard__flag">Deal at ${esc(d.retailer || p.retailer.name)}</span><h3><a href="${href}">${esc(p.name)}</a></h3>
           <p class="dealcard__head">${esc(d.headline)}</p>
-          <div class="dealcard__price"><strong>${money(p.price)}</strong> ${P().priceDrops ? `<s>${money(p.listPrice)}</s>` : ''} <small>${esc(D.endsText(d))}</small></div>
+          <div class="dealcard__price"><strong>${money(S.promoPrice(p, d.color || undefined).price)}</strong> ${P().priceDrops ? `<s>${money(p.listPrice)}</s>` : ''} ${S.promoTag(S.promoPrice(p, d.color || undefined))} <small>${esc(D.endsText(d))}</small></div>
           <button class="btn btn--sm" data-add="${p.id}"${d.color ? ` data-c="${d.color}"` : ''}>${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button> </div></article>`; }).join('')}</div>`;
   }
   const COUNTRIES = { US: 'the United States', CA: 'Canada', GB: 'the United Kingdom', IN: 'India', DE: 'Germany', FR: 'France', ES: 'Spain', AU: 'Australia' };
@@ -75,6 +81,7 @@
     if (shown) { if (!$('#listView').hidden) renderList(); else { const m = location.hash.match(/^#\/shop\/p\/([\w-]+)/); if (m && byId[m[1]]) renderDetail(byId[m[1]], hashColor()); } } renderDrawer();
   });
   region();
+  document.addEventListener('luxora:promo', () => { if (shown) { if (!$('#listView').hidden) renderList(); else { const m = location.hash.match(/^#\/shop\/p\/([\w-]+)/); if (m && byId[m[1]]) renderDetail(byId[m[1]], hashColor()); } } renderDrawer(); });
   document.addEventListener('luxora:deals', () => { if (shown) { if (!$('#listView').hidden) renderList(); else { const m = location.hash.match(/^#\/shop\/p\/([\w-]+)/); if (m && byId[m[1]]) renderDetail(byId[m[1]], hashColor()); } } renderDrawer(); });
   const leaveDetail = () => { if (/^#\/shop\/p\//.test(location.hash)) location.hash = '#/shop'; };
   function renderList() {
@@ -124,7 +131,7 @@
           <div class="info">
             <div class="pcard__store">${esc(p.store)}</div><h1>${esc(p.name)}</h1>
             <div class="rate">${S.checked(p)} &middot; at ${esc(p.retailer.name)}</div>${S.preorderTag(p) ? `<div class="preline">${S.preorderTag(p)}</div>` : ''}
-            <div class="price">${p.priceFrom ? '<small class="from">From</small> ' : ''}${priceHtml(p)}</div>${p.deal && P().priceDrops ? `<div class="dealnote"><span class="dealtag dealtag--inline">-${p.deal.discountPercent}%</span> <b>Deal.</b> ${esc(D.endsText(p.deal))}. ${esc(p.deal.headline)} <span class="dealnote__src">Compared with ${esc(p.deal.listPriceSource || 'the listed price')}.${p.deal.sourceUrl ? ` <a href="${esc(p.deal.sourceUrl)}" target="_blank" rel="noopener noreferrer sponsored">Source<span class="sr-only"> (opens in a new tab)</span></a>` : ''}</span></div>` : ''}
+            <div class="price">${p.priceFrom ? '<small class="from">From</small> ' : ''}${priceHtml(p, d.color)}</div>${p.deal && P().priceDrops ? `<div class="dealnote"><span class="dealtag dealtag--inline">-${p.deal.discountPercent}%</span> <b>Deal.</b> ${esc(D.endsText(p.deal))}. ${esc(p.deal.headline)} <span class="dealnote__src">Compared with ${esc(p.deal.listPriceSource || 'the listed price')}.${p.deal.sourceUrl ? ` <a href="${esc(p.deal.sourceUrl)}" target="_blank" rel="noopener noreferrer sponsored">Source<span class="sr-only"> (opens in a new tab)</span></a>` : ''}</span></div>` : ''}
             <p class="desc">${esc(p.description || '')}</p>
             <div class="opt"><span class="lbl">Size${S.needsSize(p) ? ' <small class="req">(required)</small>' : ''}</span><select id="dSize" aria-label="Size" ${S.needsSize(p) ? 'aria-required="true" aria-describedby="dSizeErr"' : ''}>${S.needsSize(p) ? '<option value="">Select a size</option>' : ''}${S.sellableSizes(p).map(s => `<option ${s === d.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><p class="sizeerr" id="dSizeErr" role="alert" hidden>Please select a size before adding this to your cart.</p>${p.sizes.some(S.isSizingKit) ? `<p class="onote kitnote">Not sure of your size? Get a sizing kit from ${esc(p.store)} first. Luxora checkout sells the ring in your size only, never a sizing kit.</p>` : ''}</div>
             ${base.colors[0] === 'standard' ? '' : `<div class="opt"><span class="lbl">Color: <b>${cname(d.color)}</b></span><div class="sw" id="dSw">${base.colors.map(c => `<button type="button" class="c-${c} ${c === d.color ? 'on' : ''}" data-c="${c}" aria-label="${cname(c)}" aria-pressed="${c === d.color}">${c === d.color ? '&#10003;' : ''}</button>`).join('')}</div></div>`}
@@ -174,6 +181,13 @@
     else { $('#detailView').hidden = true; $('#listView').hidden = false; document.title = 'Shop - Luxora'; renderList(); }
   }
   const drawer = $('#drawer');
+  /* promo savings row for the cart drawer / checkout summary (the subtotal below it is already discounted) */
+  function promoRow(cls, fmt = money) {
+    const code = S.promo(); if (!code || !S.cart().length) return '';
+    const save = S.promoSavings();
+    return save > 0 ? `<div class="${cls} promorow"><span>Promo ${esc(code)} (${S.promoPercent()}% off full-price items)</span><b>&minus;${fmt(save)}</b></div>`
+      : `<div class="${cls} promorow promorow--none"><span>Promo ${esc(code)}: items on deal are excluded</span><b>${fmt(0)}</b></div>`;
+  }
   function setDrawer(open) { if (open === !drawer.hidden) return; drawer.hidden = !open; if (open) { renderDrawer(); drawer.querySelector('.x').focus(); } else if (!dlg.open) cartNotes = []; }
   window.LuxoraShop = { show, setDrawer, isShown: () => shown, setReturn: h => { returnTo = h; }, checkout: () => openCheckout() };
 
@@ -191,10 +205,10 @@
         <div><div class="pcard__store">${esc(f.store)}</div><div class="line__name">${esc(f.name)}</div>
           <div class="line__opts">${esc(i.size)} &middot; <i class="dot c-${esc(i.color)}"></i>${cname(i.color)}</div>
           <div class="line__ctl"><div class="qty"><button data-dec="${idx}" aria-label="Decrease quantity of ${esc(f.name)}">&minus;</button><span>${i.qty}</span><button data-inc="${idx}" aria-label="Increase quantity of ${esc(f.name)}">+</button></div><button class="rm" data-rm="${idx}">Remove</button></div></div>
-        <div class="line__price">${money(f.price * i.qty)}</div></article>`;
+        <div class="line__price">${money(f.price * i.qty)}${f.promoApplied ? ` <s class="was">${money(f.basePrice * i.qty)}</s>` : ''}${S.promoTag({ code: S.promo(), percent: S.promoPercent(), promoApplied: f.promoApplied, dealExcluded: f.dealExcluded })}</div></article>`;
     }).join('');
     const sub = S.subtotal(), ship = S.shipping();
-    foot.innerHTML = `${notesHtml()}<div class="row"><span>Subtotal</span><b>${money(sub)}</b></div>
+    foot.innerHTML = `${notesHtml()}${promoRow('row')}<div class="row"><span>Subtotal</span><b>${money(sub)}</b></div>
       <div class="row"><span>Shipping</span><b>${ship === 0 ? 'Free' : money(ship)}</b></div>
       ${ship > 0 ? `<p class="hint">Add <b>${money(S.FREE_OVER - sub)}</b> more for free shipping.</p>` : ''}
       <div class="row total"><span>Total</span><b>${money(sub + ship)}</b></div>
@@ -227,8 +241,8 @@ const stripe = Stripe(STRIPE_PUBLISHABLE_KEY)
   /* totals = the exact Worker quote (js/prices.js), in cents */
   const summary = () => {
     const q = S.quote(method), sub = q.subtotalCents / 100, ship = q.shippingCents / 100;
-    return `${notesHtml()}<div class="sum">${S.cart().map(i => `<div><span>${i.qty} × ${esc(S.info(i).name)} <small>${esc(i.size)}, ${cname(i.color)}</small></span><span>${usd(S.info(i).price * i.qty)}</span></div>`).join('')}
-      <div><span>Subtotal</span><span>${usd(sub)}</span></div><div><span>Shipping</span><span>${ship === 0 ? 'Free' : usd(ship)}</span></div><div class="t"><span>Total (USD)</span><span>${usd(sub + ship)}</span></div></div>`;
+    return `${notesHtml()}<div class="sum">${S.cart().map(i => { const f = S.info(i); return `<div><span>${i.qty} × ${esc(f.name)} <small>${esc(i.size)}, ${cname(i.color)}${f.promoApplied ? ` · ${esc(S.promo())} −${S.promoPercent()}%` : f.dealExcluded && S.promo() ? ' · On deal, code not applied' : ''}</small></span><span>${usd(f.price * i.qty)}${f.promoApplied ? ` <s class="was">${usd(f.basePrice * i.qty)}</s>` : ''}</span></div>`; }).join('')}
+      ${promoRow('', usd).replace('<b>', '<span>').replace('</b>', '</span>')}<div><span>Subtotal</span><span>${usd(sub)}</span></div><div><span>Shipping</span><span>${ship === 0 ? 'Free' : usd(ship)}</span></div><div class="t"><span>Total (USD)</span><span>${usd(sub + ship)}</span></div></div>`;
   };
 function stepDetails() {
   $('#coBody').innerHTML = `<h2 id="coTitle">Checkout</h2>
@@ -487,12 +501,21 @@ function stepDetails() {
   })),
   method,
   currency: 'usd',
-  expectedTotalCents: q.totalCents
+  expectedTotalCents: q.totalCents,
+  /* the active promo code (only sent when one is applied); the Worker re-checks it and every discounted price */
+  ...(q.promoCode ? { promoCode: q.promoCode } : {})
 })
     });
 
     const data = await response.json().catch(() => ({}));
 
+    if (response.status === 400 && data.code === 'invalid_promo') {
+      /* the code is no longer valid (e.g. replaced by a newer code): drop it, re-price at normal prices and show the review again */
+      const code = q.promoCode || 'Your promo code';
+      S.clearPromo(`${code} is invalid or has expired, so it was removed. Prices are back to normal.`);
+      cartNotes = [`Promo code ${code} is invalid or has expired, so it was removed. Please review your updated total before paying.`];
+      placeOrder(); return;
+    }
     if (response.status === 409) {
       /* the server's prices differ from what the shopper saw: never charge, re-price and show the review again */
       S.reprice(); S.takeNotices();

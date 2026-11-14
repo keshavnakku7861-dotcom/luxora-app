@@ -24,7 +24,7 @@
         <div><div class="line__store">${esc(p.store)}</div><h2 class="line__name"><a href="#/shop/p/${p.id}${q}">${esc(f.name)}</a></h2>
           <div class="line__opts"><span>Size: ${esc(size)}</span><span><i class="dot c-${esc(color)}"></i>${cname(color)}</span><span>${esc(S.checked({ checkedAt: f.checkedAt }).replace('Price checked', 'Checked'))}</span></div>
           <div class="line__ctl"><button class="btn btn--sm" data-move="${p.id}">${S.needsSize(p) && !S.validSize(p, x.size) ? 'Choose size' : 'Move to cart'}</button><button class="rm" data-unsave="${p.id}">Remove</button></div></div>
-        <div class="line__price">${money(f.price)}</div></article>`;
+        <div class="line__price">${money(f.price)}${f.promoApplied ? ` <s class="was">${money(f.basePrice)}</s>` : ''}${S.promoTag({ code: S.promo(), percent: S.promoPercent(), promoApplied: f.promoApplied, dealExcluded: f.dealExcluded })}</div></article>`;
     }).join('');
   }
   function move(id) {
@@ -32,7 +32,7 @@
     const v = S.variant(byId[id], x.color), f = S.info(x);
     if (S.needsSize(v) && !S.validSize(v, x.size)) return { needSize: v };   // e.g. an old "Sizing kit" pick: a real ring size is needed
     /* keep the saved variant's identity (name, image, price, date, link) instead of rebuilding the base product */
-    const p = { ...v, name: f.name, price: f.price, imageId: f.imageId, checkedAt: f.checkedAt, amazon: f.url && /amazon\.com/.test(f.url) ? { ...(v.amazon || {}), url: f.url, asin: f.asin || (v.amazon && v.amazon.asin) } : v.amazon };
+    const p = { ...v, name: f.name, price: f.basePrice, imageId: f.imageId, checkedAt: f.checkedAt, amazon: f.url && /amazon\.com/.test(f.url) ? { ...(v.amazon || {}), url: f.url, asin: f.asin || (v.amazon && v.amazon.asin) } : v.amazon };
     if (!S.addToCart(p, { size: x.size, color: x.color })) return { needSize: v };   // keep it saved if it can't be sold as picked
     S.removeSaved(id); return p;
   }

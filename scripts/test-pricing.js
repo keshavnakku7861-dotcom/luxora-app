@@ -8,8 +8,9 @@ const plain = x => JSON.parse(JSON.stringify(x));
 async function test(name, fn) { try { await fn(); passes++; console.log('ok   ' + name); } catch (e) { fails++; console.log('FAIL ' + name + '\n     ' + e.message); } }
 
 /* boot the app scripts the way app.html loads them: offline -> prices -> store (-> deals) */
-function boot({ cart = [], saved = [], feed = null } = {}) {
+function boot({ cart = [], saved = [], feed = null, promo = null } = {}) {
   const ls = new Map([['luxora.cart', JSON.stringify(cart)], ['luxora.saved', JSON.stringify(saved)]]);
+  if (promo != null) ls.set('luxora.promo', promo);
   const localStorage = { getItem: k => (ls.has(k) ? ls.get(k) : null), setItem: (k, v) => ls.set(k, String(v)), removeItem: k => ls.delete(k) };
   const events = [];
   const document = { dispatchEvent: e => events.push(e.type), addEventListener() {}, querySelectorAll: () => [] };
@@ -96,6 +97,32 @@ const line = (o) => ({ id: 'aura-ring-4', name: 'Oura Ring 4', store: 'Oura', si
   await test('product data drift is corrected to the Worker price at load', () => {
     const { P } = boot(); const fake = [{ id: 'nova-ring', price: 1, colors: ['silver'] }, { id: 'aura-ring-4', price: 349, colors: ['silver', 'midnight'], variants: { midnight: { price: 279 } } }];
     const fixed = P.syncProducts(fake); assert.strictEqual(fake[0].price, 324.99); assert.strictEqual(fake[1].variants.midnight.price, 399); assert.strictEqual(fixed.length, 2);
+  });
+  /* promo code (RAM2016, 15% off full-price items; deal items excluded) */
+  await test('promo: setPromo(" ram2016 ") stores RAM2016, fires luxora:promo + luxora:change, cart quote discounts eligible items only', () => {
+    const { S, ls, events } = boot({ cart: [line(), { id: 'drift-buds', name: 'Sony WF-C710N', store: 'Sony', size: 'One size', color: 'black', qty: 1, price: 99.99 }] });
+    const r = S.setPromo(' ram2016 '); assert.strictEqual(r.ok, true); assert.strictEqual(ls.get('luxora.promo'), 'RAM2016'); assert.strictEqual(S.promo(), 'RAM2016');
+    assert.ok(events.includes('luxora:promo') && events.includes('luxora:change'));
+    const q = S.quote('standard'); assert.strictEqual(q.ok, true); assert.strictEqual(q.promoCode, 'RAM2016');
+    assert.deepStrictEqual(plain(q.lines.map(l => [l.id, l.unitCents, l.baseUnitCents, l.promoApplied])), [['aura-ring-4', 29665, 34900, true], ['drift-buds', 9999, 9999, false]]);
+    assert.strictEqual(q.subtotalCents, 29665 + 9999); assert.strictEqual(q.shippingCents, 0); assert.strictEqual(S.subtotal(), 396.64); assert.strictEqual(S.promoSavings(), 52.35);
+    assert.strictEqual(JSON.parse(ls.get('luxora.cart'))[0].price, 349, 'cart lines keep the base Worker price');
+    assert.strictEqual(S.reprice().length, 0, 'an active promo does not trigger "price updated" notices');
+  });
+  await test('promo: info()/promoPrice() show promo price for eligible, deal price for excluded items', () => {
+    const { S, products } = boot({ promo: 'RAM2016' });
+    const ipad = products.find(p => p.id === 'ipad-mini-a20'), cans = products.find(p => p.id === 'studio-cans'), aura = products.find(p => p.id === 'aura-ring-4');
+    assert.deepStrictEqual(plain(S.promoPrice(ipad)), { price: 594.15, base: 699, promoApplied: true, dealExcluded: false, code: 'RAM2016', percent: 15 });
+    assert.deepStrictEqual(plain(S.promoPrice(cans)), { price: 199.99, base: 199.99, promoApplied: false, dealExcluded: true, code: 'RAM2016', percent: 0 });
+    assert.strictEqual(S.promoPrice(S.variant(aura, 'midnight')).price, 339.15);
+    const f = S.info({ id: 'aura-ring-4', color: 'silver', size: 'Size 7', qty: 1 }); assert.strictEqual(f.price, 296.65); assert.strictEqual(f.basePrice, 349); assert.strictEqual(f.promoApplied, true);
+    assert.match(S.promoTag(S.promoPrice(ipad)), /RAM2016 &minus;15%/); assert.match(S.promoTag(S.promoPrice(cans)), /On deal/);
+  });
+  await test('promo: invalid code is rejected and not stored; a stale stored code is dropped on read; clearPromo resets prices', () => {
+    const { S, ls } = boot({ cart: [line()] });
+    assert.strictEqual(S.setPromo('LUX4829').ok, false); assert.strictEqual(S.setPromo('LUX4829').reason, 'invalid-promo'); assert.strictEqual(S.setPromo('   ').reason, 'empty'); assert.ok(!ls.has('luxora.promo'));
+    const stale = boot({ promo: 'OLDCODE' }); assert.strictEqual(stale.S.promo(), ''); assert.ok(!stale.ls.has('luxora.promo'));
+    S.setPromo('RAM2016'); assert.strictEqual(S.quote().totalCents, 29665); assert.strictEqual(S.clearPromo('expired'), true); assert.strictEqual(S.quote().totalCents, 34900); assert.ok(!ls.has('luxora.promo'));
   });
   console.log(`\n${passes} passed, ${fails} failed`); process.exit(fails ? 1 : 0);
 })();
