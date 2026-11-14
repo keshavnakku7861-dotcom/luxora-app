@@ -197,7 +197,7 @@ const history = recent.slice(-8).flatMap(h => {
         <div class="car__art" id="art">${LuxoraArt.product(p, sel.view)}</div>${LuxoraArt.illus}
         <button class="car__btn car__btn--next" id="next" aria-label="Next image">&#8250;</button>
       </div>
-      <div class="dots" id="dots">${Array.from({ length: views }, (_, i) => `<i class="${i === sel.view ? 'on' : ''}" data-i="${i}" role="button" aria-label="Image ${i + 1}"></i>`).join('')}</div>
+      <div class="dots" id="dots">${Array.from({ length: views }, (_, i) => `<button type="button" class="${i === sel.view ? 'on' : ''}" data-i="${i}" aria-label="Show image ${i + 1}" aria-pressed="${i === sel.view}"></button>`).join('')}</div>
       <div class="prod__top">
         <div class="prod__id"><div class="store">${esc(p.store)}</div><div class="prod__name">${esc(p.name)}</div>
           <div class="pnote">${S.checked(p)} &middot; ${esc(p.retailer.name)}</div></div>
@@ -219,7 +219,7 @@ const history = recent.slice(-8).flatMap(h => {
       <div class="buyat">${S.buyLink(p, 'btn btn--ghost buyat__btn')}${S.amazonLink(p, 'btn btn--ghost buyat__btn btn--amz')}${(p.alsoAt || []).map(a => `<a class="buyat__alt" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer sponsored">Also at ${esc(a.name)}${a.price ? ' (' + money(a.price) + ')' : ''} &#8599;<span class="sr-only"> (opens in a new tab)</span></a>`).join('')}</div>
       <p class="amzdisc">${S.DISCLOSURE}</p>
       <button class="confirm" id="confirm">Confirm &amp; Let AI Process</button>`;
-    const go = d => { sel.view = (sel.view + d + views) % views; $('#art').innerHTML = LuxoraArt.product(p, sel.view); $('#dots').querySelectorAll('i').forEach((x, i) => x.classList.toggle('on', i === sel.view)); };
+    const go = d => { sel.view = (sel.view + d + views) % views; $('#art').innerHTML = LuxoraArt.product(p, sel.view); $('#dots').querySelectorAll('button').forEach((x, i) => x.classList.toggle('on', i === sel.view)); };
     $('#prev').onclick = () => go(-1); $('#next').onclick = () => go(1);
     $('#dots').onclick = e => { const i = e.target.dataset.i; if (i != null) go(Number(i) - sel.view); };
     if ($('#size')) $('#size').onchange = e => { sel.size = e.target.value; sel.sizeErr = false; renderPanel(); };
