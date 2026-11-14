@@ -41,8 +41,8 @@ body { background: var(--page); overflow: hidden; }
 .panel .car__btn--prev { left: 0; }
 .panel .car__btn--next { right: 0; }
 .panel .dots { display: flex; gap: 6px; justify-content: center; margin-top: -4px; }
-.panel .dots i { width: 8px; height: 8px; border-radius: 4px; background: var(--gray-200); display: block; cursor: pointer; transition: width .2s, background .2s; }
-.panel .dots i.on { background: var(--orange); width: 22px; }
+.panel .dots button { width: 8px; height: 8px; border: 0; padding: 0; border-radius: 4px; background: var(--gray-200); display: block; cursor: pointer; transition: width .2s, background .2s; }
+.panel .dots button.on { background: var(--orange); width: 22px; }
 .panel .prod__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .panel .store { font-size: 18px; font-weight: 700; letter-spacing: -.03em; }
 .panel .prod__name { font-size: 26px; font-weight: 500; line-height: 1.15; margin-top: 2px; }
