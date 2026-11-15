@@ -314,7 +314,7 @@
     if (!inApp() || get()) return;
     open(); dlg.addEventListener('close', () => { if (!get()) location.replace('index.html'); });
   };
-  const init = () => { paint(); gate(); };
+  const init = () => { paint(); };
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
   window.LuxoraAuth = { profile: get, open, EMAIL, normPhone, COUNTRIES, CURRENCY, REGION_LABEL, checkLocation, setCountryPrefs,
     update(p) {   // edit profile; keeps the local account record in step (moves it if the email changed)
