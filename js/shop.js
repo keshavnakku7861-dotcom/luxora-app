@@ -237,7 +237,36 @@ const stripe = Stripe(STRIPE_PUBLISHABLE_KEY)
   const usd = n => '$' + Number(n).toFixed(2);
   let method = 'standard';
   let checkoutData = {};
-  function openCheckout() { repriceCart(); if (!S.cart().length) return; method = 'standard'; stepDetails(); if (!dlg.open) dlg.showModal(); }
+  let currentAttempt = null;
+
+function newAccessToken() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+function newCheckoutAttempt(fingerprint) {
+  return {
+    id: crypto.randomUUID(),
+    token: newAccessToken(),
+    fingerprint
+  };
+}
+  function openCheckout() {
+  repriceCart();
+  if (!S.cart().length) return;
+
+  currentAttempt = null;
+  method = 'standard';
+
+  stepDetails();
+
+  if (!dlg.open) dlg.showModal();
+}
   /* totals = the exact Worker quote (js/prices.js), in cents */
   const summary = () => {
     const q = S.quote(method), sub = q.subtotalCents / 100, ship = q.shippingCents / 100;
@@ -459,7 +488,42 @@ function stepDetails() {
   const q = S.quote(method);
   if (!q.ok) { cartNotes = ['Your cart has an item Luxora checkout cannot sell. Please review your cart.']; placeOrder(); return; }
   const amount = q.totalCents;
+const orderRequest = {
+  items: q.lines.map(i => ({
+    id: i.id,
+    qty: i.qty,
+    color: i.color,
+    size: i.size,
+    unitPriceCents: i.unitCents
+  })),
 
+  method,
+  currency: 'usd',
+  expectedTotalCents: q.totalCents,
+
+  ...(q.promoCode ? { promoCode: q.promoCode } : {}),
+
+  customer: {
+    name: checkoutData.name.trim(),
+    email: checkoutData.email.trim().toLowerCase(),
+    phone: checkoutData.phone.trim()
+  },
+
+  shipping: {
+    address1: checkoutData.address1.trim(),
+    address2: (checkoutData.address2 || '').trim(),
+    city: checkoutData.city.trim(),
+    region: checkoutData.state.trim(),
+    postalCode: checkoutData.zip.trim(),
+    country: checkoutData.country.trim().toUpperCase()
+  }
+};
+
+const attemptFingerprint = JSON.stringify(orderRequest);
+
+if (!currentAttempt || currentAttempt.fingerprint !== attemptFingerprint) {
+  currentAttempt = newCheckoutAttempt(attemptFingerprint);
+}
   $('#coBody').innerHTML = `
     <h2 id="coTitle">Secure payment</h2>
 
@@ -492,18 +556,9 @@ function stepDetails() {
       /* id/color/qty are what the current Worker reads; size, unitPriceCents and expectedTotalCents are extra fields the
          current Worker ignores and the updated Worker (work/.../worker.proposed.js) validates (409 if prices differ) */
       body: JSON.stringify({
-  items: q.lines.map(i => ({
-    id: i.id,
-    qty: i.qty,
-    color: i.color,
-    size: i.size,
-    unitPriceCents: i.unitCents
-  })),
-  method,
-  currency: 'usd',
-  expectedTotalCents: q.totalCents,
-  /* the active promo code (only sent when one is applied); the Worker re-checks it and every discounted price */
-  ...(q.promoCode ? { promoCode: q.promoCode } : {})
+  ...orderRequest,
+  checkoutAttemptId: currentAttempt.id,
+  orderAccessToken: currentAttempt.token
 })
     });
 
