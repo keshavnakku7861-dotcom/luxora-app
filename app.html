@@ -29,6 +29,12 @@
       <a class="rail__btn" id="navSaved" href="#/saved" aria-label="Saved items" title="Saved items"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg><b class="badge" data-saved-badge hidden>0</b></a>
       <a class="rail__btn" id="navCart" href="#/shop" aria-label="Shop and cart" title="Shop &amp; cart"><svg viewBox="0 0 24 24"><path d="M3 4h2.5l2 11h10l2-8H7M9 20h.01M17 20h.01"/></svg><b class="badge" data-cart-badge hidden>0</b></a>
       <a class="rail__btn" id="navSettings" href="#/settings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/></svg></a>
+      <a class="rail__btn" id="navInfo" href="#/info" aria-label="Information" title="Information">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="12" cy="12" r="9"></circle>
+    <path d="M12 10v7M12 7h.01"></path>
+  </svg>
+</a>
     </nav>
     <div class="rail__bottom"><button type="button" class="avatar" data-signin data-auth-keep title="Sign in" aria-label="Sign in"><span data-auth-initial></span><svg class="avatar__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.4 7-5.4s6.2 1.8 7 5.4"/></svg></button></div>
   </aside>
@@ -128,7 +134,130 @@
       <div id="settingsRoot"></div>
     </div>
   </section>
+<!-- information view -->
+<section class="view view--page" id="viewInfo" aria-label="Luxora information" hidden>
+  <div class="info-page">
 
+    <div class="vhead">
+      <div>
+        <p class="eyebrow">The future of Luxora</p>
+        <h1>From AI shopping app to superstore</h1>
+      </div>
+    </div>
+
+    <section class="info-hero">
+      <p class="info-kicker">LUXORA SUPERSTORE</p>
+      <h2>Building toward a new kind of technology store.</h2>
+      <p>
+        Luxora is starting as an AI shopping experience and growing toward
+        a future physical superstore where customers can shop, compare,
+        experience and discover technology.
+      </p>
+
+      <div class="info-goal">
+        <strong>2032</strong>
+        <span>Potential flagship opening goal</span>
+      </div>
+
+      <p class="demo-note">
+        The opening date and store plans are preliminary goals and may change
+        depending on Luxora's growth, funding, demand and business success.
+      </p>
+    </section>
+
+    <section class="info-section">
+      <p class="eyebrow">Store at a glance</p>
+      <h2>Our current vision</h2>
+
+      <div class="info-grid">
+        <article>
+          <strong>32,000</strong>
+          <span>square feet</span>
+        </article>
+
+        <article>
+          <strong>East Evansville</strong>
+          <span>Indiana candidate area</span>
+        </article>
+
+        <article>
+          <strong>130–160</strong>
+          <span>planned parking spaces</span>
+        </article>
+
+        <article>
+          <strong>2032</strong>
+          <span>potential opening goal</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="info-section">
+      <p class="eyebrow">Planned experiences</p>
+      <h2>More than a regular electronics store</h2>
+
+      <div class="info-features">
+        <article>
+          <h3>AI Experience Center</h3>
+          <p>Interactive product comparisons, touchscreen kiosks and technology demonstrations.</p>
+        </article>
+
+        <article>
+          <h3>Experience Theater</h3>
+          <p>A theater for product demos, gaming events and technology presentations.</p>
+        </article>
+
+        <article>
+          <h3>Tech Repair</h3>
+          <p>Customer support and a dedicated area for device diagnostics and repair.</p>
+        </article>
+
+        <article>
+          <h3>Café</h3>
+          <p>A place to sit, relax and enjoy the Luxora shopping experience.</p>
+        </article>
+
+        <article>
+          <h3>Pickup Lockers</h3>
+          <p>Secure pickup lockers connected to future online orders.</p>
+        </article>
+
+        <article>
+          <h3>Products &amp; Demos</h3>
+          <p>Electronics, gaming, wearables, audio, smart home, TVs, appliances and more.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="info-section">
+      <p class="eyebrow">Our roadmap</p>
+      <h2>The road to the Luxora Superstore</h2>
+
+      <div class="info-roadmap">
+        <div><strong>2026–27</strong><span>Finish and launch Luxora online</span></div>
+        <div><strong>2028–29</strong><span>Grow customers, products and revenue</span></div>
+        <div><strong>2030</strong><span>Expand sales, suppliers and funding</span></div>
+<div><strong>2031</strong><span>Site selection and potential construction</span></div>
+<div><strong>2032</strong><span>Potential Luxora Superstore opening</span></div>
+      </div>
+    </section>
+
+    <section class="info-section info-deals">
+      <p class="eyebrow">Deals &amp; updates</p>
+      <h2>Shop Luxora while we build the future</h2>
+      <p>
+        You don't have to wait for the physical store. Explore current Luxora
+        products, deals and promotional offers online today.
+      </p>
+
+      <div class="info-actions">
+        <a class="btn" href="#/shop">View current deals</a>
+        <a class="btn btn--ghost" href="#/assistant">Ask Luxora AI</a>
+      </div>
+    </section>
+
+  </div>
+</section>
   <!-- cart drawer (stays inside the stage so the sidebar remains visible) -->
   <div class="drawer" id="drawer" hidden>
     <div class="drawer__scrim" data-close-drawer></div>
