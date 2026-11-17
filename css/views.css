@@ -318,3 +318,224 @@
 .drawer__foot .reprice, #checkout .reprice { display: grid; gap: 4px; font-size: 13px; line-height: 1.45; background: var(--orange-soft); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
 .drawer__foot .reprice b, #checkout .reprice b { color: var(--orange-deep); }
 .kitnote { margin-top: 6px; }
+/* information page */
+#viewInfo {
+  overflow-y: auto;
+}
+
+#viewInfo .info-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 28px 72px;
+}
+
+#viewInfo .vhead {
+  padding: 12px 0 24px;
+  border-bottom: 1px solid var(--gray-100);
+  margin-bottom: 28px;
+}
+
+#viewInfo .vhead .eyebrow,
+#viewInfo .info-section > .eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--orange-deep);
+  margin-bottom: 8px;
+}
+
+#viewInfo .vhead h1 {
+  font-size: clamp(32px, 4.5vw, 50px);
+  line-height: 1.05;
+  letter-spacing: -.035em;
+  max-width: 760px;
+}
+
+#viewInfo .info-hero {
+  background: var(--orange-soft);
+  border: 1px solid var(--gray-100);
+  border-radius: 22px;
+  padding: clamp(24px, 4vw, 44px);
+  margin-bottom: 42px;
+}
+
+#viewInfo .info-kicker {
+  color: var(--orange-deep);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+#viewInfo .info-hero h2 {
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+
+#viewInfo .info-hero > p {
+  max-width: 760px;
+  line-height: 1.6;
+  color: var(--gray-600);
+}
+
+#viewInfo .info-goal {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--white);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin: 22px 0 14px;
+}
+
+#viewInfo .info-goal strong {
+  font-size: 30px;
+  color: var(--orange-deep);
+}
+
+#viewInfo .info-goal span {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+#viewInfo .demo-note {
+  font-size: 13px;
+  color: var(--gray-600);
+}
+
+#viewInfo .info-section {
+  margin-top: 46px;
+}
+
+#viewInfo .info-section > h2 {
+  font-size: clamp(25px, 3vw, 34px);
+  margin-bottom: 20px;
+  letter-spacing: -.02em;
+}
+
+#viewInfo .info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+#viewInfo .info-grid article {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: 16px;
+  padding: 22px;
+  display: grid;
+  gap: 6px;
+}
+
+#viewInfo .info-grid strong {
+  font-size: 24px;
+  color: var(--orange-deep);
+}
+
+#viewInfo .info-grid span {
+  font-size: 13px;
+  color: var(--gray-600);
+}
+
+#viewInfo .info-features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+#viewInfo .info-features article {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: 16px;
+  padding: 22px;
+}
+
+#viewInfo .info-features h3 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+#viewInfo .info-features p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--gray-600);
+}
+
+#viewInfo .info-roadmap {
+  display: grid;
+  gap: 12px;
+}
+
+#viewInfo .info-roadmap > div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+
+#viewInfo .info-roadmap strong {
+  color: var(--orange-deep);
+  font-size: 17px;
+}
+
+#viewInfo .info-roadmap span {
+  font-size: 14px;
+}
+
+#viewInfo .info-deals {
+  background: var(--orange-soft);
+  border-radius: 20px;
+  padding: 30px;
+  margin-bottom: 20px;
+}
+
+#viewInfo .info-deals > p:not(.eyebrow) {
+  max-width: 680px;
+  line-height: 1.6;
+  color: var(--gray-600);
+}
+
+#viewInfo .info-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+  #viewInfo .info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #viewInfo .info-features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  #viewInfo .info-page {
+    padding: 20px 16px 56px;
+  }
+
+  #viewInfo .info-grid,
+  #viewInfo .info-features {
+    grid-template-columns: 1fr;
+  }
+
+  #viewInfo .info-roadmap > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  #viewInfo .info-hero,
+  #viewInfo .info-deals {
+    padding: 22px;
+  }
+}
