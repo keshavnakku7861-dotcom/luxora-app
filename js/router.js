@@ -15,6 +15,7 @@
   shop: $('#navCart'),
   settings: $('#navSettings'),
   info: $('#navInfo')
+  news: $('#navNews')
 };
   let prev = '#/shop', cartOpen = false;
 
@@ -24,6 +25,7 @@
     if (seg[0] === 'saved') return { view: 'saved', query };
     if (seg[0] === 'settings') return { view: 'settings', query };
      if (seg[0] === 'info') return { view: 'info', query };
+     if (seg[0] === 'whats-new') return { view: 'news', query };
     if (seg[0] === 'cart') return { view: 'shop', cart: true, query };
     if (seg[0] === 'shop') return { view: 'shop', pid: seg[1] === 'p' ? seg[2] : null, query };
     return { view: 'assistant', query };
@@ -35,6 +37,7 @@
     if (r.view === 'assistant') { document.title = 'AI Assistant - Luxora'; window.LuxoraAssistant.refresh(); }
     else if (r.view === 'settings') { document.title = 'Settings - Luxora'; views.settings.scrollTop = 0; }
        else if (r.view === 'info') { document.title = 'Information - Luxora'; views.info.scrollTop = 0; }
+          else if (r.view === 'news') { document.title = "What's New - Luxora"; views.news.scrollTop = 0; }
     else if (r.view === 'saved') { document.title = 'Saved items - Luxora'; document.dispatchEvent(new Event('luxora:change')); views.saved.scrollTop = 0; }
     else {
       if (r.cart) { if (!cartOpen && /^#\/shop/.test(prev)) Shop.setReturn(prev); else if (!cartOpen && !Shop.isShown()) Shop.setReturn('#/shop'); if (!Shop.isShown()) Shop.show(null, r.query); }
