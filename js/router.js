@@ -7,14 +7,15 @@
   saved: $('#viewSaved'),
   shop: $('#viewShop'),
   settings: $('#viewSettings'),
-  info: $('#viewInfo')
+  info: $('#viewInfo'),
+  news: $('#viewNews')
 };
   const nav = {
   assistant: $('#navHome'),
   saved: $('#navSaved'),
   shop: $('#navCart'),
   settings: $('#navSettings'),
-  info: $('#navInfo')
+  info: $('#navInfo'),
   news: $('#navNews')
 };
   let prev = '#/shop', cartOpen = false;
