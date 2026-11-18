@@ -35,6 +35,13 @@
     <path d="M12 10v7M12 7h.01"></path>
   </svg>
 </a>
+      <a class="rail__btn" id="navNews" href="#/whats-new" aria-label="What's New" title="What's New">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 3v3M12 18v3M3 12h3M18 12h3"></path>
+    <path d="M7 7l2 2M15 15l2 2M17 7l-2 2M9 15l-2 2"></path>
+    <circle cx="12" cy="12" r="3"></circle>
+  </svg>
+</a>
     </nav>
     <div class="rail__bottom"><button type="button" class="avatar" data-signin data-auth-keep title="Sign in" aria-label="Sign in"><span data-auth-initial></span><svg class="avatar__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.4 7-5.4s6.2 1.8 7 5.4"/></svg></button></div>
   </aside>
@@ -237,7 +244,93 @@
   </div>
   </div>
 </div>
+<!-- what's new view -->
+<section class="view view--page" id="viewNews" aria-label="What's New" hidden>
+  <div class="news-page">
 
+    <div class="vhead">
+      <div>
+        <p class="eyebrow">Latest from Luxora</p>
+        <h1>What's New</h1>
+      </div>
+    </div>
+
+    <section class="news-hero">
+      <p class="news-kicker">LUXORA UPDATES</p>
+      <h2>See what's coming next.</h2>
+      <p>
+        Discover upcoming Luxora features, products and important announcements.
+      </p>
+    </section>
+
+    <section class="news-section">
+      <p class="eyebrow">Coming soon</p>
+      <h2>What's on the way</h2>
+
+      <div class="news-grid">
+        <article>
+          <h3>More Products &amp; Brands</h3>
+          <p>New products, categories and brands are planned for Luxora.</p>
+        </article>
+
+        <article>
+          <h3>Product Comparison</h3>
+          <p>A simpler way to compare products, features and prices.</p>
+        </article>
+
+        <article>
+          <h3>New AI Features</h3>
+          <p>More helpful shopping tools and smarter product recommendations.</p>
+        </article>
+
+        <article>
+          <h3>Future Luxora Store</h3>
+          <p>More updates about Luxora's future physical store will be shared here.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="news-section">
+      <p class="eyebrow">Luxora announcements</p>
+      <h2>Latest updates</h2>
+
+      <div class="news-announcements">
+
+        <article>
+          <strong>Luxora continues to grow</strong>
+          <p>We're improving the shopping experience and preparing more features.</p>
+        </article>
+
+        <article>
+          <strong>More products coming</strong>
+          <p>Additional products and categories are planned for the Luxora Shop.</p>
+        </article>
+
+        <article>
+          <strong>Superstore planning</strong>
+          <p>Luxora's future physical store remains part of our long-term vision.</p>
+        </article>
+
+      </div>
+    </section>
+
+  </div>
+</section>
+  <!-- cart drawer (stays inside the stage so the sidebar remains visible) -->
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer__scrim" data-close-drawer></div>
+  <aside class="drawer__box" role="dialog" aria-labelledby="cartTitle">
+    <div class="drawer__head">
+      <h2 id="cartTitle">Your cart <span id="drawerCount"></span></h2>
+      <button class="x" data-close-drawer aria-label="Close cart">&#10005;</button>
+    </div>
+    <div class="drawer__body" id="drawerBody"></div>
+    <div class="drawer__foot" id="drawerFoot"></div>
+  </aside>
+</div>
+
+</div>
+</div>
 <!-- checkout -->
 <dialog id="checkout" aria-labelledby="coTitle">
   <div class="demo__flag">STRIPE TEST MODE &middot; NO REAL CHARGE</div>
