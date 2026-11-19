@@ -53,3 +53,7 @@
   .promo__pill { font-size: 12px; padding: 4px 10px; }
   .promo__msg { flex-basis: 100%; font-size: 12px; padding: 0 2px 2px; }
 }
+
+/* checkout tab blocked by the browser: sticky notice with links (js/shop.js showBlocked) */
+.toast--sticky { max-width: min(560px, calc(100vw - 32px)); width: max-content; line-height: 1.5; text-align: center; animation: none; }
+.toast--sticky .toast__link { margin: 0 2px; }

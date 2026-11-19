@@ -101,6 +101,34 @@
       fetch(FORM, { method: 'POST', body: fd, headers: { Accept: 'application/json' }, keepalive: true }).catch(() => {});
     } catch {}
   }
+  /* ---- Luxora emails through the official Worker: a one-time welcome email (RAM2016) for every new account, and a
+     security email when a Google account signs in on a new device or from a new country. Fire and forget: these calls
+     never block, delay or fail sign-in. text/plain keeps them "simple" CORS requests (no preflight), so keepalive works
+     even when the page navigates straight to the chat. The device id is random, per browser, and holds no personal data. */
+  const MAIL_API = window.LUXORA_EMAIL_API || 'https://luxora-api.keshavnakku7861.workers.dev';
+  const DEVICE = 'luxora.deviceId';
+  function deviceId() {
+    try {
+      let d = localStorage.getItem(DEVICE);
+      if (!/^[A-Za-z0-9_-]{16,64}$/.test(d || '')) {
+        if (!(window.crypto && crypto.getRandomValues)) return null;
+        const a = crypto.getRandomValues(new Uint8Array(16));
+        d = btoa(String.fromCharCode(...a)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        localStorage.setItem(DEVICE, d);
+      }
+      return d;
+    } catch { return null; }
+  }
+  function mail(path, body) {
+    try { fetch(MAIL_API + '/api/email/' + path, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: JSON.stringify(body), keepalive: true, credentials: 'omit' }).catch(() => {}); } catch {}
+  }
+  /* the Firebase ID token proves the Google account to the Worker; capped at 1.5 s so a slow token never holds up sign-in */
+  const idToken = u => Promise.race([Promise.resolve().then(() => u.getIdToken()), new Promise(r => setTimeout(() => r(null), 1500))]).catch(() => null);
+  function googleMail(tok, isNew, name) {
+    if (!tok) return;
+    const d = deviceId(); if (d) mail('signin', { idToken: tok, deviceId: d, name });
+    if (isNew) mail('welcome', { idToken: tok, name });
+  }
   function setCountryPrefs(country) { if (window.LuxoraPrefs && CURRENCY[country]) LuxoraPrefs.set({ country, currency: CURRENCY[country] }); }
 
 
@@ -109,13 +137,26 @@
     storageBucket: 'luxora-app-2026.firebasestorage.app', messagingSenderId: '566518224342', appId: '1:566518224342:web:d0acbf4995c0f9c9f64077' };
   const FB_V = 'https://www.gstatic.com/firebasejs/10.14.1/';
   const GFLAG = 'luxora.google';
-  let fbP = null;
+  let fbP = null, fbReady = null;   // fbReady = the loaded SDK, so a click can open the Google window without waiting
   function fb() {
     if (!fbP) fbP = Promise.all([import(FB_V + 'firebase-app.js'), import(FB_V + 'firebase-auth.js'), import(FB_V + 'firebase-firestore.js')])
-      .then(([A, U, F]) => { const app = A.getApps().length ? A.getApp() : A.initializeApp(FB_CFG); return { U, F, auth: U.getAuth(app), db: F.getFirestore(app) }; })
+      .then(([A, U, F]) => { const app = A.getApps().length ? A.getApp() : A.initializeApp(FB_CFG); return fbReady = { U, F, auth: U.getAuth(app), db: F.getFirestore(app) }; })
       .catch(e => { fbP = null; throw e; });
     return fbP;
   }
+  /* Browsers (Safari/iOS above all) only allow a pop-up straight after a tap. Loading the Firebase SDK first made the
+     Google window open late, so it could be blocked; the SDK is now preloaded as soon as the sign-in dialog shows. */
+  const preloadFb = () => { fb().catch(() => {}); };
+  const GOOGLE_ERR = {
+    'auth/popup-blocked': 'Your browser blocked the Google window. Allow pop-ups for this site and try again.',
+    'auth/unauthorized-domain': 'Google sign-in is not available on this website right now. Please use your email and password for now.',
+    'auth/operation-not-allowed': 'Google sign-in is not available right now. Please use your email and password for now.',
+    'auth/network-request-failed': 'Could not reach Google. Check your connection and try again.',
+    'auth/too-many-requests': 'Too many tries in a row. Please wait a minute and try again.',
+    'auth/user-disabled': 'This account has been turned off. Please contact Luxora.',
+    'auth/web-storage-unsupported': 'Your browser is blocking the storage Google sign-in needs (private mode or blocked cookies). Try a normal window.',
+    'sdk-load': 'Could not load Google sign-in. Check your connection (or turn off a blocker for this site) and try again.'
+  };
   async function fbSignOut() { try { localStorage.removeItem(GFLAG); } catch {} try { const f = await fb(); await f.U.signOut(f.auth); } catch {} }
   const complete = p => !!(p && p.name && p.email && p.phone && p.country && p.street && p.city && p.region && p.postal);
   function finishAuth(p, msg) { mem = p; write(p); setCountryPrefs(p.country); paint(); close(); announce(msg); welcomeAfterAuth(); toChat(); }
@@ -126,7 +167,10 @@
     b.addEventListener('click', async () => {
       formErr.hidden = true; b.disabled = true;
       try {
-        const f = await fb(); const res = await f.U.signInWithPopup(f.auth, new f.U.GoogleAuthProvider());
+        let f = fbReady;
+        if (!f) { try { f = await fb(); } catch (e) { throw { code: 'sdk-load', cause: e }; } }
+        const prov = new f.U.GoogleAuthProvider(); prov.setCustomParameters({ prompt: 'select_account' });
+        const res = await f.U.signInWithPopup(f.auth, prov);
         try { localStorage.setItem(GFLAG, '1'); } catch {}
         const u = res.user, email = (u.email || '').slice(0, 120), key = email.toLowerCase();
         let cloud = null; try { const d = await f.F.getDoc(f.F.doc(f.db, 'users', u.uid)); cloud = d.exists() ? d.data() : null; } catch {}
@@ -136,18 +180,20 @@
           delete have.updatedAt; have.uid = u.uid; have.provider = 'google';
           const all = accts(); all[key] = { ...(all[key] || {}), uid: u.uid, google: true, profile: have }; saveAccts(all);
           if (!complete(cloud)) { try { await f.F.setDoc(f.F.doc(f.db, 'users', u.uid), { ...have, updatedAt: f.F.serverTimestamp() }, { merge: true }); } catch {} }
+          googleMail(await idToken(u), false, have.name);
           return finishAuth(have, `Signed in as ${have.name}`);
         }
         completeView(u, cloud || local || {});
       } catch (e) {
         const c = e && e.code || '';
         if (c === 'auth/popup-closed-by-user' || c === 'auth/cancelled-popup-request') { b.disabled = false; return; }
-        formErr.textContent = c === 'auth/popup-blocked' ? 'Your browser blocked the Google window. Allow pop-ups for this site and try again.'
-          : c === 'auth/unauthorized-domain' ? 'Google sign-in is not enabled for this website yet.' : 'Google sign-in did not work. Please try again or use your email and password.';
+        try { console.warn('Luxora Google sign-in failed:', c || (e && e.message) || e); } catch {}
+        formErr.textContent = GOOGLE_ERR[c] || 'Google sign-in did not work. Please try again or use your email and password.';
         formErr.hidden = false;
       }
       b.disabled = false;
     });
+    preloadFb();
     return [b, el('p', { class: 'auth__or', 'aria-hidden': 'true' }, [el('span', { text: 'or' })])];
   }
   /* after Google: the shopper must still add phone + address (and name if Google had none) before entering the app */
@@ -177,7 +223,7 @@
         el('div', { class: 'auth__col' }, [el('h3', { text: 'Your account' }), ...nm.wrap, ...em.wrap, ...ph.wrap]),
         el('fieldset', { class: 'auth__loc auth__col' }, [el('legend', { text: 'Your address' }), ...co.wrap, ...st.wrap, ...ap.wrap, el('div', { class: 'auth__row' }, [el('div', {}, ci.wrap), el('div', {}, rg.wrap)]), ...pc.wrap])]),
       formErr, el('button', { type: 'submit', class: 'btn auth__go', text: 'Finish account' }),
-      el('p', { class: 'auth__fine', text: 'You signed in with Google, so no Luxora password is needed. Your profile is saved to your Luxora cloud account and this browser. Your name, email, phone and city/state/country are also sent to Luxora’s sign-up form provider (Forminit) so Luxora knows who joined. Luxora never asks for a card or PIN.' }));
+      el('p', { class: 'auth__fine', text: 'You signed in with Google, so no Luxora password is needed. Your profile is saved to your Luxora cloud account and this browser. Your name, email, phone and city/state/country are also sent to Luxora’s sign-up form provider (Forminit) so Luxora knows who joined. Luxora emails you a one-time welcome with a discount code, and a security notice if your account signs in on a new device. Luxora never asks for a card or PIN.' }));
     form.addEventListener('submit', async e => {
       e.preventDefault(); formErr.hidden = true;
       const email = (u.email || '').slice(0, 120), key = email.toLowerCase();
@@ -194,6 +240,7 @@
       const all = accts(); all[key] = { ...(all[key] || {}), uid: u.uid, google: true, profile: v }; saveAccts(all);
       delete dlg.dataset.completing;
       if (isNew) report(v);
+      googleMail(await idToken(u), isNew, v.name);
       finishAuth(v, `Account created. Signed in as ${v.name}`);
     });
     dlg.append(closeBtn(), logo, el('h2', { id: 'authTitle', text: 'Finish your Luxora account' }),
@@ -239,7 +286,7 @@
           el('div', { class: 'auth__col' }, [el('h3', { text: 'Your account' }), ...nm.wrap, ...em.wrap, ...ph.wrap, ...pw.wrap, pwHint, ...pw2.wrap]),
           el('fieldset', { class: 'auth__loc auth__col' }, [el('legend', { text: 'Your address' }), ...co.wrap, ...st.wrap, ...ap.wrap, el('div', { class: 'auth__row' }, [el('div', {}, ci.wrap), el('div', {}, rg.wrap)]), ...pc.wrap])]),
         formErr, el('button', { type: 'submit', class: 'btn auth__go', text: 'Create account' }),
-        el('p', { class: 'auth__fine', text: 'Your account is saved in this browser; the password is stored only as a one-way hash and never leaves this device. Your name, email, phone and city/state/country are also sent to Luxora’s sign-up form provider (Forminit) so Luxora knows who joined. Luxora never asks for a card or PIN.' }));
+        el('p', { class: 'auth__fine', text: 'Your account is saved in this browser; the password is stored only as a one-way hash and never leaves this device. Your name, email, phone and city/state/country are also sent to Luxora’s sign-up form provider (Forminit) so Luxora knows who joined. Luxora emails you a one-time welcome with a discount code. Luxora never asks for a card or PIN.' }));
     } else {
       form.append(...em.wrap, ...pw.wrap, formErr, el('button', { type: 'submit', class: 'btn auth__go', text: 'Sign in' }),
         el('p', { class: 'auth__fine', text: 'Accounts are saved only in this browser, so sign in on the device where you created it.' }));
@@ -267,7 +314,7 @@
       const bad = errs.find(([, m]) => m); if (bad) return bad[0].inp.focus();
       const salt = newSalt(), all = accts(); all[key] = { salt, hash: await hash(pass, salt), profile: v }; saveAccts(all);
       v.phone = normPhone(v.phone, v.country); v.createdAt = new Date().toISOString();
-      mem = v; write(v); setCountryPrefs(v.country); report(v); paint(); close(); announce(`Account created. Signed in as ${v.name}`); welcomeAfterAuth(); toChat();
+      mem = v; write(v); setCountryPrefs(v.country); report(v); mail('welcome', { email: v.email, name: v.name }); paint(); close(); announce(`Account created. Signed in as ${v.name}`); welcomeAfterAuth(); toChat();
     });
     dlg.classList.toggle('auth--wide', mode === 'signup');
     dlg.append(closeBtn(), logo, el('h2', { id: 'authTitle', text: mode === 'signup' ? 'Create your Luxora account' : 'Sign in to Luxora' }),

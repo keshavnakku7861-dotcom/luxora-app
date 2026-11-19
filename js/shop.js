@@ -1,4 +1,5 @@
-/* Luxora shop: plain e-commerce store (no assistant). Product list, detail view, cart drawer, Stripe test checkout. */
+/* Luxora shop: plain e-commerce store (no assistant). Product list, detail view, cart drawer. Checkout (Stripe test mode)
+   opens in its own tab: checkout.html + js/checkout.js. */
 (() => {
   const $ = s => document.querySelector(s);
   const S = window.LuxoraStore, money = S.money, esc = S.esc, Art = window.LuxoraArt;
@@ -136,7 +137,7 @@
             <div class="opt"><span class="lbl">Size${S.needsSize(p) ? ' <small class="req">(required)</small>' : ''}</span><select id="dSize" aria-label="Size" ${S.needsSize(p) ? 'aria-required="true" aria-describedby="dSizeErr"' : ''}>${S.needsSize(p) ? '<option value="">Select a size</option>' : ''}${S.sellableSizes(p).map(s => `<option ${s === d.size ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><p class="sizeerr" id="dSizeErr" role="alert" hidden>Please select a size before adding this to your cart.</p>${p.sizes.some(S.isSizingKit) ? `<p class="onote kitnote">Not sure of your size? Get a sizing kit from ${esc(p.store)} first. Luxora checkout sells the ring in your size only, never a sizing kit.</p>` : ''}</div>
             ${base.colors[0] === 'standard' ? '' : `<div class="opt"><span class="lbl">Color: <b>${cname(d.color)}</b></span><div class="sw" id="dSw">${base.colors.map(c => `<button type="button" class="c-${c} ${c === d.color ? 'on' : ''}" data-c="${c}" aria-label="${cname(c)}" aria-pressed="${c === d.color}">${c === d.color ? '&#10003;' : ''}</button>`).join('')}</div></div>`}
             <div class="opt"><span class="lbl">Quantity</span><div class="qty"><button id="dMinus" aria-label="Decrease">&minus;</button><span id="dQ">${d.qty}</span><button id="dPlus" aria-label="Increase">+</button></div></div>
-            <div class="buyat buyat--detail"><button type="button" class="btn btn--lg btn--orange" id="dBuyNow">Buy now</button></div>
+            <div class="buyat buyat--detail"><button type="button" class="btn btn--lg btn--orange" id="dBuyNow">Buy now<span class="sr-only"> (opens checkout in a new tab)</span></button></div>
             <p class="onote amzdisc">${S.DISCLOSURE} Amazon's price and availability can differ from the price shown here.</p>
             ${p.optionsNote ? `<p class="onote">${esc(p.optionsNote)}</p>` : ''}
             <p class="onote">Luxora checkout is currently in Stripe test mode. Test payments do not create a real order, and no product will be shipped.</p>
@@ -156,15 +157,11 @@
       if (e.target.closest('#dPlus')) { d.qty = Math.min(9, d.qty + 1); $('#dQ').textContent = d.qty; }
       const sizeOk = () => { const sz = $('#dSize'), bad = S.needsSize(p) && !sz.value; $('#dSizeErr').hidden = !bad; bad ? sz.setAttribute('aria-invalid', 'true') : sz.removeAttribute('aria-invalid'); if (bad) sz.focus(); return !bad; };
       if (e.target.closest('#dBuyNow') && sizeOk()) {
-  const size = $('#dSize').value;
-  const cart = S.cart().filter(i =>
-    !(i.id === p.id && i.size === size && i.color === d.color)
-  );
-
-  S.setCart(cart);
-  if (!S.addToCart(p, { size, color: d.color, qty: d.qty })) { toast(`Choose a ring size for ${p.name} first`); return; }
-  openCheckout();
-}
+        /* Buy now = this item only (the cart is not changed), checked out in its own tab (checkout.html) */
+        const item = { id: p.id, color: d.color, size: $('#dSize').value, qty: d.qty };
+        if (window.LuxoraPrices.lineProblem(item)) { toast(`Choose a ring size for ${p.name} first`); return; }
+        openCheckoutTab({ mode: 'buy', items: [item], returnTo: location.hash });
+      }
       if (e.target.closest('#dAdd') && sizeOk()) addToCart(p, { size: $('#dSize').value, color: d.color, qty: d.qty });
       if (e.target.closest('#dBuy') && sizeOk()) { S.addToCart(p, { size: $('#dSize').value, color: d.color, qty: d.qty }); openDrawer(); }
       if (e.target.closest('#dHeart')) { const on = S.toggleSaved(p, { size: $('#dSize').value, color: d.color }); const b = $('#dHeart'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); toast(on ? `Saved ${p.name}` : `Removed ${p.name} from saved`, on ? ['View saved', goSaved] : null); }
@@ -188,7 +185,7 @@
     return save > 0 ? `<div class="${cls} promorow"><span>Promo ${esc(code)} (${S.promoPercent()}% off full-price items)</span><b>&minus;${fmt(save)}</b></div>`
       : `<div class="${cls} promorow promorow--none"><span>Promo ${esc(code)}: items on deal are excluded</span><b>${fmt(0)}</b></div>`;
   }
-  function setDrawer(open) { if (open === !drawer.hidden) return; drawer.hidden = !open; if (open) { renderDrawer(); drawer.querySelector('.x').focus(); } else if (!dlg.open) cartNotes = []; }
+  function setDrawer(open) { if (open === !drawer.hidden) return; drawer.hidden = !open; if (open) { renderDrawer(); drawer.querySelector('.x').focus(); } else cartNotes = []; }
   window.LuxoraShop = { show, setDrawer, isShown: () => shown, setReturn: h => { returnTo = h; }, checkout: () => openCheckout() };
 
   /* ---------- cart drawer ---------- */
@@ -212,7 +209,7 @@
       <div class="row"><span>Shipping</span><b>${ship === 0 ? 'Free' : money(ship)}</b></div>
       ${ship > 0 ? `<p class="hint">Add <b>${money(S.FREE_OVER - sub)}</b> more for free shipping.</p>` : ''}
       <div class="row total"><span>Total</span><b>${money(sub + ship)}</b></div>
-      <button class="btn btn--lg" id="goCheckout">Checkout</button>
+      <button class="btn btn--lg" id="goCheckout">Checkout<span class="sr-only"> (opens in a new tab)</span></button>
       <button class="btn btn--lg btn--ghost" data-close-drawer>Continue shopping</button>`;
   }
   drawer.addEventListener('click', e => {
@@ -222,415 +219,42 @@
     if ((b = q('data-inc'))) { const i = +b.dataset.inc; S.setQty(i, S.cart()[i].qty + 1); }
     else if ((b = q('data-dec'))) { const i = +b.dataset.dec; S.setQty(i, S.cart()[i].qty - 1); }
     else if ((b = q('data-rm'))) S.removeLine(+b.dataset.rm);
-    else if (t.id === 'goCheckout') openCheckout();
+    else if (t.closest('#goCheckout')) openCheckout();
   });
   document.addEventListener('luxora:change', () => { if (!drawer.hidden) renderDrawer(); });
   document.addEventListener('luxora:external', () => { if (!drawer.hidden) renderDrawer(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !drawer.hidden && !dlg.open) closeDrawer(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !drawer.hidden) closeDrawer(); });
 
-  const STRIPE_PUBLISHABLE_KEY = 'pk_test_51UPOleR1DYbWyYrQZemSSGasBAbAVI9chWFiqeOfO6d73RCBpaUL2UPtHtzE7qzEJinqL2ugtvJWKio7uzfUlYHD004r2XwVyp';
-const STRIPE_PAYMENT_URL = 'https://luxora-api.keshavnakku7861.workers.dev/api/create-payment-intent';
-const stripe = Stripe(STRIPE_PUBLISHABLE_KEY)
-  /* ---------- Stripe test checkout ---------- */
-  const dlg = $('#checkout');
-  dlg.addEventListener('close', () => { cartNotes = []; });   // cart-update notes are shown for one checkout only
-  const usd = n => '$' + Number(n).toFixed(2);
-  let method = 'standard';
-  let checkoutData = {};
-  let currentAttempt = null;
-
-function newAccessToken() {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-
-  return btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/g, '');
-}
-
-function newCheckoutAttempt(fingerprint) {
-  return {
-    id: crypto.randomUUID(),
-    token: newAccessToken(),
-    fingerprint
-  };
-}
-  function openCheckout() {
-  repriceCart();
-  if (!S.cart().length) return;
-
-  currentAttempt = null;
-  method = 'standard';
-
-  stepDetails();
-
-  if (!dlg.open) dlg.showModal();
-}
-  /* totals = the exact Worker quote (js/prices.js), in cents */
-  const summary = () => {
-    const q = S.quote(method), sub = q.subtotalCents / 100, ship = q.shippingCents / 100;
-    return `${notesHtml()}<div class="sum">${S.cart().map(i => { const f = S.info(i); return `<div><span>${i.qty} × ${esc(f.name)} <small>${esc(i.size)}, ${cname(i.color)}${f.promoApplied ? ` · ${esc(S.promo())} −${S.promoPercent()}%` : f.dealExcluded && S.promo() ? ' · On deal, code not applied' : ''}</small></span><span>${usd(f.price * i.qty)}${f.promoApplied ? ` <s class="was">${usd(f.basePrice * i.qty)}</s>` : ''}</span></div>`; }).join('')}
-      ${promoRow('', usd).replace('<b>', '<span>').replace('</b>', '</span>')}<div><span>Subtotal</span><span>${usd(sub)}</span></div><div><span>Shipping</span><span>${ship === 0 ? 'Free' : usd(ship)}</span></div><div class="t"><span>Total (USD)</span><span>${usd(sub + ship)}</span></div></div>`;
-  };
-function stepDetails() {
-  $('#coBody').innerHTML = `<h2 id="coTitle">Checkout</h2>
-
-    <form id="coForm" autocomplete="on">
-
-      <h3>Contact information</h3>
-
-      <label>Full name
-        <input name="name" required autocomplete="name" placeholder="Full name">
-      </label>
-
-      <label>Email
-        <input name="email" type="email" required autocomplete="email" placeholder="you@example.com">
-      </label>
-
-      <label>Phone number
-        <input name="phone" type="tel" required autocomplete="tel" placeholder="Phone number">
-      </label>
-
-      <h3>Shipping address</h3>
-
-      <label>Street address
-        <input name="address1" required autocomplete="address-line1" placeholder="Street address">
-      </label>
-
-      <label>Apartment, suite, unit (optional)
-        <input name="address2" autocomplete="address-line2" placeholder="Apartment, suite, unit">
-      </label>
-
-      <label>City
-        <input name="city" required autocomplete="address-level2" placeholder="City">
-      </label>
-
-      <label>State
-        <input name="state" required autocomplete="address-level1" placeholder="State">
-      </label>
-
-      <label>ZIP code
-        <input name="zip" required autocomplete="postal-code" placeholder="ZIP code">
-      </label>
-
-      <label>Country
-        <select name="country" required autocomplete="country">
-          <option value="US">United States</option>
-          <option value="CA">Canada</option>
-          <option value="IN">India</option>
-          <option value="GB">United Kingdom</option>
-        </select>
-      </label>
-
-      <fieldset>
-        <legend>Delivery</legend>
-
-        <label class="radio">
-          <input type="radio" name="m" value="standard"
-            ${method === 'standard' ? 'checked' : ''}>
-          Standard test shipping (3–5 day estimate)
-          <b>${S.subtotal() >= S.FREE_OVER ? 'Free' : usd(S.STANDARD)}</b>
-        </label>
-
-        <label class="radio">
-          <input type="radio" name="m" value="express"
-            ${method === 'express' ? 'checked' : ''}>
-          Express test shipping (1–2 day estimate)
-          <b>${usd(S.EXPRESS)}</b>
-        </label>
-      </fieldset>
-
-      <div class="paybox">
-        <b>Test checkout</b>
-        <span>Shipping rates and delivery times shown here are test values. No shipment will occur. Stripe test payments are processed in USD.</span>
-      </div>
-
-      <h3>Order summary</h3>
-      <div id="coSum">${summary()}</div>
-
-      <div class="demo__btns">
-        <button type="submit" class="btn btn--lg">
-          Continue to payment
-        </button>
-
-        <button type="button" class="btn btn--lg btn--ghost" id="coCancel">
-          Back to cart
-        </button>
-      </div>
-
-    </form>`;
-
-  $('#coForm').onsubmit = e => {
-  e.preventDefault();
-  checkoutData = Object.fromEntries(new FormData(e.target).entries());
-  stepPayment();
-};
-
-  $('#coForm').onchange = e => {
-    if (e.target.name === 'm') {
-      method = e.target.value;
-      $('#coSum').innerHTML = summary();
+  /* ---------- checkout: its own browser tab (checkout.html), never inside the app view ----------
+     Buy now hands over { mode: 'buy', items: [{ id, color, size, qty }], returnTo } through localStorage
+     'luxora.checkout.<random id>' (read once and deleted by checkout.html; no prices are handed over, the page re-prices
+     from js/prices.js). The cart's Checkout opens checkout.html?src=cart, which reads the live cart. */
+  const CHECKOUT_PAGE = 'checkout.html';
+  const handoffId = () => { const b = new Uint8Array(18); crypto.getRandomValues(b); return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+  function openCheckoutTab(payload) {
+    let url = CHECKOUT_PAGE + '?src=cart';
+    if (payload) {
+      const h = handoffId();
+      try { localStorage.setItem('luxora.checkout.' + h, JSON.stringify({ ...payload, at: Date.now() })); }
+      catch { toast('Checkout could not start because this browser blocks local storage.'); return false; }
+      url = CHECKOUT_PAGE + '?h=' + h;
     }
-  };
-
-  $('#coCancel').onclick = () => dlg.close();
-}
-  
-    function stepPayment() {
-  $('#coBody').innerHTML = `
-    <h2 id="coTitle">Payment & Review</h2>
-
-    <h3>Ship to</h3>
-    <div class="paybox">
-      <b>${esc(checkoutData.name)}</b>
-      <span>
-        ${esc(checkoutData.address1)}
-        ${checkoutData.address2 ? ', ' + esc(checkoutData.address2) : ''}<br>
-        ${esc(checkoutData.city)}, ${esc(checkoutData.state)} ${esc(checkoutData.zip)}<br>
-        ${esc(checkoutData.country)}
-      </span>
-    </div>
-
-    <h3>Contact</h3>
-    <div class="paybox">
-      <span>${esc(checkoutData.email)}<br>${esc(checkoutData.phone)}</span>
-    </div>
-
-    <h3>Payment</h3>
-    <div class="paybox">
-      <b>Stripe test mode</b>
-      <span>Secure payment options will be shown by Stripe after you review the order. Use Stripe test payment details only.</span>
-    </div>
-
-    <h3>Review your order</h3>
-    ${summary()}
-
-    <div class="demo__btns">
-      <button type="button" class="btn btn--lg" id="reviewOrder">
-        Review order
-      </button>
-
-      <button type="button" class="btn btn--lg btn--ghost" id="backDetails">
-        Back
-      </button>
-    </div>
-  `;
-
-  $('#reviewOrder').onclick = () => {
-    checkoutData.payment = 'stripe';
-    placeOrder();
-  };
-
-  $('#backDetails').onclick = () => stepDetails();
-}
-  
-  function placeOrder() {
-  const paymentName = 'Stripe secure test checkout';
-
-  $('#coBody').innerHTML = `
-    <h2 id="coTitle">Review your order</h2>
-
-    <h3>Shipping address</h3>
-    <div class="paybox">
-      <b>${esc(checkoutData.name)}</b>
-      <span>
-        ${esc(checkoutData.address1)}
-        ${checkoutData.address2 ? ', ' + esc(checkoutData.address2) : ''}<br>
-        ${esc(checkoutData.city)}, ${esc(checkoutData.state)} ${esc(checkoutData.zip)}<br>
-        ${esc(checkoutData.country)}
-      </span>
-    </div>
-
-    <h3>Contact information</h3>
-    <div class="paybox">
-      <span>
-        ${esc(checkoutData.email)}<br>
-        ${esc(checkoutData.phone)}
-      </span>
-    </div>
-
-    <h3>Delivery</h3>
-    <div class="paybox">
-      <span>
-        ${method === 'express'
-          ? 'Express test shipping (1–2 day estimate)'
-          : 'Standard test shipping (3–5 day estimate)'}
-      </span>
-    </div>
-
-    <h3>Payment method</h3>
-    <div class="paybox">
-      <span>${paymentName}</span>
-    </div>
-
-    <h3>Order total</h3>
-    ${summary()}
-
-    <div class="demo__btns">
-      <button type="button" class="btn btn--lg" id="finalPayment">
-        Continue to Stripe test payment
-      </button>
-
-      <button type="button" class="btn btn--lg btn--ghost" id="backPayment">
-        Back
-      </button>
-    </div>
-  `;
-
-  $('#backPayment').onclick = () => stepPayment();
-
-  $('#finalPayment').onclick = () => openStripePayment();
-}
-  async function openStripePayment() {
-  /* re-price right before paying: if anything changed, go back to the review step and show what changed */
-  if (repriceCart().length) { placeOrder(); return; }
-  const q = S.quote(method);
-  if (!q.ok) { cartNotes = ['Your cart has an item Luxora checkout cannot sell. Please review your cart.']; placeOrder(); return; }
-  const amount = q.totalCents;
-const orderRequest = {
-  items: q.lines.map(i => ({
-    id: i.id,
-    qty: i.qty,
-    color: i.color,
-    size: i.size,
-    unitPriceCents: i.unitCents
-  })),
-
-  method,
-  currency: 'usd',
-  expectedTotalCents: q.totalCents,
-
-  ...(q.promoCode ? { promoCode: q.promoCode } : {}),
-
-  customer: {
-    name: checkoutData.name.trim(),
-    email: checkoutData.email.trim().toLowerCase(),
-    phone: checkoutData.phone.trim()
-  },
-
-  shipping: {
-    address1: checkoutData.address1.trim(),
-    address2: (checkoutData.address2 || '').trim(),
-    city: checkoutData.city.trim(),
-    region: checkoutData.state.trim(),
-    postalCode: checkoutData.zip.trim(),
-    country: checkoutData.country.trim().toUpperCase()
+    /* opened from the click itself (not async) so browsers allow it; opener is cut right away (same as rel=noopener).
+       'noopener' in the features string is not used because then window.open always returns null and a blocked popup
+       could not be detected. */
+    let w = null; try { w = window.open(url, '_blank'); } catch {}
+    if (w) { try { w.opener = null; } catch {} hideBlocked(); return true; }
+    showBlocked(url); return false;
   }
-};
-
-const attemptFingerprint = JSON.stringify(orderRequest);
-
-if (!currentAttempt || currentAttempt.fingerprint !== attemptFingerprint) {
-  currentAttempt = newCheckoutAttempt(attemptFingerprint);
-}
-  $('#coBody').innerHTML = `
-    <h2 id="coTitle">Secure payment</h2>
-
-    <p class="fine">
-      Stripe test mode — no real money will be charged.
-    </p>
-
-    <div id="stripePaymentElement"></div>
-
-    <p id="stripeError" class="fine" role="alert"></p>
-
-    <div class="demo__btns">
-      <button type="button" class="btn btn--lg" id="payWithStripe">
-        Pay ${usd(amount / 100)} USD
-      </button>
-
-      <button type="button" class="btn btn--lg btn--ghost" id="backReview">
-        Back
-      </button>
-    </div>
-  `;
-
-  $('#backReview').onclick = () => placeOrder();
-  try {
-    const response = await fetch(STRIPE_PAYMENT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      /* id/color/qty are what the current Worker reads; size, unitPriceCents and expectedTotalCents are extra fields the
-         current Worker ignores and the updated Worker (work/.../worker.proposed.js) validates (409 if prices differ) */
-      body: JSON.stringify({
-  ...orderRequest,
-  checkoutAttemptId: currentAttempt.id,
-  orderAccessToken: currentAttempt.token
-})
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (response.status === 400 && data.code === 'invalid_promo') {
-      /* the code is no longer valid (e.g. replaced by a newer code): drop it, re-price at normal prices and show the review again */
-      const code = q.promoCode || 'Your promo code';
-      S.clearPromo(`${code} is invalid or has expired, so it was removed. Prices are back to normal.`);
-      cartNotes = [`Promo code ${code} is invalid or has expired, so it was removed. Please review your updated total before paying.`];
-      placeOrder(); return;
-    }
-    if (response.status === 409) {
-      /* the server's prices differ from what the shopper saw: never charge, re-price and show the review again */
-      S.reprice(); S.takeNotices();
-      cartNotes = [data.message || 'Prices changed. Please review your updated total before paying.'];
-      placeOrder(); return;
-    }
-    if (!response.ok || !data.clientSecret) {
-      throw new Error(data.message || data.error || 'Unable to start payment.');
-    }
-    if (typeof data.amount === 'number' && data.amount !== q.totalCents) {
-      throw new Error('The payment amount did not match your order total, so payment was not started. Please review your cart and try again.');
-    }
-
-    cartNotes = [];
-    const elements = stripe.elements({
-      clientSecret: data.clientSecret
-    });
-
-    const paymentElement = elements.create('payment');
-    paymentElement.mount('#stripePaymentElement');
-
-    $('#payWithStripe').onclick = async () => {
-      $('#payWithStripe').disabled = true;
-      $('#stripeError').textContent = '';
-
-      const result = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: window.location.href
-        },
-        redirect: 'if_required'
-      });
-
-      if (result.error) {
-        $('#stripeError').textContent = result.error.message;
-        $('#payWithStripe').disabled = false;
-        return;
-      }
-const paymentRef = result.paymentIntent?.id || 'Test payment';
-      $('#coBody').innerHTML = `
-        <h2 id="coTitle">Payment successful</h2>
-        <div class="paybox">
-          <b>Stripe test payment completed.</b>
-          <span>No real money was charged.</span>
-          <span>Test payment reference: ${paymentRef}</span>
-        </div>
-        <button type="button" class="btn btn--lg" id="finishOrder">
-          Done
-        </button>
-      `;
-
-      $('#finishOrder').onclick = () => {
-  S.clearCart();
-  dlg.close();
-};
-    };
-
-  } catch (error) {
-    $('#stripeError').textContent =
-      error.message || 'Unable to load Stripe payment.';
+  /* popup blocked: keep the shopper moving with a real link (new tab) or continue in this tab */
+  function showBlocked(url) {
+    let el = $('#coBlocked');
+    if (!el) { el = document.createElement('div'); el.id = 'coBlocked'; el.className = 'toast toast--sticky'; el.setAttribute('role', 'alert'); document.body.append(el); }
+    el.innerHTML = `<span>Your browser blocked the checkout tab.</span> <a class="toast__link" href="${esc(url)}" target="_blank" rel="noopener" id="coBlockedOpen">Open checkout in a new tab</a> · <a class="toast__link" href="${esc(url)}" id="coBlockedSame">Continue in this tab</a> <button type="button" class="toast__link" id="coBlockedX" aria-label="Dismiss">&#10005;</button>`;
+    el.hidden = false;
+    el.querySelector('#coBlockedOpen').onclick = () => setTimeout(hideBlocked, 0);
+    el.querySelector('#coBlockedX').onclick = hideBlocked;
   }
-}
+  function hideBlocked() { const el = $('#coBlocked'); if (el) el.hidden = true; }
+  function openCheckout() { repriceCart(); if (!S.cart().length) return; openCheckoutTab(null); }
 })();
