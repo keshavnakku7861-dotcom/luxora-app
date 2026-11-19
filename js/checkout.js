@@ -84,11 +84,13 @@
   $('#coBack').href = backHref();
   $('#coBack').innerHTML = ses.mode === 'cart' ? '&larr; Back to cart' : '&larr; Back to product';
 
-  /* ---------- profile prefill (prototype profile in this browser: name, email, phone, city, region, ZIP, country; no street) ---------- */
+  /* ---------- profile prefill: the signed-in Luxora profile (the same luxora.profile record LuxoraAuth.profile() returns):
+     name, email, phone, street, apt, city, region, ZIP, country. 'Use a different address' ships elsewhere without editing it. ---------- */
   const profile = (() => { try { const v = JSON.parse(localStorage.getItem('luxora.profile')); return v && typeof v.name === 'string' && typeof v.email === 'string' ? v : null; } catch { return null; } })();
   const COUNTRIES = [['US', 'United States'], ['CA', 'Canada'], ['GB', 'United Kingdom'], ['IN', 'India'], ['DE', 'Germany'], ['FR', 'France'], ['ES', 'Spain'], ['AU', 'Australia']];
   const cName = c => (COUNTRIES.find(x => x[0] === c) || [c, c])[1];
-  const fromProfile = () => profile ? { name: profile.name || '', email: profile.email || '', phone: profile.phone || '', country: COUNTRIES.some(c => c[0] === profile.country) ? profile.country : 'US', address1: '', address2: '', city: profile.city || '', state: profile.region || profile.state || '', zip: profile.zip || profile.postal || '' } : null;
+  const fromProfile = () => profile ? { name: profile.name || '', email: profile.email || '', phone: profile.phone || '', country: COUNTRIES.some(c => c[0] === profile.country) ? profile.country : 'US', address1: profile.street || '', address2: profile.apt || '', city: profile.city || '', state: profile.region || profile.state || '', zip: profile.postal || profile.zip || '' } : null;
+  st.addrSrc = profile ? 'profile' : 'other';
   st.addr = fromProfile() || { name: '', email: '', phone: '', country: 'US', address1: '', address2: '', city: '', state: '', zip: '' };
 
   /* ---------- header steps ---------- */
@@ -162,9 +164,13 @@
     setMain(`<p class="kicker">Step 1 of 4</p><h1>Where should we send it?</h1>
       <p class="lead">${p ? 'Use your saved Luxora profile, or edit any of the details below.' : 'Enter your contact and delivery details.'}</p>
       <div class="stack">${notesHtml()}
-        ${p ? `<div class="saved" role="radio" aria-checked="true" tabindex="0" id="useProfile"><span class="radio" aria-hidden="true"></span><div>
+        ${p ? `<div class="addrsrc" role="radiogroup" aria-label="Delivery address">
+          <div class="saved" role="radio" aria-checked="${st.addrSrc === 'profile'}" tabindex="${st.addrSrc === 'profile' ? 0 : -1}" id="useProfile" data-src="profile"><span class="radio" aria-hidden="true"></span><div>
           <b>${esc(p.name)} <span class="tag">Saved Luxora profile</span></b><p>${esc([p.email, p.phone].filter(Boolean).join(' · '))}</p>
-          <p>${esc([p.city, [p.state, p.zip].filter(Boolean).join(' '), cName(p.country)].filter(Boolean).join(', '))}</p></div></div>` : ''}
+          <p>${esc([[p.address1, p.address2].filter(Boolean).join(', '), p.city, [p.state, p.zip].filter(Boolean).join(' '), cName(p.country)].filter(Boolean).join(', '))}</p></div></div>
+          <div class="saved saved--other" role="radio" aria-checked="${st.addrSrc === 'other'}" tabindex="${st.addrSrc === 'other' ? 0 : -1}" id="useOther" data-src="other"><span class="radio" aria-hidden="true"></span><div>
+          <b>Use a different address</b><p>Ship this order somewhere else. Your saved profile is not changed.</p></div></div>
+        </div>` : ''}
         <form class="fields" id="addrForm" novalidate autocomplete="on">
           <div class="pair">${fld('name', 'Full name', { ac: 'name' })}${fld('email', 'Email', { type: 'email', ac: 'email', mode: 'email' })}</div>
           <div class="pair">${fld('phone', 'Mobile phone', { type: 'tel', ac: 'tel', mode: 'tel', max: 24 })}
@@ -181,7 +187,23 @@
         </form>
       </div>`);
     const f = $('#addrForm');
-    if ($('#useProfile')) { const fill = () => { st.addr = { ...st.addr, ...Object.fromEntries(Object.entries(p).filter(([k, v]) => v && k !== 'address1' && k !== 'address2')) }; ['name', 'email', 'phone', 'city', 'state', 'zip'].forEach(k => { f.elements[k].value = st.addr[k] || ''; }); f.elements.country.value = st.addr.country; f.elements.address1.focus(); }; $('#useProfile').onclick = fill; $('#useProfile').onkeydown = e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); fill(); } }; }
+    if ($('#useProfile')) {
+      const ADDR = ['address1', 'address2', 'city', 'state', 'zip'], opts = [$('#useProfile'), $('#useOther')];
+      const pick = (src, focus) => {
+        st.addrSrc = src;
+        opts.forEach(o => { const on = o.dataset.src === src; o.setAttribute('aria-checked', String(on)); o.tabIndex = on ? 0 : -1; });
+        if (src === 'profile') { st.addr = { ...st.addr, ...p }; ['name', 'email', 'phone', ...ADDR].forEach(k => { f.elements[k].value = st.addr[k] || ''; }); f.elements.country.value = st.addr.country; }
+        else { ADDR.forEach(k => { st.addr[k] = ''; f.elements[k].value = ''; f.elements[k].removeAttribute('aria-invalid'); }); }
+        if (focus) (src === 'other' || !f.elements.address1.value ? f.elements.address1 : opts[0]).focus();
+      };
+      opts.forEach((o, n) => {
+        o.onclick = () => pick(o.dataset.src, true);
+        o.onkeydown = e => {
+          if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); pick(o.dataset.src, true); }
+          if (/^Arrow(Up|Down|Left|Right)$/.test(e.key)) { e.preventDefault(); const t = opts[1 - n]; pick(t.dataset.src, false); t.focus(); }
+        };
+      });
+    }
     f.oninput = e => { if (e.target.getAttribute('aria-invalid') && e.target.value.trim()) { e.target.removeAttribute('aria-invalid'); if (!f.querySelector('[aria-invalid]')) $('#addrErr').textContent = ''; } };
     f.onchange = e => { if (e.target.name === 'm') { st.method = e.target.value; saveTab(); priceChanged(); } };
     f.onsubmit = e => {

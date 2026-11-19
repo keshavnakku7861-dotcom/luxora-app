@@ -732,3 +732,8 @@ button.linkbtn { background: none; border: 0; padding: 0; font-size: 13px; font-
 .pehost { margin-top: 11px; }
 .stack--foot { margin-top: 11px; flex: 0; }
 #coStep .stack { flex: 0; }
+
+/* saved profile vs "Use a different address" (radio group) */
+.addrsrc { display: grid; gap: 10px; }
+.saved--other b { font-weight: 600; }
+.saved:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }

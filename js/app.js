@@ -142,7 +142,7 @@ const history = recent.slice(-8).flatMap(h => {
         const add = el('button', 'card__add', '+'); add.setAttribute('aria-label', `Add ${pr.name} to cart`); add.type = 'button';
         add.addEventListener('click', e => { e.stopPropagation(); if (S.needsSize(pr)) { open(); sel.sizeErr = true; renderPanel(); toast(`Choose a size for ${pr.name} first`); const sz = $('#size'); if (sz) sz.focus(); } else addToCart(pr); });
         c.append(heart, add);
-        const open = () => { show(pr); view.classList.add('panel-open'); cards.querySelectorAll('.card').forEach(x => x.classList.toggle('sel', x === c)); };
+        const open = () => { panelOpener = c; show(pr); view.classList.add('panel-open'); cards.querySelectorAll('.card').forEach(x => x.classList.toggle('sel', x === c)); focusPanel(); };
         c.addEventListener('click', open); c.addEventListener('keydown', e => { if (e.target !== c) return; if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); open(); } });   // role=button: Enter and Space both activate
         cards.append(c);
       });
@@ -161,11 +161,8 @@ const history = recent.slice(-8).flatMap(h => {
     catch (e) { t.remove(); botMsg({ reply: "Sorry, I couldn't reach the assistant just now. Please try again.", products: [] }); }
     finally { busyReply = false; }
   }
-  /* attachment: a prototype nicety - the file stays in the browser; only its name is shown in the chat */
-  const fileIn = $('#file'), attached = $('#attached'); let attName = '';
-  const setFile = n => { attName = n; attached.hidden = !n; attached.innerHTML = ''; if (n) { const t = el('span'); t.textContent = n; const x = el('button', null, '&#10005;'); x.type = 'button'; x.setAttribute('aria-label', 'Remove attachment'); x.onclick = () => { fileIn.value = ''; setFile(''); $('#msg').focus(); }; attached.append(t, x); } };
-  $('#attachBtn').addEventListener('click', () => fileIn.click());
-  fileIn.addEventListener('change', () => { const f = fileIn.files[0]; setFile(f ? f.name.slice(0, 40) : ''); if (f) $('#msg').focus(); });
+  /* attachment: not built yet, so the button says "Coming soon" instead of pretending to attach a file */
+  $('#attachBtn').addEventListener('click', () => toast('Image attachments are coming soon.'));
   /* message length: nothing is silently cut off. Counter appears near the limit; over the limit, sending is blocked with a warning. */
   const MAX = 1000, msgIn = $('#msg'), cnt = $('#msgCount'), comp = $('#composer'), sendBtn = $('.send');
   function counter() {
@@ -175,11 +172,31 @@ const history = recent.slice(-8).flatMap(h => {
     sendBtn.setAttribute('aria-disabled', over); msgIn.setAttribute('aria-invalid', over);
   }
   msgIn.addEventListener('input', counter);
-  $('#composer').addEventListener('submit', e => { e.preventDefault(); const i = $('#msg'); const v = i.value; if (!v.trim()) { i.focus(); return; } if (v.length > MAX) { counter(); i.focus(); return; } i.value = ''; counter(); const n = attName; fileIn.value = ''; setFile(''); send(v, n); });
+  $('#composer').addEventListener('submit', e => { e.preventDefault(); const i = $('#msg'); const v = i.value; if (!v.trim()) { i.focus(); return; } if (v.length > MAX) { counter(); i.focus(); return; } i.value = ''; counter(); send(v, ''); });
   $('#newChat').addEventListener('click', () => { history.replaceState(null, '', location.pathname + '#/assistant'); document.dispatchEvent(new Event('luxora:clear-chat')); $('#msg').focus(); });
   feed.addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) send(b.dataset.q); });
 
   /* ---------- recommended panel ---------- */
+  /* product panel focus: opening moves focus to the panel heading; on phones the panel covers the chat, so Tab stays inside
+     it and Escape / Back / Close return focus to the card that opened it. On desktop it is a side pane next to the chat. */
+  let panelOpener = null;
+  const panelIsOverlay = () => view.classList.contains('panel-open') && getComputedStyle(panel).position === 'fixed';
+  function focusPanel() { const h = panel.querySelector('.panel__title'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } }
+  function closePanel() {
+    view.classList.remove('panel-open'); feed.querySelectorAll('.card.sel').forEach(x => x.classList.remove('sel'));
+    const o = panelOpener; panelOpener = null; if (o && document.contains(o)) o.focus({ preventScroll: true });
+  }
+  document.addEventListener('keydown', e => {
+    if (!panelIsOverlay() || document.querySelector('dialog[open]')) return;
+    if (e.key === 'Escape') { e.preventDefault(); closePanel(); return; }
+    if (e.key !== 'Tab') return;
+    const f = [...panel.querySelectorAll('a[href], button:not([disabled]), select, input, [tabindex]:not([tabindex="-1"])')].filter(x => x.offsetParent !== null);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (!panel.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && (document.activeElement === first || document.activeElement === panel.querySelector('.panel__title'))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
   function show(p) { current = p; sel = { size: '', sizeErr: false, color: p.colors[0], qty: 1, view: 0 }; renderPanel(); }
   /* a ring size is required; "Sizing kit" is never a cart size (it comes from the brand, not Luxora checkout) */
   const chosen = () => ({ size: sel.size || (S.needsSize(current) ? '' : current.sizes[0]), color: sel.color, qty: sel.qty });
@@ -222,6 +239,7 @@ const history = recent.slice(-8).flatMap(h => {
     const go = d => { sel.view = (sel.view + d + views) % views; $('#art').innerHTML = LuxoraArt.product(p, sel.view); $('#dots').querySelectorAll('button').forEach((x, i) => { const on = i === sel.view; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); }); };
     $('#prev').onclick = () => go(-1); $('#next').onclick = () => go(1);
     $('#dots').onclick = e => { const i = e.target.dataset.i; if (i != null) go(Number(i) - sel.view); };
+    $('#dots').onkeydown = e => { if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return; e.preventDefault(); go(e.key === 'ArrowRight' ? 1 : -1); $('#dots').querySelectorAll('button')[sel.view].focus(); };
     if ($('#size')) $('#size').onchange = e => { sel.size = e.target.value; sel.sizeErr = false; renderPanel(); };
     if ($('#sw')) $('#sw').onclick = e => { const b = e.target.closest('button'); if (b) { sel.color = b.dataset.c; renderPanel(); } };
     $('#minus').onclick = () => { sel.qty = Math.max(1, sel.qty - 1); $('#q').textContent = sel.qty; };
@@ -229,7 +247,7 @@ const history = recent.slice(-8).flatMap(h => {
     $('#add').onclick = () => { if (!needSize()) addToCart(p, chosen()); };
     $('#heart').onclick = () => { toggleSave(p, chosen()); renderPanel(); document.querySelectorAll('.card').forEach(c => { const hb = c.querySelector('.card__heart'); if (hb && c.dataset.id === base.id) { hb.classList.toggle('on', S.isSaved(base.id)); hb.setAttribute('aria-pressed', S.isSaved(base.id)); } }); };
     $('#confirm').onclick = confirmOrder;
-    $('#pback').onclick = $('#pclose').onclick = () => { view.classList.remove('panel-open'); feed.querySelectorAll('.card.sel').forEach(x => x.classList.remove('sel')); };
+    $('#pback').onclick = $('#pclose').onclick = closePanel;
   }
   function confirmOrder() {
     if (!current || needSize()) return;

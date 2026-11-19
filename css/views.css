@@ -672,3 +672,64 @@
     padding: 22px;
   }
 }
+
+/* help center page: matches PAINTER's mock (luxora-painter/help-center-ui.html), in the app's own fonts and colours */
+#viewHelp { overflow-y: auto; }
+#viewHelp .help-page { max-width: 1120px; margin: 0 auto; padding: 28px 28px 72px; }
+#viewHelp .vhead { padding: 12px 0 24px; border-bottom: 1px solid var(--gray-100); margin-bottom: 28px; }
+#viewHelp .vhead .eyebrow,
+#viewHelp .help-section > .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--orange-deep); margin-bottom: 8px; }
+#viewHelp .vhead h1 { font-size: clamp(32px, 4.5vw, 50px); line-height: 1.05; letter-spacing: -.035em; }
+#viewHelp .vhead p.help-sub { margin-top: 10px; max-width: 560px; font-size: 16px; line-height: 1.5; color: var(--gray-600); }
+#viewHelp .help-hero { background: var(--orange-soft); border: 1px solid var(--gray-100); border-radius: 22px; padding: clamp(24px, 4vw, 44px); margin-bottom: 32px; }
+#viewHelp .help-kicker { color: var(--orange-deep); font-size: 12px; font-weight: 700; letter-spacing: .1em; margin-bottom: 10px; }
+#viewHelp .help-hero h2 { font-size: clamp(26px, 3vw, 36px); line-height: 1.1; margin-bottom: 12px; }
+#viewHelp .help-hero > p { max-width: 760px; line-height: 1.6; color: var(--gray-600); }
+#viewHelp .help-hero .search { margin-top: 22px; max-width: 480px; }
+#viewHelp .help-hero .search input { background: var(--white); }
+#viewHelp .help-hero > p.help-qmsg { margin-top: 10px; font-size: 14px; line-height: 1.4; color: var(--gray-600); }
+#viewHelp .help-hero > p.help-qmsg:empty { display: none; }
+
+#viewHelp .help-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+#viewHelp .help-grid article { background: var(--white); border: 1px solid var(--gray-100); border-radius: 16px; padding: 24px; min-width: 0; }
+#viewHelp .help-grid article[hidden] { display: none; }
+#viewHelp .help-card__top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+#viewHelp .help-card__ic { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; background: var(--orange-soft); color: var(--orange-deep); display: grid; place-items: center; }
+#viewHelp .help-card__ic svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#viewHelp .help-grid h3, #viewHelp .help-faq-card h3 { font-size: 19px; font-weight: 500; letter-spacing: -.02em; }
+#viewHelp .help-topics { list-style: none; margin: 0; padding: 0; }
+#viewHelp .help-topics li[hidden] { display: none; }
+/* topics look like the mock's plain rows; a row opens its answer in place (route stays #/help) */
+#viewHelp .help-t { display: block; width: 100%; padding: 11px 0; border: 0; border-top: 1px solid var(--gray-100); background: none; font: inherit; font-size: 15px; font-weight: 500; line-height: 1.4; color: var(--black); text-align: left; text-decoration: none; cursor: pointer; }
+#viewHelp .help-t:hover, #viewHelp .help-t[aria-expanded="true"] { color: var(--orange-deep); }
+#viewHelp .help-t:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 4px; }
+#viewHelp .help-a { padding: 0 0 12px; }
+#viewHelp .help-a p { font-size: 14px; line-height: 1.55; color: var(--gray-600); }
+#viewHelp .help-a strong { color: var(--black); font-weight: 600; }
+
+#viewHelp .help-ask { margin-top: 14px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--gray-200); border-radius: 14px; padding: 8px 8px 8px 16px; background: var(--white); }
+#viewHelp .help-ask:focus-within { border-color: var(--black); }
+#viewHelp .help-ask input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 14px; height: 36px; color: var(--black); }
+#viewHelp .help-ask input::placeholder { color: var(--gray-400); }
+#viewHelp .help-ask .send { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 8px; border: 0; background: var(--black); color: var(--white); display: grid; place-items: center; cursor: pointer; }
+#viewHelp .help-ask .send svg { width: 16px; height: 16px; fill: currentColor; }
+#viewHelp .help-ask-link { display: inline-block; margin-top: 12px; font-size: 14px; font-weight: 500; color: var(--orange-deep); }
+
+#viewHelp .help-section { margin-top: 46px; }
+#viewHelp .help-section > h2 { font-size: clamp(25px, 3vw, 34px); margin-bottom: 20px; letter-spacing: -.02em; }
+#viewHelp .help-faq-card { background: var(--white); border: 1px solid var(--gray-100); border-radius: 16px; padding: 24px; }
+#viewHelp .help-faq-card .help-card__top { margin-bottom: 6px; }
+#viewHelp .help-faq { margin-top: 8px; }
+#viewHelp .help-faq details:first-child { border-top: 0; }
+
+@media (max-width: 700px) {
+  #viewHelp .help-page { padding: 20px 16px 40px; }
+  #viewHelp .help-grid { grid-template-columns: 1fr; }
+  #viewHelp .help-hero { padding: 22px; }
+  #viewHelp .help-faq-card { padding: 18px; }
+}
+/* phones: the mock's topic rows are already >= 44px tall; keep the ask button a full tap target */
+@media (max-width: 560px) {
+  #viewHelp .help-ask .send { width: 44px; height: 44px; border-radius: 10px; }
+  #viewHelp .help-ask { padding: 6px 6px 6px 16px; }
+}

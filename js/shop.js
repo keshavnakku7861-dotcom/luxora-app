@@ -145,11 +145,13 @@
               <button class="heartbtn ${on ? 'on' : ''}" id="dHeart" aria-pressed="${on}" aria-label="${on ? 'Remove from saved' : 'Save for later'}">${heart}</button></div>
             <ul class="perks"><li>Real shipping, returns and warranty come from the seller</li><li>Prices can change; always confirm at the retailer</li><li>Stripe test mode: no real charge or delivery</li></ul>
           </div></div>
-        <h2 class="rel__t">You may also like</h2><div class="grid grid--4">${related.map(cardHtml).join('')}</div>`;
+        <div class="stickybuy" id="dSticky" aria-label="Buy ${esc(p.name)}" role="group"><div class="stickybuy__price">${priceHtml(p, d.color)}</div><button type="button" class="btn btn--ghost" data-proxy="dAdd">Add to cart</button><button type="button" class="btn btn--orange" data-proxy="dBuyNow">Buy now<span class="sr-only"> (opens checkout in a new tab)</span></button></div>
+                <h2 class="rel__t">You may also like</h2><div class="grid grid--4">${related.map(cardHtml).join('')}</div>`;
     };
     draw();
     root.onchange = e => { if (e.target.id === 'dSize') { $('#dSizeErr').hidden = true; e.target.removeAttribute('aria-invalid'); } };
     root.onclick = e => {
+      const px = e.target.closest('[data-proxy]'); if (px) { $('#' + px.dataset.proxy).click(); return; }   // sticky mobile bar = same actions as the buttons above
       const v = e.target.closest('[data-view]'); if (v) { d.view = +v.dataset.view; root.querySelector('.gallery__main').innerHTML = Art.product(p, d.view); root.querySelectorAll('.gallery__thumbs button').forEach((b, i) => b.classList.toggle('on', i === d.view)); }
       const c = e.target.closest('#dSw button'); if (c && base.variants) { const keep = $('#dSize') ? $('#dSize').value : d.size; d.color = c.dataset.c; d.size = keep; p = S.variant(base, d.color); history.replaceState(null, '', '#/shop/p/' + base.id + (p.variantKey ? '?c=' + p.variantKey : '')); draw(); return; }
       if (c) { d.color = c.dataset.c; const s = $('#dSw'); s.querySelectorAll('button').forEach(b => { const on = b.dataset.c === d.color; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.innerHTML = on ? '&#10003;' : ''; }); s.previousElementSibling.innerHTML = `Color: <b>${cname(d.color)}</b>`; }
@@ -160,7 +162,8 @@
         /* Buy now = this item only (the cart is not changed), checked out in its own tab (checkout.html) */
         const item = { id: p.id, color: d.color, size: $('#dSize').value, qty: d.qty };
         if (window.LuxoraPrices.lineProblem(item)) { toast(`Choose a ring size for ${p.name} first`); return; }
-        openCheckoutTab({ mode: 'buy', items: [item], returnTo: location.hash });
+        const payload = { mode: 'buy', items: [item], returnTo: location.hash };
+        gateCheckout(e.target.closest('#dBuyNow'), after => openCheckoutTab(payload, after));
       }
       if (e.target.closest('#dAdd') && sizeOk()) addToCart(p, { size: $('#dSize').value, color: d.color, qty: d.qty });
       if (e.target.closest('#dBuy') && sizeOk()) { S.addToCart(p, { size: $('#dSize').value, color: d.color, qty: d.qty }); openDrawer(); }
@@ -185,7 +188,30 @@
     return save > 0 ? `<div class="${cls} promorow"><span>Promo ${esc(code)} (${S.promoPercent()}% off full-price items)</span><b>&minus;${fmt(save)}</b></div>`
       : `<div class="${cls} promorow promorow--none"><span>Promo ${esc(code)}: items on deal are excluded</span><b>${fmt(0)}</b></div>`;
   }
-  function setDrawer(open) { if (open === !drawer.hidden) return; drawer.hidden = !open; if (open) { renderDrawer(); drawer.querySelector('.x').focus(); } else cartNotes = []; }
+  /* cart drawer focus: opening remembers what had focus and moves into the drawer; Tab stays inside while it is open;
+     closing returns focus to that element (or the cart button in the sidebar if it is gone) */
+  let drawerOpener = null;
+  function setDrawer(open) {
+    if (open === !drawer.hidden) return;
+    drawer.hidden = !open;
+    if (open) { const a = document.activeElement; drawerOpener = a && a !== document.body && !drawer.contains(a) ? a : null; renderDrawer(); drawer.querySelector('.x').focus(); }
+    else {
+      cartNotes = []; const op = drawerOpener, oid = op && op.id; drawerOpener = null;
+      const back = () => { const live = op && document.contains(op) && op.offsetParent !== null ? op : (oid && document.getElementById(oid)); const o = live && live.offsetParent !== null ? live : $('#navCart'); if (o) o.focus({ preventScroll: true }); };
+      back();   // closing changes the hash; the page behind may re-render, so find the opener again by id (only while focus has not moved on)
+      [0, 150, 450].forEach(t => setTimeout(() => { const a = document.activeElement; if (oid && (!a || a === document.body || a.id === 'navCart') && a !== document.getElementById(oid)) back(); }, t));
+    }
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Tab' || drawer.hidden || document.querySelector('dialog[open]')) return;
+    const box = drawer.querySelector('.drawer__box');
+    const f = [...box.querySelectorAll('a[href], button:not([disabled]), input, select, [tabindex]:not([tabindex="-1"])')].filter(x => x.offsetParent !== null);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (!box.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
   window.LuxoraShop = { show, setDrawer, isShown: () => shown, setReturn: h => { returnTo = h; }, checkout: () => openCheckout() };
 
   /* ---------- cart drawer ---------- */
@@ -219,11 +245,11 @@
     if ((b = q('data-inc'))) { const i = +b.dataset.inc; S.setQty(i, S.cart()[i].qty + 1); }
     else if ((b = q('data-dec'))) { const i = +b.dataset.dec; S.setQty(i, S.cart()[i].qty - 1); }
     else if ((b = q('data-rm'))) S.removeLine(+b.dataset.rm);
-    else if (t.closest('#goCheckout')) openCheckout();
+    else if (t.closest('#goCheckout')) openCheckout(t.closest('#goCheckout'));
   });
   document.addEventListener('luxora:change', () => { if (!drawer.hidden) renderDrawer(); });
   document.addEventListener('luxora:external', () => { if (!drawer.hidden) renderDrawer(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !drawer.hidden) closeDrawer(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !drawer.hidden && !document.querySelector('dialog[open]')) closeDrawer(); });
 
   /* ---------- checkout: its own browser tab (checkout.html), never inside the app view ----------
      Buy now hands over { mode: 'buy', items: [{ id, color, size, qty }], returnTo } through localStorage
@@ -231,7 +257,15 @@
      from js/prices.js). The cart's Checkout opens checkout.html?src=cart, which reads the live cart. */
   const CHECKOUT_PAGE = 'checkout.html';
   const handoffId = () => { const b = new Uint8Array(18); crypto.getRandomValues(b); return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
-  function openCheckoutTab(payload) {
+  /* checkout gate: guests can browse, chat and fill a cart, but Buy now / Checkout need an account first.
+     Signed in: the tab opens straight from the click. Guest: the sign-in / create-account dialog opens and checkout
+     continues once it succeeds (if the browser then blocks the tab, the notice offers a one-tap link). */
+  function gateCheckout(trigger, go) {
+    const A = window.LuxoraAuth;
+    if (!A || !A.requireAccount) return go(false);
+    A.requireAccount(trigger, (p, after) => go(after));
+  }
+  function openCheckoutTab(payload, afterSignIn) {
     let url = CHECKOUT_PAGE + '?src=cart';
     if (payload) {
       const h = handoffId();
@@ -244,17 +278,17 @@
        could not be detected. */
     let w = null; try { w = window.open(url, '_blank'); } catch {}
     if (w) { try { w.opener = null; } catch {} hideBlocked(); return true; }
-    showBlocked(url); return false;
+    showBlocked(url, afterSignIn); return false;
   }
   /* popup blocked: keep the shopper moving with a real link (new tab) or continue in this tab */
-  function showBlocked(url) {
+  function showBlocked(url, afterSignIn) {
     let el = $('#coBlocked');
     if (!el) { el = document.createElement('div'); el.id = 'coBlocked'; el.className = 'toast toast--sticky'; el.setAttribute('role', 'alert'); document.body.append(el); }
-    el.innerHTML = `<span>Your browser blocked the checkout tab.</span> <a class="toast__link" href="${esc(url)}" target="_blank" rel="noopener" id="coBlockedOpen">Open checkout in a new tab</a> · <a class="toast__link" href="${esc(url)}" id="coBlockedSame">Continue in this tab</a> <button type="button" class="toast__link" id="coBlockedX" aria-label="Dismiss">&#10005;</button>`;
+    el.innerHTML = `<span>${afterSignIn ? 'You&rsquo;re signed in. Continue to checkout:' : 'Your browser blocked the checkout tab.'}</span> <a class="toast__link" href="${esc(url)}" target="_blank" rel="noopener" id="coBlockedOpen">Open checkout in a new tab</a> · <a class="toast__link" href="${esc(url)}" id="coBlockedSame">Continue in this tab</a> <button type="button" class="toast__link" id="coBlockedX" aria-label="Dismiss">&#10005;</button>`;
     el.hidden = false;
     el.querySelector('#coBlockedOpen').onclick = () => setTimeout(hideBlocked, 0);
     el.querySelector('#coBlockedX').onclick = hideBlocked;
   }
   function hideBlocked() { const el = $('#coBlocked'); if (el) el.hidden = true; }
-  function openCheckout() { repriceCart(); if (!S.cart().length) return; openCheckoutTab(null); }
+  function openCheckout(trigger) { repriceCart(); if (!S.cart().length) return; gateCheckout(trigger || document.activeElement, after => openCheckoutTab(null, after)); }
 })();

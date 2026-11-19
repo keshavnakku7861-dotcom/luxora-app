@@ -15,19 +15,21 @@
   <link rel="stylesheet" href="css/palette.css?v=gauth20261105">
   <link rel="stylesheet" href="css/base.css?v=gauth20261105">
   <link rel="stylesheet" href="css/app.css?v=a11y20261114">
-  <link rel="stylesheet" href="css/views.css?v=a11y20261115">
+  <link rel="stylesheet" href="css/views.css?v=pub20261119">
   <link rel="stylesheet" href="css/warm.css?v=gauth20261105">
   <link rel="stylesheet" href="css/mobile.css?v=gauth20261105">
   <link rel="stylesheet" href="css/promo.css?v=checkout20261114">
+  <link rel="stylesheet" href="css/guest.css?v=pub20261119">
+  <link rel="stylesheet" href="css/mobilenav.css?v=pub20261119">
 </head>
 <body>
 <div class="shell">
   <aside class="rail" aria-label="Main">
     <a href="index.html" class="rail__logo" aria-label="Luxora home"><span data-logo></span></a>
     <nav class="rail__nav">
-      <a class="rail__btn on" id="navHome" href="#/assistant" aria-label="Assistant" title="Assistant" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10"/></svg></a>
-      <a class="rail__btn" id="navSaved" href="#/saved" aria-label="Saved items" title="Saved items"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg><b class="badge" data-saved-badge hidden>0</b></a>
-      <a class="rail__btn" id="navCart" href="#/shop" aria-label="Shop and cart" title="Shop &amp; cart"><svg viewBox="0 0 24 24"><path d="M3 4h2.5l2 11h10l2-8H7M9 20h.01M17 20h.01"/></svg><b class="badge" data-cart-badge hidden>0</b></a>
+      <a class="rail__btn on" id="navHome" href="#/assistant" aria-label="Home" title="Assistant" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10"/></svg><span class="rail__lbl" aria-hidden="true">Home</span></a>
+      <a class="rail__btn" id="navSaved" href="#/saved" aria-label="Saved items" title="Saved items"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg><b class="badge" data-saved-badge hidden>0</b><span class="rail__lbl" aria-hidden="true">Saved</span></a>
+      <a class="rail__btn" id="navCart" href="#/shop" aria-label="Shop and cart" title="Shop &amp; cart"><svg viewBox="0 0 24 24"><path d="M3 4h2.5l2 11h10l2-8H7M9 20h.01M17 20h.01"/></svg><b class="badge" data-cart-badge hidden>0</b><span class="rail__lbl" aria-hidden="true">Shop</span></a>
       <a class="rail__btn" id="navSettings" href="#/settings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/></svg></a>
       <a class="rail__btn" id="navInfo" href="#/info" aria-label="Information" title="Information">
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -42,9 +44,32 @@
     <circle cx="12" cy="12" r="3"></circle>
   </svg>
 </a>
+      <a class="rail__btn" id="navHelp" href="#/help" aria-label="Help Center" title="Help Center">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="12" cy="12" r="9"></circle>
+    <path d="M9.6 9.2a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7M12 17h.01"></path>
+  </svg>
+<span class="rail__lbl" aria-hidden="true">Help Center</span></a>
+      <button type="button" class="rail__btn rail__more" id="navAccount" aria-label="Account and more" aria-haspopup="dialog" aria-expanded="false" aria-controls="moreSheet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.4 7-5.4s6.2 1.8 7 5.4"/></svg><b class="rail__init" data-auth-initial aria-hidden="true"></b><span class="rail__lbl" aria-hidden="true">Account</span></button>
     </nav>
     <div class="rail__bottom"><button type="button" class="avatar" data-signin data-auth-keep title="Sign in" aria-label="Sign in"><span data-auth-initial></span><svg class="avatar__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.4 7-5.4s6.2 1.8 7 5.4"/></svg></button></div>
   </aside>
+
+  <!-- phone bottom bar: Account opens this "More" sheet (Information, What's New, Settings + account actions). Not used on desktop. -->
+  <dialog class="more" id="moreSheet" aria-labelledby="moreTitle">
+    <div class="more__grab" aria-hidden="true"></div>
+    <div class="more__head">
+      <span class="more__av" aria-hidden="true"><span data-auth-initial></span><svg class="more__avic" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.4 7-5.4s6.2 1.8 7 5.4"/></svg></span>
+      <div class="more__who"><h2 id="moreTitle">Account</h2><p id="moreSub">Not signed in</p></div>
+      <button type="button" class="more__x" data-more-close aria-label="Close menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <nav class="more__list" aria-label="More">
+      <a class="more__item" href="#/info" data-more-route="info"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v7M12 7h.01"/></svg><span>Information</span></a>
+      <a class="more__item" href="#/whats-new" data-more-route="whats-new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><path d="M7 7l2 2M15 15l2 2M17 7l-2 2M9 15l-2 2"/><circle cx="12" cy="12" r="3"/></svg><span>What's New</span></a>
+      <a class="more__item" href="#/settings" data-more-route="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/></svg><span>Settings</span></a>
+    </nav>
+    <div class="more__acct" id="moreAcct"></div>
+  </dialog>
 
   <div class="stage" id="stage">
   <!-- promo code bar: top of the app on every view (one active code; full-price items only, deals excluded) -->
@@ -83,8 +108,7 @@
       <div class="composer__file" id="attached" hidden></div>
       <input id="msg" name="message" placeholder="Ask about any product, price, or brand..." aria-describedby="msgCount" autocomplete="off">
       <span class="msgcount" id="msgCount" aria-live="polite" hidden></span>
-      <input type="file" id="file" accept="image/*" aria-label="Choose product image to attach" hidden tabindex="-1">
-      <button class="attach" id="attachBtn" type="button" aria-label="Add attachment"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 11-8.2 8.2a5 5 0 0 1-7-7L13.4 3.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg><span>Add attachment</span></button>
+      <button class="attach attach--soon" id="attachBtn" type="button" aria-disabled="true" aria-label="Image attachments: coming soon" title="Image attachments are coming soon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 11-8.2 8.2a5 5 0 0 1-7-7L13.4 3.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg><span>Coming soon</span></button>
       <button class="send" type="submit" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-5 16-3-7-8-1Z"/></svg></button>
     </form>
   </main>
@@ -307,6 +331,128 @@
 
   </div>
 </section>
+<!-- help center view -->
+<section class="view view--page" id="viewHelp" aria-label="Help Center" hidden>
+  <div class="help-page">
+    <div class="vhead">
+      <div>
+        <p class="eyebrow">Support</p>
+        <h1>Help Center</h1>
+        <p class="help-sub">Answers about orders, payments, promo codes and your Luxora account.</p>
+      </div>
+    </div>
+
+    <section class="help-hero" aria-labelledby="helpHeroT">
+      <p class="help-kicker">LUXORA HELP</p>
+      <h2 id="helpHeroT">How can we help?</h2>
+      <p>Browse a topic below, or search. For a quick question, you can also ask in the Assistant.</p>
+      <form class="search" role="search" id="helpSearch" autocomplete="off">
+        <button type="submit" class="search__submit" aria-label="Search help topics"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></button>
+        <label class="sr-only" for="helpQ">Search help topics</label>
+        <input id="helpQ" type="search" placeholder="Search help topics" autocomplete="off" aria-describedby="helpQMsg">
+      </form>
+      <p class="help-qmsg" id="helpQMsg" role="status" aria-live="polite"></p>
+    </section>
+
+    <div class="help-grid">
+      <article id="help-orders" aria-labelledby="help-orders-t">
+        <div class="help-card__top"><span class="help-card__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 4h2.5l2 11h10l2-8H7M9 20h.01M17 20h.01"/></svg></span><h3 id="help-orders-t">Orders &amp; checkout</h3></div>
+        <ul class="help-topics">
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-orders-1">Track an order</button><div class="help-a" id="help-orders-1" hidden><p>Luxora checkout runs in Stripe test mode, so no real order is created and there is nothing to track. For a purchase made on Amazon through a Luxora link, use your Amazon account.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-orders-2">Orders placed through Amazon links</button><div class="help-a" id="help-orders-2" hidden><p>When you buy on Amazon through a Luxora link, the order is placed with Amazon and handled by the seller. Amazon&rsquo;s own price, availability and terms apply.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-orders-3">Checkout in the Luxora app</button><div class="help-a" id="help-orders-3" hidden><p><strong>Buy now</strong> on a product page opens checkout in a new tab with only that item. <strong>Checkout</strong> in the cart opens it with everything in your cart. There are four steps: Address, Payment, Review and Confirmed. Prices are checked again by Luxora&rsquo;s server before any payment. Because checkout is in test mode, the confirmation shows a Stripe test reference, not an order number.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-orders-4">What&#x27;s in your cart</button><div class="help-a" id="help-orders-4" hidden><p>Your cart is saved in this browser. You can add up to 9 of each item, and rings need a ring size. Buy now does not change your cart.</p></div></li>
+        </ul>
+      </article>
+
+      <article id="help-shipping" aria-labelledby="help-shipping-t">
+        <div class="help-card__top"><span class="help-card__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h13v10H3zM16 10h4l2 3v4h-6M7 20h.01M18 20h.01"/></svg></span><h3 id="help-shipping-t">Shipping &amp; delivery</h3></div>
+        <ul class="help-topics">
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-shipping-1">Where purchases are fulfilled</button><div class="help-a" id="help-shipping-1" hidden><p>Luxora checkout is in test mode, so nothing is shipped from it yet. Purchases made on Amazon through a Luxora link are fulfilled by Amazon or the seller.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-shipping-2">Delivery for Amazon-link orders</button><div class="help-a" id="help-shipping-2" hidden><p>Delivery for Amazon-link orders is handled by Amazon or the seller, under their own delivery terms.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-shipping-3">Delivery status and tracking</button><div class="help-a" id="help-shipping-3" hidden><p>For an Amazon-link order, check its status in your Amazon account. In Luxora checkout you choose Standard ($9.99, free when your subtotal after any promo code is $150 or more) or Express ($19.99); in test mode nothing is shipped.</p></div></li>
+        </ul>
+      </article>
+
+      <article id="help-returns" aria-labelledby="help-returns-t">
+        <div class="help-card__top"><span class="help-card__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h11a5 5 0 1 1 0 10H8"/><path d="M8 4 4 7l4 3"/></svg></span><h3 id="help-returns-t">Returns &amp; refunds</h3></div>
+        <ul class="help-topics">
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-returns-1">Start a return with the seller</button><div class="help-a" id="help-returns-1" hidden><p>Returns are handled by the retailer or seller you bought from, under their own return policy.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-returns-2">Returns for Amazon-link orders</button><div class="help-a" id="help-returns-2" hidden><p>For anything bought on Amazon through a Luxora link, Amazon&rsquo;s or the seller&rsquo;s return policy applies. Start the return from your Amazon account.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-returns-3">Refund questions</button><div class="help-a" id="help-returns-3" hidden><p>Luxora checkout payments are Stripe test payments, so no real money is charged. For retailer-link purchases, refunds follow that retailer&rsquo;s own policy.</p></div></li>
+        </ul>
+      </article>
+
+      <article id="help-promo" aria-labelledby="help-promo-t">
+        <div class="help-card__top"><span class="help-card__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12V4.5A1.5 1.5 0 0 1 4.5 3H12l9 9-9 9-9-9Z"/><circle cx="7.5" cy="7.5" r="1.4"/></svg></span><h3 id="help-promo-t">Promo codes</h3></div>
+        <ul class="help-topics">
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-promo-1">How to apply a promo code</button><div class="help-a" id="help-promo-1" hidden><p>Type the code and press Apply. <strong>RAM2016</strong> gives 15% off full-price items. Upper or lower case both work.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-promo-2">Where to enter a code</button><div class="help-a" id="help-promo-2" hidden><p>Use the promo bar at the top of the app, or the promo field in checkout.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-promo-3">Codes and items already on a deal</button><div class="help-a" id="help-promo-3" hidden><p>Items already on a deal keep their deal price; a code does not discount them again.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-promo-4">Removing a promo code</button><div class="help-a" id="help-promo-4" hidden><p>Clear the code in the promo bar or in checkout. One code can be active at a time, and an invalid code is removed before payment.</p></div></li>
+        </ul>
+      </article>
+
+      <article id="help-payments" aria-labelledby="help-payments-t">
+        <div class="help-card__top"><span class="help-card__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg></span><h3 id="help-payments-t">Payments</h3></div>
+        <ul class="help-topics">
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-payments-1">Ways to pay</button><div class="help-a" id="help-payments-1" hidden><p>Card, through Stripe&rsquo;s Payment Element in <strong>test mode</strong>. To try it, use a Stripe test card such as 4242 4242 4242 4242. No real money is charged.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-payments-2">Paying through Amazon links</button><div class="help-a" id="help-payments-2" hidden><p>When you buy on Amazon through a Luxora link, you pay Amazon directly. As an Amazon Associate, Luxora earns from qualifying purchases.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-payments-3">Payment security</button><div class="help-a" id="help-payments-3" hidden><p>Card details go directly to Stripe. Luxora never receives or stores your full card number.</p></div></li>
+        </ul>
+      </article>
+
+      <article id="help-account" aria-labelledby="help-account-t">
+        <div class="help-card__top"><span class="help-card__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.4 7-5.4s6.2 1.8 7 5.4"/></svg></span><h3 id="help-account-t">Account &amp; sign-in</h3></div>
+        <ul class="help-topics">
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-account-1">Sign in to Luxora</button><div class="help-a" id="help-account-1" hidden><p>Use <strong>Continue with Google</strong>, or create an account with your email and a password.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-account-2">Manage your account</button><div class="help-a" id="help-account-2" hidden><p>Use the account button to sign in, view your account or log out.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-account-3">Update your profile</button><div class="help-a" id="help-account-3" hidden><p>Edit your name, phone and address in Settings. Email and password accounts are stored in your own browser.</p></div></li>
+          <li><a class="help-t" href="#/settings">Open Settings</a></li>
+        </ul>
+      </article>
+
+      <article id="help-contact" aria-labelledby="help-contact-t">
+        <div class="help-card__top"><span class="help-card__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H7l-3 3V6Z"/></svg></span><h3 id="help-contact-t">Contact Luxora</h3></div>
+        <ul class="help-topics">
+          <li><a class="help-t" href="#/assistant">Ask Luxora in the Assistant</a></li>
+          <li><a class="help-t" href="#/assistant" data-help-newchat="">Start a new chat</a></li>
+        </ul>
+        <form class="help-ask" id="helpAskForm" autocomplete="off">
+          <label class="sr-only" for="helpAsk">Ask Luxora</label>
+          <input id="helpAsk" type="text" name="q" placeholder="Ask Luxora a question..." autocomplete="off" maxlength="500">
+          <button class="send" type="submit" aria-label="Send to Ask Luxora"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-5 16-3-7-8-1Z"/></svg></button>
+        </form>
+        <a class="help-ask-link" href="#/assistant">Open the Assistant</a>
+      </article>
+
+      <article id="help-report" aria-labelledby="help-report-t">
+        <div class="help-card__top"><span class="help-card__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg></span><h3 id="help-report-t">Report a problem</h3></div>
+        <ul class="help-topics">
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-report-1">Something looks wrong</button><div class="help-a" id="help-report-1" hidden><p>Tell Ask Luxora what happened, which page you were on, and your device and browser. Please never include card numbers or passwords.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-report-2">Report a product or listing issue</button><div class="help-a" id="help-report-2" hidden><p>Tell Ask Luxora which product it was and what looks wrong (price, picture or details). Prices can change, so each product shows the date it was checked.</p></div></li>
+          <li><button type="button" class="help-t" aria-expanded="false" aria-controls="help-report-3">App feedback</button><div class="help-a" id="help-report-3" hidden><p>Share it with Ask Luxora in the Assistant.</p></div></li>
+          <li><a class="help-t" href="#/assistant">Tell Ask Luxora what happened</a></li>
+        </ul>
+      </article>
+
+    </div>
+
+    <section class="help-section" id="help-faq" aria-labelledby="help-faq-h">
+      <p class="eyebrow">FAQ</p>
+      <h2 id="help-faq-h">Frequently asked questions</h2>
+      <div class="help-faq-card">
+        <div class="help-card__top"><span class="help-card__ic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7M12 17h.01"/></svg></span><h3>FAQ</h3></div>
+        <div class="faq help-faq">
+          <details open><summary>Is Luxora a store or a shopping assistant?</summary><p>Luxora is an AI shopping assistant. You can browse products in the app, and some purchases are placed through Amazon links. When you buy through a retailer link, that retailer&rsquo;s own price, availability and terms apply.</p></details>
+          <details><summary>How do Buy Now links work?</summary><p>Buy now on a Luxora product page opens Luxora&rsquo;s checkout in a new tab; it runs in Stripe test mode, so no real money is charged. Buy-on-Amazon links go to Amazon. As an Amazon Associate, Luxora earns from qualifying purchases. Orders placed through Amazon links are handled by the seller.</p></details>
+          <details><summary>How do promo codes work?</summary><p>Enter a code in the promo bar at the top of the app. One code can be active at a time. A code may not apply to items that are already on a deal.</p></details>
+          <details><summary>How do I contact Luxora?</summary><p>Use Ask Luxora in the Assistant &mdash; you can start a chat from the Contact Luxora card on this page, or open the Assistant in the sidebar.</p></details>
+        </div>
+      </div>
+    </section>
+  </div>
+</section>
   <!-- cart drawer (stays inside the stage so the sidebar remains visible) -->
 <div class="drawer" id="drawer" hidden>
   <div class="drawer__scrim" data-close-drawer></div>
@@ -326,18 +472,19 @@
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="js/art.js?v=gauth20261105"></script>
-<script src="js/auth.js?v=emails20261119"></script>
+<script src="js/auth.js?v=pub20261119"></script>
 <script src="js/offline.js?v=stabilize20261111"></script>
 <script src="js/prices.js?v=promo20261113"></script>
 <script src="js/store.js?v=promo20261113"></script>
 <script src="js/deals.js?v=pricing20261112"></script>
 <script src="js/promo.js?v=promo20261113"></script>
 <script src="js/signup.js?v=gauth20261105"></script>
-<script src="js/app.js?v=a11y20261114"></script>
-<script src="js/shop.js?v=checkout20261119"></script>
+<script src="js/app.js?v=pub20261119"></script>
+<script src="js/shop.js?v=pub20261119"></script>
 <script src="js/saved.js?v=promo20261113"></script>
 <script src="js/settings.js?v=stabilize20261111"></script>
 <script src="js/i18n.js?v=735dfdc6c0"></script>
-<script src="js/router.js?v=gauth20261105"></script>
+<script src="js/router.js?v=pub20261119"></script>
+<script src="js/mobilenav.js?v=pub20261119"></script>
 </body>
 </html>

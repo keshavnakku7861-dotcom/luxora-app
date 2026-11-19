@@ -1,0 +1,28 @@
+/* guest browsing + checkout gate + a11y polish (Nov 19, 2026). Loaded after the other app styles. */
+
+/* sign-in dialog opened by Buy now / Checkout */
+.auth__gate { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--orange-soft); color: var(--orange-deep); font-size: 13px; font-weight: 600; }
+
+/* attachment: not built yet */
+.attach--soon { color: var(--gray-600); cursor: default; opacity: .75; }
+.attach--soon:hover { border-color: var(--gray-100); color: var(--gray-600); }
+
+/* carousel dots: bigger hit area (the visible dot stays the same size) and a visible keyboard focus ring */
+.panel .dots { gap: 2px; }
+.panel .dots button { box-sizing: content-box; background-clip: content-box; padding: 8px 3px; }
+.panel .dots button:focus-visible { outline: 2px solid var(--orange); outline-offset: 1px; }
+
+/* sticky Add to cart / Buy now bar: phones only, on the shop product page */
+.stickybuy { display: none; }
+@media (max-width: 560px) {
+  #detailView:not([hidden]) .stickybuy {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px;
+    position: fixed; left: 8px; right: 8px; bottom: calc(90px + env(safe-area-inset-bottom, 0px)); z-index: 14;   /* 12px above the 5-item bottom bar, same side insets */
+    padding: 8px 8px 8px 14px; border-radius: 16px; background: var(--white); border: 1px solid var(--gray-100);
+    box-shadow: 0 6px 24px var(--shadow);
+  }
+  .stickybuy__price { font-weight: 600; font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stickybuy__price s, .stickybuy__price .promotag, .stickybuy__price small { display: none; }
+  .stickybuy .btn { height: 44px; padding: 0 14px; font-size: 14px; white-space: nowrap; }
+  #detailView:not([hidden]) { padding-bottom: 96px; }
+}

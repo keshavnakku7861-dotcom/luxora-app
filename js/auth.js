@@ -35,7 +35,7 @@
   function build() {
     dlg = el('dialog', { class: 'auth', 'aria-labelledby': 'authTitle' });
     dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });           // click on backdrop
-    dlg.addEventListener('close', () => { if (dlg.dataset.completing) { delete dlg.dataset.completing; if (!get()) fbSignOut(); } if (opener && document.contains(opener)) opener.focus(); });
+    dlg.addEventListener('close', () => { if (!get()) afterAuth = null; if (dlg.dataset.completing) { delete dlg.dataset.completing; if (!get()) fbSignOut(); } if (opener && document.contains(opener)) opener.focus(); });
     document.body.append(dlg);
   }
   function close() { dlg.close(); }
@@ -84,6 +84,10 @@
   const clean = x => String(x || '').trim().replace(/\s+/g, ' ');
   const inApp = () => /app\.html$/.test(location.pathname) || !!document.getElementById('viewAssistant');
   function toChat() { inApp() ? (location.hash = '#/assistant') : location.assign('app.html#/assistant'); }
+  /* checkout gate: Buy now / Checkout pass a continuation to open(); after sign-in or create-account it runs instead of
+     jumping to the chat. Closing the dialog without an account drops it. */
+  let afterAuth = null;
+  function afterAuthDone() { const f = afterAuth; afterAuth = null; if (f) { try { f(get()); } catch {} } else toChat(); }
   /* After sign-in or create-account, show the empty assistant welcome (not leftover chat). */
   function welcomeAfterAuth() {
     try { localStorage.removeItem('luxora.chat'); localStorage.removeItem('luxora.chatOwner'); } catch {}
@@ -159,7 +163,7 @@
   };
   async function fbSignOut() { try { localStorage.removeItem(GFLAG); } catch {} try { const f = await fb(); await f.U.signOut(f.auth); } catch {} }
   const complete = p => !!(p && p.name && p.email && p.phone && p.country && p.street && p.city && p.region && p.postal);
-  function finishAuth(p, msg) { mem = p; write(p); setCountryPrefs(p.country); paint(); close(); announce(msg); welcomeAfterAuth(); toChat(); }
+  function finishAuth(p, msg) { mem = p; write(p); setCountryPrefs(p.country); paint(); close(); announce(msg); welcomeAfterAuth(); afterAuthDone(); }
   function googleBtn(formErr) {
     const b = el('button', { type: 'button', class: 'btn btn--ghost auth__google', id: 'authGoogle' });
     b.innerHTML = '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
@@ -300,7 +304,7 @@
         if (!EMAIL.test(email)) return em.inp.focus(); if (!pass) return pw.inp.focus();
         const a = accts()[key];
         if (!a || a.hash !== await hash(pass, a.salt)) { formErr.textContent = 'That email and password do not match an account on this device.'; formErr.hidden = false; return pw.inp.focus(); }
-        mem = a.profile; write(a.profile); setCountryPrefs(a.profile.country); paint(); close(); announce(`Signed in as ${a.profile.name}`); welcomeAfterAuth(); toChat(); return;
+        mem = a.profile; write(a.profile); setCountryPrefs(a.profile.country); paint(); close(); announce(`Signed in as ${a.profile.name}`); welcomeAfterAuth(); afterAuthDone(); return;
       }
       const v = { name: clean(nm.inp.value).slice(0, 60), email: email.slice(0, 120), country: co.inp.value, region: clean(rg.inp.value).slice(0, 60), city: clean(ci.inp.value).slice(0, 60), postal: clean(pc.inp.value).toUpperCase().slice(0, 12), phone: clean(ph.inp.value).slice(0, 20), street: clean(st.inp.value).slice(0, 100), apt: clean(ap.inp.value).slice(0, 60) };
       const loc = checkLocation(v);
@@ -314,10 +318,11 @@
       const bad = errs.find(([, m]) => m); if (bad) return bad[0].inp.focus();
       const salt = newSalt(), all = accts(); all[key] = { salt, hash: await hash(pass, salt), profile: v }; saveAccts(all);
       v.phone = normPhone(v.phone, v.country); v.createdAt = new Date().toISOString();
-      mem = v; write(v); setCountryPrefs(v.country); report(v); mail('welcome', { email: v.email, name: v.name }); paint(); close(); announce(`Account created. Signed in as ${v.name}`); welcomeAfterAuth(); toChat();
+      mem = v; write(v); setCountryPrefs(v.country); report(v); mail('welcome', { email: v.email, name: v.name }); paint(); close(); announce(`Account created. Signed in as ${v.name}`); welcomeAfterAuth(); afterAuthDone();
     });
     dlg.classList.toggle('auth--wide', mode === 'signup');
     dlg.append(closeBtn(), logo, el('h2', { id: 'authTitle', text: mode === 'signup' ? 'Create your Luxora account' : 'Sign in to Luxora' }),
+      ...(afterAuth ? [el('p', { class: 'auth__gate', id: 'authGate', role: 'status', text: 'Sign in or create a free account to continue to checkout.' })] : []),
       el('p', { class: 'auth__lead', text: mode === 'signup' ? 'Add your name, phone, and address so Luxora can save your profile.' : 'Welcome back. Enter your email and password.' }), ...googleBtn(formErr), form, swap);
     setTimeout(() => (nm || em).inp.focus(), 0);
   }
@@ -341,8 +346,9 @@
     paint(); announce('Logged out');
     if (inApp()) location.replace('index.html');
   }
-  function open(trigger, mode) {
+  function open(trigger, mode, then) {
     if (!dlg) build();
+    afterAuth = typeof then === 'function' ? then : null;
     opener = trigger || document.activeElement;
     const p = get(); p ? accountView(p) : formView(mode);
     if (!dlg.open) dlg.showModal();
@@ -363,7 +369,10 @@
   };
   const init = () => { paint(); };
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
-  window.LuxoraAuth = { profile: get, open, EMAIL, normPhone, COUNTRIES, CURRENCY, REGION_LABEL, checkLocation, setCountryPrefs,
+  /* run fn now if signed in (keeps the click's user gesture, so a new tab can open), else ask to sign in / create an
+     account first and run fn(profile) afterwards */
+  function requireAccount(trigger, fn) { if (get()) { fn(get(), false); return true; } open(trigger, 'signin', p => fn(p, true)); return false; }
+  window.LuxoraAuth = { profile: get, open, logOut, requireAccount, EMAIL, normPhone, COUNTRIES, CURRENCY, REGION_LABEL, checkLocation, setCountryPrefs,
     update(p) {   // edit profile; keeps the local account record in step (moves it if the email changed)
       const old = get(), all = accts(), ok = old && old.email && all[old.email.toLowerCase()];
       if (p && ok) { const rec = all[old.email.toLowerCase()]; delete all[old.email.toLowerCase()]; rec.profile = p; all[p.email.toLowerCase()] = rec; saveAccts(all); }
