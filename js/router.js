@@ -55,52 +55,7 @@
   nav.assistant.addEventListener('click', e => { if (parse().view === 'assistant') { e.preventDefault(); location.reload(); } });
   if (!location.hash) history.replaceState(null, '', location.pathname + location.search + '#/assistant');
   route();
-   const newsDetails = {
-  products: {
-    title: 'More Products & Brands',
-    text: 'Luxora plans to add more products, categories and trusted brands. More details will be announced as the selection expands.'
-  },
-  comparison: {
-    title: 'Product Comparison',
-    text: 'A future comparison tool will make it easier to compare products, prices and important features in one place.'
-  },
-  ai: {
-    title: 'New AI Features',
-    text: 'Luxora plans to introduce more AI-powered shopping features to make recommendations and product discovery even more helpful.'
-  },
-  store: {
-    title: 'Future Luxora Store',
-    text: 'Luxora continues to explore a future physical store experience. More information will be shared as the project develops.'
-  }
-};
+ 
 
-const newsGrid = document.querySelector('.news-grid');
-const newsDetail = document.querySelector('#newsDetail');
-const newsBack = document.querySelector('#newsBack');
-const newsDetailTitle = document.querySelector('#newsDetailTitle');
-const newsDetailText = document.querySelector('#newsDetailText');
 
-let lastNewsCard = null;
-
-document.querySelectorAll('[data-news-detail]').forEach(card => {
-  card.addEventListener('click', () => {
-    const item = newsDetails[card.dataset.newsDetail];
-    if (!item) return;
-
-    lastNewsCard = card;
-    newsDetailTitle.textContent = item.title;
-    newsDetailText.textContent = item.text;
-
-    newsGrid.hidden = true;
-    newsDetail.hidden = false;
-    newsDetail.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-});
-
-newsBack.addEventListener('click', () => {
-  newsDetail.hidden = true;
-  newsGrid.hidden = false;
-
-  if (lastNewsCard) lastNewsCard.focus();
-});
 })();
