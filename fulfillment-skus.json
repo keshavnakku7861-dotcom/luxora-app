@@ -1,9 +1,81 @@
 {
   "version": 1,
   "products": {
+    "aura-ring-4": {
+      "name": "Oura Ring 4",
+      "sku": "LUX-OURA-RING4",
+      "fulfillmentProvider": "amazon_mcf",
+      "amazonMcfEnabled": false
+    },
+    "nova-ring": {
+      "name": "Samsung Galaxy Ring",
+      "sku": "LUX-SAMSUNG-GALAXY-RING",
+      "fulfillmentProvider": "amazon_mcf",
+      "amazonMcfEnabled": false
+    },
+    "ring-pro": {
+      "name": "Oura Ring 5",
+      "sku": "LUX-OURA-RING5",
+      "fulfillmentProvider": "amazon_mcf",
+      "amazonMcfEnabled": false
+    },
+    "pulse-watch-s": {
+      "name": "Garmin Forerunner 165",
+      "sku": "LUX-GARMIN-FR165",
+      "fulfillmentProvider": "amazon_mcf",
+      "amazonMcfEnabled": false
+    },
+    "orbit-watch": {
+      "name": "Apple Watch Series 12",
+      "sku": "LUX-APPLE-WATCH-S12",
+      "fulfillmentProvider": "amazon_mcf",
+      "amazonMcfEnabled": false
+    },
+    "drift-buds": {
+      "name": "Sony WF-C710N",
+      "sku": "LUX-SONY-WFC710N",
+      "fulfillmentProvider": "amazon_mcf",
+      "amazonMcfEnabled": false
+    },
+    "echo-buds-pro": {
+      "name": "Apple AirPods Pro 3",
+      "sku": "LUX-APPLE-AIRPODS-PRO3",
+      "fulfillmentProvider": "amazon_mcf",
+      "amazonMcfEnabled": false
+    },
+    "studio-cans": {
+      "name": "Sony WH-1000XM5",
+      "sku": "LUX-SONY-WH1000XM5-BLK",
+      "fulfillmentProvider": "amazon_mcf",
+      "amazonMcfEnabled": false
+    },
     "calm-over-ear": {
       "name": "Sony WH-CH720N",
       "sku": "LUX-SONY-WHCH720N-BLK",
+      "fulfillmentProvider": "amazon_mcf",
+      "amazonMcfEnabled": false
+    },
+    "ipad-mini-a20": {
+      "name": "Apple iPad mini (A20 Pro)",
+      "sku": "LUX-APPLE-IPADMINI-A20",
+      "fulfillmentProvider": "amazon_mcf",
+      "amazonMcfEnabled": false
+    },
+    "kindle-16gb-2026": {
+      "name": "Amazon Kindle 16GB (2026)",
+      "sku": "LUX-AMZ-KINDLE16-2026",
+      "fulfillmentProvider": "amazon_mcf",
+      "amazonMcfEnabled": false
+    },
+    "echo-dot-2026": {
+      "name": "Amazon Echo Dot (2026)",
+      "sku": "LUX-AMZ-ECHODOT-2026",
+      "fulfillmentProvider": "amazon_mcf",
+      "amazonMcfEnabled": false
+    },
+    "alexa-tablet-8": {
+      "name": "Amazon Alexa Tablet 8 (64GB)",
+      "sku": "LUX-AMZ-ALEXA-TAB8-64",
       "fulfillmentProvider": "amazon_mcf",
       "amazonMcfEnabled": false
     }
