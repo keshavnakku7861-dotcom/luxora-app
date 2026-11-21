@@ -12,7 +12,7 @@
   const $ = s => document.querySelector(s);
   const S = window.LuxoraStore, Pr = window.LuxoraPrices, Art = window.LuxoraArt, esc = S.esc;
   const products = window.LuxoraOffline.products, byId = Object.fromEntries(products.map(p => [p.id, p]));
-  const STRIPE_PUBLISHABLE_KEY = 'pk_test_51UPOleR1DYbWyYrQZemSSGasBAbAVI9chWFiqeOfO6d73RCBpaUL2UPtHtzE7qzEJinqL2ugtvJWKio7uzfUlYHD004r2XwVyp';
+  const STRIPE_PUBLISHABLE_KEY = pk_test_51UYDQKJCa6aigpcZW3Z08Ky9Wnr78e77EtmPGxjbWMEuA7xZEi6toF01gfyHmuPvGP3WqyVgwNE2vhN3hs03VWGH003aNFeHf5
   const STRIPE_PAYMENT_URL = 'https://luxora-api.keshavnakku7861.workers.dev/api/create-payment-intent';
   /* payment methods: only card is enabled (Stripe test card 4242 confirmed end-to-end Nov 14, 2026). The Worker's
      PaymentIntent uses automatic_payment_methods (Dashboard list: card, klarna, link, affirm, cashapp, amazon_pay), and
