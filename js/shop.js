@@ -3,11 +3,13 @@
 (() => {
   const $ = s => document.querySelector(s);
   const S = window.LuxoraStore, money = S.money, esc = S.esc, Art = window.LuxoraArt;
-  const products = window.LuxoraOffline.products, byId = Object.fromEntries(products.map(p => [p.id, p]));
-  const CATS = [['all', 'All'], ['smart-rings', 'Smart rings'], ['smartwatches', 'Smartwatches'], ['earbuds', 'Earbuds'], ['headphones', 'Headphones'], ['tablets', 'Tablets'], ['e-readers', 'E-readers'], ['smart-home', 'Smart home'], ['deals', 'Deals']];
+  const products = [...(window.LuxoraOffline.products || []), ...(window.LuxoraOffline.drops || [])], byId = Object.fromEntries(products.map(p => [p.id, p]));
+  const CATS = [['all', 'All'], ['luxora-originals', 'Luxora Originals'], ['smart-rings', 'Smart rings'], ['smartwatches', 'Smartwatches'], ['earbuds', 'Earbuds'], ['headphones', 'Headphones'], ['tablets', 'Tablets'], ['e-readers', 'E-readers'], ['smart-home', 'Smart home'], ['deals', 'Deals']];
   const D = window.LuxoraDeals, dealKey = p => Object.keys(p.variants || {}).find(k => p.variants[k].deal), inCat = (p, k) => k === 'all' || (k === 'deals' ? !!(p.deal || dealKey(p)) : p.category === k), dealsOn = () => D.list.length > 0;
   /* price shown = what the Worker charges: promo price (struck base + code tag) on full-price items, deal price on deal items */
   const priceHtml = (p, color) => {
+    const note = p.priceNote ? ` <small class="pricenote">${esc(p.priceNote)}</small>` : '';
+    if (S.comingSoon(p)) return `<strong>${money(p.price)}</strong>${note}`;
     const pp = S.promoPrice(p, color);
     if (pp.promoApplied) return `<span class="pr pr--promo"><strong class="pr__now">${money(pp.price)}</strong> <s>${money(pp.base)}</s>${S.promoTag(pp)}</span>`;
     const tag = S.promoTag(pp);
@@ -49,18 +51,25 @@
     if (st.cat === 'deals') list = list.map(p => p.deal || !dealKey(p) ? p : S.variant(p, dealKey(p)));   // Deals tab: show the variant that is on sale
     if (st.sort === 'price-asc') list.sort((a, b) => a.price - b.price);
     else if (st.sort === 'price-desc') list.sort((a, b) => b.price - a.price);
-    else { const f = P(), w = p => (f.favCats.includes(p.category) ? 2 : 0) + (f.favBrands.includes(p.store) ? 1 : 0); if (f.favCats.length || f.favBrands.length) list = list.map((p, i) => [p, i]).sort((a, b) => w(b[0]) - w(a[0]) || a[1] - b[1]).map(x => x[0]); }
+    else {
+      const f = P(), w = p => (f.favCats.includes(p.category) ? 2 : 0) + (f.favBrands.includes(p.store) ? 1 : 0) + (S.comingSoon(p) ? 8 : 0);
+      list = list.map((p, i) => [p, i]).sort((a, b) => w(b[0]) - w(a[0]) || a[1] - b[1]).map(x => x[0]);
+    }
     return list;
   }
   function cardHtml(p) {
     const on = S.isSaved(p.id);
-    return `<article class="pcard">
-      <a class="pcard__img" href="#/shop/p/${p.id}${p.variantKey ? '?c=' + p.variantKey : ''}" aria-label="View ${esc(p.name)}">${p.deal && P().priceDrops ? `<span class="dealtag" title="Deal">-${p.deal.discountPercent}%</span>` : ''}<span class="a">${Art.product(p, 0)}</span><span class="b">${Art.product(p, 1)}</span>${Art.illus}</a>
+    const soon = S.comingSoon(p);
+    const cap = soon ? '<span class="illus">Original Luxora design</span>' : Art.illus;
+    const rate = soon ? 'Luxora Originals, Coming soon' : `${p.priceFrom ? 'From &middot; ' : ''}${S.checked(p).replace('Price checked', 'Checked')} &middot; ${esc(p.retailer.name)}`;
+    const action = soon ? `<span class="soonlbl">Coming soon</span>` : `<button class="btn btn--sm" data-add="${p.id}"${p.variantKey ? ` data-c="${p.variantKey}"` : ''}>${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button>`;
+    return `<article class="pcard${soon ? ' pcard--soon' : ''}">
+      <a class="pcard__img" href="#/shop/p/${p.id}${p.variantKey ? '?c=' + p.variantKey : ''}" aria-label="View ${esc(p.name)}">${soon ? S.comingSoonTag(p) : (p.deal && P().priceDrops ? `<span class="dealtag" title="Deal">-${p.deal.discountPercent}%</span>` : '')}<span class="a">${Art.product(p, 0)}</span><span class="b">${Art.product(p, 1)}</span>${cap}</a>
       <button class="pcard__heart ${on ? 'on' : ''}" data-heart="${p.id}" aria-pressed="${on}" aria-label="${on ? 'Remove' : 'Save'} ${esc(p.name)}">${heart}</button>
       <div class="pcard__body"><div class="pcard__store">${esc(p.store)}${S.preorderTag(p)}${P().budget && p.price > Number(P().budget) ? ' <span class="overtag">Over your budget</span>' : ''}</div>
         <h3><a href="#/shop/p/${p.id}${p.variantKey ? '?c=' + p.variantKey : ''}">${esc(p.name)}</a></h3>
-        <div class="rate">${p.priceFrom ? 'From &middot; ' : ''}${S.checked(p).replace('Price checked', 'Checked')} &middot; ${esc(p.retailer.name)}</div>
-        <div class="pcard__foot">${priceHtml(p)}<button class="btn btn--sm" data-add="${p.id}"${p.variantKey ? ` data-c="${p.variantKey}"` : ''}>${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button></div>
+        <div class="rate">${rate}</div>
+        <div class="pcard__foot">${priceHtml(p)}${action}</div>
        </div></article>`;
   }
   function renderDeals() {
@@ -75,7 +84,20 @@
           <div class="dealcard__price"><strong>${money(S.promoPrice(p, d.color || undefined).price)}</strong> ${P().priceDrops ? `<s>${money(p.listPrice)}</s>` : ''} ${S.promoTag(S.promoPrice(p, d.color || undefined))} <small>${esc(D.endsText(d))}</small></div>
           <button class="btn btn--sm" data-add="${p.id}"${d.color ? ` data-c="${d.color}"` : ''}>${S.needsSize(p) ? 'Choose size' : 'Add to cart'}</button> </div></article>`; }).join('')}</div>`;
   }
-  const COUNTRIES = { US: 'the United States', CA: 'Canada', GB: 'the United Kingdom', IN: 'India', DE: 'Germany', FR: 'France', ES: 'Spain', AU: 'Australia' };
+  function renderDrops() {
+    const box = $('#dropsBox'); if (!box) return;
+    const show = !st.q.trim() && (st.cat === 'all' || st.cat === 'luxora-originals');
+    const list = show ? products.filter(p => S.comingSoon(p) && inCat(p, st.cat === 'all' ? 'luxora-originals' : st.cat)) : [];
+    box.hidden = !list.length; if (!list.length) { box.innerHTML = ''; return; }
+    box.innerHTML = `<div class="deals__head"><div><h2>New drop</h2><p>Luxora Originals, Coming soon. Original designs inspired by a fun trend &mdash; not for sale yet, because a Printful listing is not set up.</p></div></div>
+      <div class="drops__grid">${list.map(p => { const href = `#/shop/p/${p.id}`; return `<article class="dealcard">
+        <a class="dealcard__img" href="${href}" aria-label="View ${esc(p.name)}">${Art.product(p, 0)}${S.comingSoonTag(p)}</a>
+        <div class="dealcard__body"><span class="dealcard__flag">Luxora Originals, Coming soon</span><h3><a href="${href}">${esc(p.name)}</a></h3>
+          <p class="dealcard__head">${esc((p.highlights || []).slice(0, 2).join(' · '))}</p>
+          <div class="dealcard__price">${priceHtml(p)}</div>
+          <span class="soonlbl">Coming soon</span></div></article>`; }).join('')}</div>`;
+  }
+    const COUNTRIES = { US: 'the United States', CA: 'Canada', GB: 'the United Kingdom', IN: 'India', DE: 'Germany', FR: 'France', ES: 'Spain', AU: 'Australia' };
   function region() { const f = $('#regionNote'); if (f) f.textContent = ` Shipping region: ${COUNTRIES[P().country] || 'the United States'} (shipping is set by the retailer). Prices shown in ${P().currency}${P().currency === 'USD' ? '' : ' at approximate rates, not live exchange rates'}.`; }
   document.addEventListener('luxora:prefs', () => {
     st.sort = ['price-asc', 'price-desc'].includes(P().sort) ? P().sort : 'featured'; $('#sort').value = st.sort; region();
@@ -94,6 +116,7 @@
     }).join('');
     const list = filtered();
     renderDeals();
+    renderDrops();
     $('#listTitle').textContent = st.q ? `Results for "${st.q}"` : (CATS.find(c => c[0] === st.cat)[1] === 'All' ? 'All products' : CATS.find(c => c[0] === st.cat)[1]);
     $('#count').textContent = `${list.length} product${list.length === 1 ? '' : 's'}`;
     $('#grid').innerHTML = list.length ? list.map(cardHtml).join('') : `<div class="none"><h3>No products found</h3><p>Try another search or category.</p><button class="btn btn--sm" data-cat="all" id="reset">Show all products</button></div>`;
@@ -104,7 +127,7 @@
   $('#shopQ').addEventListener('input', e => { st.q = e.target.value; leaveDetail(); renderList(); });
   $('#searchForm').addEventListener('submit', e => { e.preventDefault(); leaveDetail(); });
   document.addEventListener('click', e => {
-    const a = e.target.closest('[data-add]'); if (a) { const p = a.dataset.c ? S.variant(byId[a.dataset.add], a.dataset.c) : byId[a.dataset.add]; if (S.needsSize(p)) { location.hash = '#/shop/p/' + p.id + (a.dataset.c ? '?c=' + a.dataset.c : ''); toast(`Choose a size for ${p.name} first`); } else addToCart(p); return; }
+    const a = e.target.closest('[data-add]'); if (a) { const p = a.dataset.c ? S.variant(byId[a.dataset.add], a.dataset.c) : byId[a.dataset.add]; if (!p || S.comingSoon(p)) { toast('This Luxora Original is coming soon and can’t be added to your cart yet.'); return; } if (S.needsSize(p)) { location.hash = '#/shop/p/' + p.id + (a.dataset.c ? '?c=' + a.dataset.c : ''); toast(`Choose a size for ${p.name} first`); } else addToCart(p); return; }
     const h = e.target.closest('[data-heart]'); if (h) {
       const p = byId[h.dataset.heart], on = S.toggleSaved(p); h.classList.toggle('on', on); h.setAttribute('aria-pressed', on);
       toast(on ? `Saved ${p.name}` : `Removed ${p.name} from saved`, on ? ['View saved', goSaved] : null);
@@ -113,7 +136,7 @@
 
   /* ---------- detail ---------- */
   /* "You may also like": same category first, then related categories (tablets <-> e-readers <-> smart home, rings <-> watches, earbuds <-> headphones) */
-  const REL = { 'tablets': ['e-readers', 'smart-home'], 'e-readers': ['tablets', 'smart-home'], 'smart-home': ['tablets', 'e-readers'], 'smart-rings': ['smartwatches'], 'smartwatches': ['smart-rings', 'earbuds'], 'earbuds': ['headphones', 'smartwatches'], 'headphones': ['earbuds'] };
+  const REL = { 'luxora-originals': [], 'tablets': ['e-readers', 'smart-home'], 'e-readers': ['tablets', 'smart-home'], 'smart-home': ['tablets', 'e-readers'], 'smart-rings': ['smartwatches'], 'smartwatches': ['smart-rings', 'earbuds'], 'earbuds': ['headphones', 'smartwatches'], 'headphones': ['earbuds'] };
   function relatedFor(p) {
     const order = [p.category, ...(REL[p.category] || [])], rank = x => { const i = order.indexOf(x.category); return i < 0 ? 99 : i; };
     return products.filter(x => x.id !== p.id && rank(x) < 99).sort((a, b) => rank(a) - rank(b)).slice(0, 4);
@@ -123,14 +146,20 @@
     let p = S.variant(base, d.color);
     const root = $('#detailView');
     const draw = () => {
-      const on = S.isSaved(p.id), related = relatedFor(p);
-      root.innerHTML = `
-        <nav class="crumbs" aria-label="Breadcrumb"><a href="#/shop">Shop</a> / <a href="#/shop?cat=${p.category}">${CATS.find(c => c[0] === p.category)[1]}</a> / <span>${esc(p.name)}</span></nav>
-        <div class="detail">
-          <div class="gallery"><div class="gallery__main">${Art.product(p, d.view)}${Art.illus}</div>
-            <div class="gallery__thumbs">${Array.from({ length: Art.VIEWS }, (_, i) => `<button class="${i === d.view ? 'on' : ''}" data-view="${i}" aria-label="Photo ${i + 1}">${Art.product(p, i)}</button>`).join('')}</div></div>
-          <div class="info">
-            <div class="pcard__store">${esc(p.store)}</div><h1>${esc(p.name)}</h1>
+      const on = S.isSaved(p.id), related = relatedFor(p), soon = S.comingSoon(p);
+      const catLabel = (CATS.find(c => c[0] === p.category) || [p.category, p.category])[1];
+      const views = (Art.viewsOf && Art.viewsOf(p)) || Art.VIEWS;
+      const cap = soon ? '<span class="illus">Original Luxora design</span>' : Art.illus;
+      const thumbs = views > 1 ? `<div class="gallery__thumbs">${Array.from({ length: views }, (_, i) => `<button class="${i === d.view ? 'on' : ''}" data-view="${i}" aria-label="Photo ${i + 1}">${Art.product(p, i)}</button>`).join('')}</div>` : '';
+      const buyBlock = soon ? `
+            <div class="rate">Luxora Originals, Coming soon</div>
+            <div class="price">${priceHtml(p, d.color)}</div>
+            <p class="desc">${esc(p.description || '')}</p>
+            ${p.optionsNote ? `<p class="onote">${esc(p.optionsNote)}</p>` : ''}
+            <p class="onote soonnote">This Luxora Original is coming soon and cannot be bought yet. There is no Printful listing, no Buy now, and no checkout for it.</p>
+            <div class="buyrow"><span class="soonlbl soonlbl--lg">Coming soon</span>
+              <button class="heartbtn ${on ? 'on' : ''}" id="dHeart" aria-pressed="${on}" aria-label="${on ? 'Remove from saved' : 'Save for later'}">${heart}</button></div>
+            <ul class="perks"><li>Luxora Originals, Coming soon</li><li>Not for sale until a Printful listing is set up</li><li>You can save it for later</li></ul>` : `
             <div class="rate">${S.checked(p)} &middot; at ${esc(p.retailer.name)}</div>${S.preorderTag(p) ? `<div class="preline">${S.preorderTag(p)}</div>` : ''}
             <div class="price">${p.priceFrom ? '<small class="from">From</small> ' : ''}${priceHtml(p, d.color)}</div>${p.deal && P().priceDrops ? `<div class="dealnote"><span class="dealtag dealtag--inline">-${p.deal.discountPercent}%</span> <b>Deal.</b> ${esc(D.endsText(p.deal))}. ${esc(p.deal.headline)} <span class="dealnote__src">Compared with ${esc(p.deal.listPriceSource || 'the listed price')}.${p.deal.sourceUrl ? ` <a href="${esc(p.deal.sourceUrl)}" target="_blank" rel="noopener noreferrer sponsored">Source<span class="sr-only"> (opens in a new tab)</span></a>` : ''}</span></div>` : ''}
             <p class="desc">${esc(p.description || '')}</p>
@@ -143,9 +172,20 @@
             <p class="onote">Luxora checkout is currently in Stripe test mode. Test payments do not create a real order, and no product will be shipped.</p>
             <div class="buyrow"><button class="btn btn--lg btn--ghost" id="dAdd">Add to cart</button><button class="btn btn--lg btn--ghost" id="dBuy">Checkout</button>
               <button class="heartbtn ${on ? 'on' : ''}" id="dHeart" aria-pressed="${on}" aria-label="${on ? 'Remove from saved' : 'Save for later'}">${heart}</button></div>
-            <ul class="perks"><li>Real shipping, returns and warranty come from the seller</li><li>Prices can change; always confirm at the retailer</li><li>Stripe test mode: no real charge or delivery</li></ul>
+            <ul class="perks"><li>Real shipping, returns and warranty come from the seller</li><li>Prices can change; always confirm at the retailer</li><li>Stripe test mode: no real charge or delivery</li></ul>`;
+      const sticky = soon
+        ? `<div class="stickybuy" id="dSticky" aria-label="${esc(p.name)}" role="group"><div class="stickybuy__price">${priceHtml(p, d.color)}</div><span class="soonlbl">Coming soon</span></div>`
+        : `<div class="stickybuy" id="dSticky" aria-label="Buy ${esc(p.name)}" role="group"><div class="stickybuy__price">${priceHtml(p, d.color)}</div><button type="button" class="btn btn--ghost" data-proxy="dAdd">Add to cart</button><button type="button" class="btn btn--orange" data-proxy="dBuyNow">Buy now<span class="sr-only"> (opens checkout in a new tab)</span></button></div>`;
+      root.innerHTML = `
+        <nav class="crumbs" aria-label="Breadcrumb"><a href="#/shop">Shop</a> / <a href="#/shop?cat=${p.category}">${esc(catLabel)}</a> / <span>${esc(p.name)}</span></nav>
+        <div class="detail">
+          <div class="gallery"><div class="gallery__main">${Art.product(p, d.view)}${cap}</div>
+            ${thumbs}</div>
+          <div class="info">
+            <div class="pcard__store">${esc(p.store)}</div><h1>${esc(p.name)}</h1>
+            ${buyBlock}
           </div></div>
-        <div class="stickybuy" id="dSticky" aria-label="Buy ${esc(p.name)}" role="group"><div class="stickybuy__price">${priceHtml(p, d.color)}</div><button type="button" class="btn btn--ghost" data-proxy="dAdd">Add to cart</button><button type="button" class="btn btn--orange" data-proxy="dBuyNow">Buy now<span class="sr-only"> (opens checkout in a new tab)</span></button></div>
+        ${sticky}
                 <h2 class="rel__t">You may also like</h2><div class="grid grid--4">${related.map(cardHtml).join('')}</div>`;
     };
     draw();
@@ -158,6 +198,9 @@
       if (e.target.closest('#dMinus')) { d.qty = Math.max(1, d.qty - 1); $('#dQ').textContent = d.qty; }
       if (e.target.closest('#dPlus')) { d.qty = Math.min(9, d.qty + 1); $('#dQ').textContent = d.qty; }
       const sizeOk = () => { const sz = $('#dSize'), bad = S.needsSize(p) && !sz.value; $('#dSizeErr').hidden = !bad; bad ? sz.setAttribute('aria-invalid', 'true') : sz.removeAttribute('aria-invalid'); if (bad) sz.focus(); return !bad; };
+      if (e.target.closest('#dBuyNow') || e.target.closest('#dAdd') || e.target.closest('#dBuy')) {
+        if (S.comingSoon(p)) { toast('This Luxora Original is coming soon and can’t be bought yet.'); return; }
+      }
       if (e.target.closest('#dBuyNow') && sizeOk()) {
         /* Buy now = this item only (the cart is not changed), checked out in its own tab (checkout.html) */
         const item = { id: p.id, color: d.color, size: $('#dSize').value, qty: d.qty };
@@ -167,7 +210,7 @@
       }
       if (e.target.closest('#dAdd') && sizeOk()) addToCart(p, { size: $('#dSize').value, color: d.color, qty: d.qty });
       if (e.target.closest('#dBuy') && sizeOk()) { S.addToCart(p, { size: $('#dSize').value, color: d.color, qty: d.qty }); openDrawer(); }
-      if (e.target.closest('#dHeart')) { const on = S.toggleSaved(p, { size: $('#dSize').value, color: d.color }); const b = $('#dHeart'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); toast(on ? `Saved ${p.name}` : `Removed ${p.name} from saved`, on ? ['View saved', goSaved] : null); }
+      if (e.target.closest('#dHeart')) { const on = S.toggleSaved(p, { size: ($('#dSize') && $('#dSize').value) || d.size, color: d.color }); const b = $('#dHeart'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); toast(on ? `Saved ${p.name}` : `Removed ${p.name} from saved`, on ? ['View saved', goSaved] : null); }
     };
   }
 

@@ -8,7 +8,7 @@
   const KC = 'luxora.cart', KS = 'luxora.saved', KP = 'luxora.promo';
   const read = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v : d; } catch { return d; } };
   const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} document.dispatchEvent(new Event('luxora:change')); };
-  const catalog = () => Object.fromEntries((window.LuxoraOffline?.products || []).map(p => [p.id, p]));
+  const catalog = () => Object.fromEntries([...(window.LuxoraOffline?.products || []), ...(window.LuxoraOffline?.drops || [])].map(p => [p.id, p]));
   const Pr = window.LuxoraPrices;
   const FREE_OVER = Pr.SHIPPING.freeOver, STANDARD = Pr.SHIPPING.standard, EXPRESS = Pr.SHIPPING.express;
   /* product data always shows the Worker's prices (a drift in js/offline.js is corrected here and logged) */
@@ -80,6 +80,7 @@
     clearPromo(message) { const had = !!promo(); try { localStorage.removeItem(KP); } catch {} if (had) promoChanged(message); return had; },
     /* price of a product/finish with the active promo: { price, base (USD), promoApplied, dealExcluded, code, percent } */
     promoPrice(p, color) {
+      if (Store.comingSoon(p)) return { price: p.price, base: p.price, promoApplied: false, dealExcluded: false, code: '', percent: 0 };
       const c = color || (p && (p.variantKey || (p.colors || [])[0])), u = p && Pr.promoUnit(p.id, c, promo());
       if (!u) return { price: p ? p.price : 0, base: p ? p.price : 0, promoApplied: false, dealExcluded: false, code: promo(), percent: 0 };
       return { price: u.unitCents / 100, base: u.baseUnitCents / 100, promoApplied: u.promoApplied, dealExcluded: u.dealExcluded, code: promo(), percent: u.discountPercent };
@@ -109,6 +110,9 @@
     /* pre-order products (e.g. a device not released yet): true until the release day */
     preorder: p => !!(p && p.preorder && Date.now() < new Date(p.preorder.releases + 'T00:00:00').getTime()),
     preorderTag(p) { if (!Store.preorder(p)) return ''; const d = new Date(p.preorder.releases + 'T12:00:00'); return `<span class="pretag">Pre-order · releases ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>`; },
+    /* Daily Drop / Luxora Originals with no Printful listing yet: visible in the shop, never sellable */
+    comingSoon: p => !!(p && p.comingSoon),
+    comingSoonTag(p) { return Store.comingSoon(p) ? `<span class="droptag">New drop</span>` : ''; },
     amazonLink(p, cls = 'btn', label, always, opts = {}) {
       if (Store.preorder(p) && (!label || label === 'Buy now')) label = 'Pre-order';
       const a = p && p.amazon; if (!a || !/^https:\/\/www\.amazon\.com\/.*[?&]tag=luxora004-20/.test(a.url)) return '';
@@ -124,6 +128,7 @@
     validSize: (p, size) => !!p && Pr.validSize(p.id, size),
     isSizingKit: Pr.isSizingKit,
     addToCart(p, opts = {}) {
+      if (Store.comingSoon(p)) return null;                // Daily Drop / coming soon: no cart, no checkout
       if (Store.needsSize(p) && !opts.size) return null;   // a size must be chosen first
       const size = opts.size || (Store.needsSize(p) ? '' : p.sizes[0]), color = opts.color || p.colors[0];
       if (!Pr.validSize(p.id, size)) return null;          // e.g. "Sizing kit": never sold as a ring

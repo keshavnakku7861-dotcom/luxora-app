@@ -1,7 +1,7 @@
 /* Luxora saved page: favorited items (localStorage 'luxora.saved'). Move to cart / remove. */
 (() => {
   const $ = s => document.querySelector(s);
-  const S = window.LuxoraStore, money = S.money, esc = S.esc, byId = Object.fromEntries(window.LuxoraOffline.products.map(p => [p.id, p]));
+  const S = window.LuxoraStore, money = S.money, esc = S.esc, byId = Object.fromEntries([...(window.LuxoraOffline.products || []), ...(window.LuxoraOffline.drops || [])].map(p => [p.id, p]));
   const cname = c => c[0].toUpperCase() + c.slice(1);
   S.bind();
   function toast(t, link) {
@@ -23,12 +23,13 @@
         <a class="line__img" href="#/shop/p/${p.id}${q}" aria-label="View ${esc(f.name)}">${LuxoraArt.product({ ...p, name: f.name, imageId: f.imageId })}</a>
         <div><div class="line__store">${esc(p.store)}</div><h2 class="line__name"><a href="#/shop/p/${p.id}${q}">${esc(f.name)}</a></h2>
           <div class="line__opts"><span>Size: ${esc(size)}</span><span><i class="dot c-${esc(color)}"></i>${cname(color)}</span><span>${esc(S.checked({ checkedAt: f.checkedAt }).replace('Price checked', 'Checked'))}</span></div>
-          <div class="line__ctl"><button class="btn btn--sm" data-move="${p.id}">${S.needsSize(p) && !S.validSize(p, x.size) ? 'Choose size' : 'Move to cart'}</button><button class="rm" data-unsave="${p.id}">Remove</button></div></div>
-        <div class="line__price">${money(f.price)}${f.promoApplied ? ` <s class="was">${money(f.basePrice)}</s>` : ''}${S.promoTag({ code: S.promo(), percent: S.promoPercent(), promoApplied: f.promoApplied, dealExcluded: f.dealExcluded })}</div></article>`;
+          <div class="line__ctl">${S.comingSoon(p) ? '<span class="soonlbl">Coming soon</span>' : `<button class="btn btn--sm" data-move="${p.id}">${S.needsSize(p) && !S.validSize(p, x.size) ? 'Choose size' : 'Move to cart'}</button>`}<button class="rm" data-unsave="${p.id}">Remove</button></div></div>
+        <div class="line__price">${S.comingSoon(p) ? money(p.price) : `${money(f.price)}${f.promoApplied ? ` <s class="was">${money(f.basePrice)}</s>` : ''}${S.promoTag({ code: S.promo(), percent: S.promoPercent(), promoApplied: f.promoApplied, dealExcluded: f.dealExcluded })}`}</div></article>`;
     }).join('');
   }
   function move(id) {
     const x = S.saved().find(s => s.id === id); if (!x || !byId[id]) return;
+    if (S.comingSoon(byId[id])) return { soon: byId[id] };
     const v = S.variant(byId[id], x.color), f = S.info(x);
     if (S.needsSize(v) && !S.validSize(v, x.size)) return { needSize: v };   // e.g. an old "Sizing kit" pick: a real ring size is needed
     /* keep the saved variant's identity (name, image, price, date, link) instead of rebuilding the base product */
@@ -38,7 +39,7 @@
   }
   document.addEventListener('click', e => {
     const m = e.target.closest('[data-move]'), r = e.target.closest('[data-unsave]');
-    if (m) { const p = move(m.dataset.move); if (p && p.needSize) { location.hash = '#/shop/p/' + p.needSize.id; toast(`Choose a size for ${p.needSize.name} first`); } else if (p) toast(`Moved ${p.name} to cart`, ['View cart', '#/cart']); }
+    if (m) { const p = move(m.dataset.move); if (p && p.soon) toast(`${p.soon.name} is coming soon and can’t be moved to your cart yet.`); else if (p && p.needSize) { location.hash = '#/shop/p/' + p.needSize.id; toast(`Choose a size for ${p.needSize.name} first`); } else if (p) toast(`Moved ${p.name} to cart`, ['View cart', '#/cart']); }
     else if (r) { S.removeSaved(r.dataset.unsave); toast('Removed from saved'); }
     else if (e.target.id === 'moveAll') { const res = S.saved().map(s => move(s.id)), done = res.filter(r => r && !r.needSize).length, skipped = res.filter(r => r && r.needSize).length; toast(`Moved ${done} item${done === 1 ? '' : 's'} to cart${skipped ? `; ${skipped} still need a size` : ''}`, ['View cart', '#/cart']); }
   });

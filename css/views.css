@@ -235,6 +235,16 @@
 /* deals */
 .vsignup { margin: 28px 0 8px; }
 #viewShop .pcard__img .dealtag, #viewShop .dealcard__img .dealtag { position: absolute; top: 10px; left: 10px; z-index: 2; }
+#viewShop .pcard__img .droptag, #viewShop .dealcard__img .droptag { position: absolute; top: 10px; left: 10px; z-index: 2; }
+.droptag { background: var(--orange); color: var(--white); font-size: 12px; font-weight: 600; letter-spacing: .02em; border-radius: 6px; padding: 4px 8px; line-height: 1.2; }
+.soonlbl { display: inline-block; font-weight: 600; font-size: 12px; color: var(--orange-deep); background: var(--orange-soft); border-radius: 6px; padding: 6px 10px; }
+.soonlbl--lg { font-size: 14px; padding: 10px 16px; }
+#viewShop .pricenote, .pricenote { font-size: 12px; font-weight: 500; color: var(--gray-600); }
+#viewShop .soonnote { background: var(--orange-soft); border-radius: 10px; padding: 10px 14px; }
+#viewShop .drops { margin: 4px 0 28px; }
+#viewShop .drops__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) { #viewShop .drops__grid { grid-template-columns: 1fr; } }
+
 .dealtag { background: var(--orange); color: var(--white); font-size: 12px; font-weight: 600; letter-spacing: .02em; border-radius: 6px; padding: 4px 8px; line-height: 1.2; }
 .dealtag--inline { position: static; display: inline-block; }
 #viewShop .pr { display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }

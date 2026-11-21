@@ -149,7 +149,44 @@ const categories = {
   'smart-home': { label: 'smart home devices', words: ['echo', 'echo dot', 'smart speaker', 'smart speakers', 'speaker', 'speakers', 'smart home', 'alexa speaker', 'home assistant', 'enceinte', 'enceintes', 'altavoz', 'altavoces', 'lautsprecher']}
 };
 
-module.exports = { products, categories, CHECKED, AMAZON_TAG, AMAZON_DISCLOSURE };
+
+/* Nov 21, 2026 Daily Drop: original Luxora designs, coming soon (no Printful / no checkout).
+   Kept out of `products` so chat recommendations and PRICE_CATALOG checks stay unchanged. */
+const DROP_CHECKED = '2026-11-21';
+const drops = [
+  { id: 'out-of-lives-until-monday', name: 'Out of Lives Until Monday', store: 'Luxora Originals',
+    category: 'luxora-originals', kind: 'apparel', tone: 'teal', comingSoon: true, imageViews: 1,
+    alt: 'Original Luxora design of an orange tabby cat flopped on a teal sofa, for the Out of Lives Until Monday unisex t-shirt',
+    aliases: ['out of lives until monday', 'out of lives'],
+    description: 'Unisex t-shirt with an original Luxora design of an orange tabby cat flopped on a teal sofa. Inspired by a fun #Caturday trend, drawn as our own art. Coming soon — a Printful listing is not set up yet, so this cannot be bought today.',
+    highlights: ['Unisex t-shirt', 'Original Luxora design', 'Coming soon'],
+    price: 26, tags: ['luxora-originals', 't-shirt', 'shirt', 'cat', 'new-drop', 'coming-soon'],
+    sizes: ['One size'], colors: ['standard'],
+    optionsNote: 'Unisex t-shirt. Sizes and checkout will be available once Printful is set up.',
+    alsoAt: [], checkedAt: DROP_CHECKED },
+  { id: 'recharging-life-2-of-9', name: 'Recharging Life 2 of 9', store: 'Luxora Originals',
+    category: 'luxora-originals', kind: 'mug', tone: 'blue', comingSoon: true, imageViews: 1,
+    alt: 'Original Luxora design of a fluffy blue-gray cat hugging a steaming mug, for the Recharging Life 2 of 9 11 oz ceramic mug',
+    aliases: ['recharging life 2 of 9', 'recharging life'],
+    description: '11 oz ceramic mug with an original Luxora design of a fluffy blue-gray cat hugging a steaming mug. Inspired by a fun #Caturday trend, drawn as our own art. Coming soon — a Printful listing is not set up yet, so this cannot be bought today.',
+    highlights: ['11 oz ceramic mug', 'Original Luxora design', 'Coming soon'],
+    price: 16, tags: ['luxora-originals', 'mug', 'ceramic', 'cat', 'new-drop', 'coming-soon'],
+    sizes: ['One size'], colors: ['standard'],
+    optionsNote: '11 oz ceramic mug. Checkout will be available once Printful is set up.',
+    alsoAt: [], checkedAt: DROP_CHECKED },
+  { id: 'status-sunbeam', name: 'Status: Sunbeam', store: 'Luxora Originals',
+    category: 'luxora-originals', kind: 'sticker', tone: 'cream', comingSoon: true, imageViews: 1,
+    alt: 'Original Luxora design of a cream cat lying belly-up in a sunbeam, for the Status: Sunbeam die-cut vinyl sticker',
+    aliases: ['status sunbeam', 'status: sunbeam'],
+    description: 'Die-cut vinyl sticker with an original Luxora design of a cream cat lying belly-up in a sunbeam. Inspired by a fun #Caturday trend, drawn as our own art. $5 each, or $9 for a 3-pack, when it goes on sale. Coming soon — a Printful listing is not set up yet, so this cannot be bought today.',
+    highlights: ['Die-cut vinyl sticker', 'Original Luxora design', '$5 each or $9 for a 3-pack'],
+    price: 5, priceNote: 'or $9 for a 3-pack', tags: ['luxora-originals', 'sticker', 'vinyl', 'cat', 'sunbeam', 'new-drop', 'coming-soon'],
+    sizes: ['One size'], colors: ['standard'],
+    optionsNote: 'Die-cut vinyl sticker. $5 each or $9 for a 3-pack, once Printful is set up.',
+    alsoAt: [], checkedAt: DROP_CHECKED }
+];
+
+module.exports = { products, categories, drops, CHECKED, AMAZON_TAG, AMAZON_DISCLOSURE };
 
   };
   defs.rules = function (module, exports, require) {
@@ -600,6 +637,7 @@ module.exports = { respond };
   const products = load('products'), sender = load('sender');
   window.LuxoraOffline = {
     products: products.products,
+    drops: products.drops || [],
     // Same contract as POST /api/chat: { reply, products, title?, followUp? } (SENDER's warm voice on top of the rules)
     respond: async (message, ctx) => sender.respond(message, ctx || {})
   };

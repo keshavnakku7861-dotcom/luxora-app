@@ -8,9 +8,15 @@
   /* Product art = studio photos in images/<id>-<view 1..3>.webp (relative URLs, works under /<repo>/). */
   const VIEWS = 3;
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const viewsOf = p => {
+    const n = p && p.imageViews;
+    return Number.isInteger(n) && n > 0 ? Math.min(VIEWS, n) : VIEWS;
+  };
   function product(p, view = 0) {
-    const v = ((view % VIEWS) + VIEWS) % VIEWS + 1;
-    return `<img class="pimg" src="images/${encodeURIComponent(p.imageId || p.id)}-${v}.webp" alt="Illustrative image of ${esc(p.name || 'the product')} (not an official product photo)" width="800" height="800" loading="lazy" decoding="async" onerror="this.onerror=null;this.style.visibility='hidden'">`;
+    const total = viewsOf(p);
+    const v = total === 1 ? 1 : ((view % total) + total) % total + 1;
+    const alt = (p && p.alt) ? p.alt : `Illustrative image of ${esc(p.name || 'the product')} (not an official product photo)`;
+    return `<img class="pimg" src="images/${encodeURIComponent((p && p.imageId) || (p && p.id) || 'product')}-${v}.webp" alt="${esc(alt)}" width="800" height="800" loading="lazy" decoding="async" onerror="this.onerror=null;this.style.visibility='hidden'">`;
   }
 
   const illus = '<span class="illus">Illustrative image</span>';
@@ -23,6 +29,6 @@
     root.querySelectorAll('[data-logo]:not([data-done])').forEach(el => { el.innerHTML = logo(); el.dataset.done = '1'; });
     root.querySelectorAll('[data-sparkle]:not([data-done])').forEach(el => { el.innerHTML = sparkle(Number(el.dataset.sparkle) || 40); el.dataset.done = '1'; });
   }
-  window.LuxoraArt = { logo, sparkle, product, hydrate, VIEWS, illus };
+  window.LuxoraArt = { logo, sparkle, product, hydrate, viewsOf, VIEWS, illus };
   document.addEventListener('DOMContentLoaded', () => hydrate());
 })();
