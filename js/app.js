@@ -29,7 +29,14 @@
       price: p.price,
       description: p.description,
       highlights: p.highlights || [],
-      tags: p.tags || []
+      tags: p.tags || [],
+      // chat wording: lets the Worker answer size/colour asks from data and date prices from each product's checkedAt
+      store: p.store,
+      aliases: p.aliases || [],
+      sizes: p.sizes || [],
+      colors: (p.colors || []).filter(c => c !== 'standard').map(c => (p.colorNames && p.colorNames[c]) || c[0].toUpperCase() + c.slice(1)),
+      optionsNote: p.optionsNote || '',
+      checkedAt: p.checkedAt || ''
     }))
   }),
   signal: ctl.signal

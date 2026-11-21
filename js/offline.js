@@ -193,8 +193,72 @@ module.exports = { products, categories, drops, CHECKED, AMAZON_TAG, AMAZON_DISC
 // Built-in rule-based responder (keyword matching). Replace or wrap it - see README "Plugging in SENDER".
 // Contract: async respond(message, ctx) -> { reply: string, products: Product[], title?: string, followUp?: string }
 const { products, categories } = require('../products');
-const CHECKED_TXT = 'price checked Nov 3, 2026';
-const ck = p => p && p.checkedAt && p.checkedAt !== '2026-11-03' ? 'price checked ' + new Date(p.checkedAt + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : CHECKED_TXT;
+const day = (d, year) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(year ? { year: 'numeric' } : {}), timeZone: 'UTC' });
+const ck = p => 'price checked ' + day((p && p.checkedAt) || '2026-11-03', true);
+/* "Prices checked Nov 3." from the shown products' own checkedAt dates ("Nov 3–4" when they differ) */
+function checkedLine(ps) {
+  const list = (ps || []).filter(Boolean), ds = [...new Set(list.map(p => p.checkedAt || '2026-11-03'))].sort();
+  if (!ds.length) return '';
+  const a = day(ds[0]), b = day(ds[ds.length - 1]);
+  const when = ds.length === 1 ? a : a.split(' ')[0] === b.split(' ')[0] ? `${a}–${b.split(' ')[1]}` : `${a} and ${b}`;
+  return `${list.length === 1 ? 'Price' : 'Prices'} checked ${when}.`;
+}
+/* One natural reason to pick a product, written from its catalog highlights. Pricing notes and
+   labels like "Current AirPods Pro" are skipped rather than pasted in lowercase. */
+const WHY = {
+  'titanium': "it's made of titanium", 'sleep + readiness tracking': 'it tracks sleep and readiness', 'newest oura ring': "it's Oura's newest ring",
+  'gps': 'it has built-in GPS', 'amoled display': 'it has an AMOLED display', 'noise cancelling': 'it has noise cancelling',
+  'up to 30 h total battery with anc': 'it gets up to 30 hours of battery with noise cancelling on', '30 h battery': 'it gets about 30 hours of battery',
+  '35 h battery': 'it gets about 35 hours of battery', 'folds flat': 'it folds flat for travel', 'lightweight': "it's lightweight", 'ipx4': "it's rated IPX4 for splashes",
+  'a20 pro chip': 'it runs on the A20 Pro chip', 'compact tablet': "it's a compact tablet", '6-inch display': 'it has a 6-inch glare-free display',
+  'smart speaker': "it's a compact smart speaker", 'smart home hub': 'it doubles as a smart home hub', 'designed for alexa+': "it's designed for Alexa+",
+  '8.7-inch display': 'it has an 8.7-inch display', 'google play': 'it has Google Play'
+};
+const whyClause = (p, need) => { const hs = ((p && p.highlights) || []).filter(h => WHY[h.toLowerCase()]); const h = (need && hs.find(x => x.toLowerCase().includes(need))) || hs[0]; return h ? WHY[h.toLowerCase()] : ''; };
+/* What two compared products have in common, from their catalog text (never from a tag alone). */
+function compareNotes(a, b) {
+  const txt = p => [...(p.highlights || []), p.description || ''].join(' ').toLowerCase();
+  const F = [['noise', /noise[- ]cancel/, 'noise cancelling'], ['titanium', /titanium/, 'a titanium build'], ['gps', /\bgps\b/, 'GPS']];
+  const both = F.filter(([, re]) => re.test(txt(a)) && re.test(txt(b))).map(f => f[2]);
+  const hrs = p => { const m = txt(p).match(/(\d+)\s*(?:h|hours)\b[^.]*battery/); return m ? Number(m[1]) : null; };
+  const ha = hrs(a), hb = hrs(b);
+  let out = both.length ? ` Both have ${both.join(' and ')}.` : '';
+  if (ha && hb) out += ha === hb ? ` Both get about ${ha} hours of battery.` : ` ${a.name} is rated for ${ha} hours of battery, ${b.name} for ${hb}.`;
+  else if (ha && !(b.tags || []).includes('battery')) out += ` ${a.name} gets up to ${ha} hours of battery.`;
+  else if (hb && !(a.tags || []).includes('battery')) out += ` ${b.name} gets up to ${hb} hours of battery.`;
+  return out;
+}
+/* Reply language for the canned help answers: the app's language setting wins, then the words used. */
+function langOf(text, ctx) {
+  const l = String((ctx && ctx.lang) || '').split('-')[0];
+  if (['fr', 'es', 'de'].includes(l)) return l;
+  const t = String(text || '').toLowerCase();
+  if (/\b(tailles?|livraison|expédi|expedi|retour(ner)?|rembours\w*|commande|bague)\b/.test(t)) return 'fr';
+  if (/\b(tallas?|envío|envio|entrega|devol\w*|reembolso|pedido|anillo)\b/.test(t)) return 'es';
+  if (/(größe|groesse|versand|lieferung|lieferzeit|rückgabe|rueckgabe|zurück\w*|bestellung)/.test(t)) return 'de';
+  return 'en';
+}
+/* Shipping / returns / tracking in the Help Center's neutral wording: no delivery-time or refund promises. */
+const HELP = {
+  ship: {
+    en: "Good question! Luxora's own checkout is still in test mode, so nothing ships from us yet. If you buy with a product's Buy button, that retailer handles shipping, so timing depends on their store. Which product are you looking at?",
+    fr: "Bonne question ! Le paiement Luxora est encore en mode test, donc rien n'est expédié par nous pour l'instant. Si vous achetez avec le bouton Acheter d'un produit, c'est ce marchand qui gère la livraison, donc les délais dépendent de lui. Quel produit vous intéresse ?",
+    es: "¡Buena pregunta! El pago de Luxora todavía está en modo de prueba, así que por ahora no enviamos nada. Si compras con el botón Comprar de un producto, esa tienda se encarga del envío, así que los plazos dependen de ella. ¿Qué producto te interesa?",
+    de: "Gute Frage! Der Luxora-Checkout ist noch im Testmodus, daher versenden wir derzeit nichts. Wenn du über den Kaufen-Button eines Produkts kaufst, übernimmt dieser Händler den Versand, und die Lieferzeit hängt von ihm ab. Welches Produkt interessiert dich?"
+  },
+  returns: {
+    en: "Returns go through the store you buy from. Each product's Buy button shows the retailer, so it's worth a quick look at their return policy first. (Luxora's own checkout is just test mode for now, so there's nothing to return there.) Which product are you thinking about?",
+    fr: "Les retours se font auprès du magasin où vous achetez. Le bouton Acheter de chaque produit indique le marchand, alors jetez un œil à sa politique de retour avant d'acheter. (Le paiement Luxora est en mode test pour l'instant, il n'y a donc rien à retourner chez nous.) Quel produit vous intéresse ?",
+    es: "Las devoluciones se hacen con la tienda donde compras. El botón Comprar de cada producto muestra la tienda, así que conviene revisar su política de devoluciones antes. (El pago de Luxora es solo de prueba por ahora, así que aquí no hay nada que devolver.) ¿Qué producto te interesa?",
+    de: "Rücksendungen laufen über den Shop, bei dem du kaufst. Der Kaufen-Button jedes Produkts zeigt den Händler, also wirf vorher kurz einen Blick in seine Rückgaberichtlinie. (Der Luxora-Checkout ist vorerst nur im Testmodus, dort gibt es also nichts zurückzuschicken.) Welches Produkt interessiert dich?"
+  },
+  track: {
+    en: "Luxora's own checkout is still in test mode, so there's no real order here to track. If you bought something with a product's Buy button, the retailer you bought from can show you its status.",
+    fr: "Le paiement Luxora est encore en mode test, il n'y a donc pas de vraie commande à suivre ici. Si vous avez acheté avec le bouton Acheter d'un produit, le marchand concerné peut vous indiquer son statut.",
+    es: "El pago de Luxora todavía está en modo de prueba, así que aquí no hay un pedido real que seguir. Si compraste con el botón Comprar de un producto, la tienda donde compraste puede mostrarte su estado.",
+    de: "Der Luxora-Checkout ist noch im Testmodus, daher gibt es hier keine echte Bestellung zum Verfolgen. Wenn du über den Kaufen-Button eines Produkts gekauft hast, kann dir der Händler den Status zeigen."
+  }
+};
 const pre = p => p && p.preorder && Date.now() < Date.parse(p.preorder.releases + 'T00:00:00-06:00') ? ` It's a pre-order on Amazon; it releases ${new Date(p.preorder.releases + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}.` : '';
 
 const money = n => '$' + (Number.isInteger(n) ? n : n.toFixed(2));   // one price format everywhere: $349, $324.99
@@ -231,12 +295,11 @@ function namedProducts(lower) {
 }
 
 const dealPct = p => p.listPrice ? Math.round((1 - p.price / p.listPrice) * 100) : 0;
-const facts = p => (p.highlights || []).slice(0, 2).join(', ');
 /* There are no verified review scores, so "better" is answered with price, discount and specs only. */
 function sideBySide(a, b) {
   const cheaper = a.price <= b.price ? a : b, other = cheaper === a ? b : a;
   const diff = other.price - cheaper.price;
-  return { title: 'Side by side', reply: `${a.name} is ${money(a.price)} (${facts(a)}) and ${b.name} is ${money(b.price)} (${facts(b)}).${diff >= 1 ? ` ${cheaper.name} saves you about $${Math.round(diff)}.` : ''} I go by price and features, not reviews. Prices checked Nov 3.`, products: [a, b], followUp: 'Want me to add one of them to your cart?' };
+  return { title: 'Side by side', reply: `${a.name} is ${money(a.price)} and ${b.name} is ${money(b.price)}.${compareNotes(a, b)}${diff >= 1 ? ` ${cheaper.name} saves you about $${Math.round(diff)}.` : ''} I go by price and features, not reviews. ${checkedLine([a, b])}`, products: [a, b], followUp: 'Want me to add one of them to your cart?' };
 }
 
 /* follow-up questions about the products shown last ("which one is cheaper?", "tell me more about the first one") */
@@ -262,24 +325,45 @@ function followUp(lower, last, cats, named) {
   }
   if (/\b(better|best|top rated|highest rated|best rated|higher rated|worth it|should i (get|buy|pick|choose)|recommend)\b/.test(lower) && last.length) {
     const p = [...last].sort((a, b) => dealPct(b) - dealPct(a) || a.price - b.price)[0];
-    return pick(p, last.length > 1 ? `I don't have verified reviews, so I'm going by price and features. ${p.name} looks like the best value of those at ${money(p.price)}${dealPct(p) ? ` (${dealPct(p)}% below its listed price)` : ''}: ${facts(p)}. Prices checked Nov 3.` : `${p.name} is ${money(p.price)}: ${facts(p)} (${CHECKED_TXT}).`);
+    const w = whyClause(p);
+    return pick(p, last.length > 1 ? `I don't have verified reviews, so I'm going by price and features. ${p.name} looks like the best value of those at ${money(p.price)}${dealPct(p) ? ` (${dealPct(p)}% below its listed price)` : ''}${w ? `, and ${w}` : ''}. ${checkedLine(last)}` : `${p.name} is ${money(p.price)}${w ? `, and ${w}` : ''}. ${checkedLine([p])}`);
   }
   if (/\b(tell me more|more about|more info|details?|describe|what about)\b/.test(lower) || ord >= 0) {
     const p = last[ord >= 0 && ord < last.length ? ord : 0];
-    return pick(p, `${p.name} (${p.store}) is ${money(p.price)}, ${CHECKED_TXT}. ${p.description || ''} Tap ${pre(p) ? 'Pre-order' : 'Buy now'} on the card to get it.`.trim());
+    return pick(p, `${p.name} (${p.store}) is ${money(p.price)}, ${ck(p)}. ${p.description || ''} Tap ${pre(p) ? 'Pre-order' : 'Buy now'} on the card to get it.`.trim());
   }
   return null;
 }
 
 /* sizing and colour questions answered from the catalog (sizes, colors, variants, optionsNote) */
 const COLOR_WORDS = ['black', 'white', 'silver', 'gold', 'gray', 'grey', 'blue', 'pink', 'green', 'red', 'midnight', 'graphite', 'rose', 'purple', 'brown'];
-function sizeOrColor(lower, p) {
-  const ask = (reply, followUp) => ({ title: 'Your pick', products: [p], reply, followUp: followUp || 'Want me to save it, or compare it with another one?' });
-  if (/\b(size|sizes|sizing|fit|fits)\b/.test(lower)) {
+const SIZE_ASK = /\b(size|sizes|sizing|fit|fits|tailles?|tallas?)\b|gr(ö|oe)(ß|ss)en?\b/;
+const OPTION_ASK = /\b(size|sizes|sizing|colou?rs?|finish(es)?|tailles?|tallas?|couleurs?|colores|farben?)\b|gr(ö|oe)(ß|ss)en?\b/;
+/* "the Oura ring" names no exact model: take the first catalog product of that brand (and category, if one was named). */
+const brandPick = (lower, cats) => products.find(p => new RegExp('\\b' + p.store.toLowerCase() + '\\b').test(lower) && (!cats.length || cats.includes(p.category)));
+function sizeOrColor(lower, p, lang = 'en') {
+  const ask = (reply, followUp) => ({ keep: true, title: { fr: 'Votre choix', es: 'Tu elección', de: 'Deine Wahl' }[lang] || 'Your pick', products: [p], reply, followUp: followUp || 'Want me to save it, or compare it with another one?' });
+  if (SIZE_ASK.test(lower)) {
     const real = (p.sizes || []).filter(x => x !== 'One size' && /\d/.test(x)).map(x => x.replace(/^size\s*/i, ''));
-    if (real.length) return ask(`Good question! ${p.name} comes in sizes ${real[0]} to ${real[real.length - 1]}. ${p.optionsNote || 'Check the sizing guide on the product page before you buy.'}`.trim());
+    if (real.length) {
+      const a = real[0], b = real[real.length - 1], kit = (p.sizes || []).some(x => /sizing kit/i.test(x));
+      const color = (p.colors || []).filter(c => c !== 'standard').map(c => (p.colorNames && p.colorNames[c]) || c[0].toUpperCase() + c.slice(1))[0];
+      const twin = products.find(x => x !== p && x.store === p.store && x.category === p.category && String(x.sizes) === String(p.sizes));
+      const kitTip = /sizing kit is recommended/i.test(p.optionsNote || '');
+      if (lang !== 'en') {
+        const price = new Intl.NumberFormat({ fr: 'fr-FR', es: 'es-ES', de: 'de-DE' }[lang], { style: 'currency', currency: 'USD' }).format(p.price);
+        return ask({
+          fr: `${p.name} existe en tailles ${a} à ${b}${kit ? ', avec aussi un kit de tailles' : ''}. Vérifiez votre taille avant d'acheter. Prix : ${price}${color ? ` (${color})` : ''}.${twin ? ` Même choix de tailles pour ${twin.name}.` : ''}`,
+          es: `${p.name} viene en tallas del ${a} al ${b}${kit ? ', y también hay un kit de tallas' : ''}. Confirma tu talla antes de comprar. Cuesta ${price}${color ? ` en ${color}` : ''}.${twin ? ` ${twin.name} viene en las mismas tallas.` : ''}`,
+          de: `${p.name} gibt es in den Größen ${a} bis ${b}${kit ? ', außerdem gibt es ein Größen-Kit' : ''}. Prüfe deine Größe vor dem Kauf. Preis: ${price}${color ? ` in ${color}` : ''}.${twin ? ` ${twin.name} gibt es in denselben Größen.` : ''}`
+        }[lang], { fr: 'Voulez-vous que je l’enregistre ou que je le compare à un autre ?', es: '¿Quieres que lo guarde o que lo compare con otro?', de: 'Soll ich es merken oder mit einem anderen vergleichen?' }[lang]);
+      }
+      const advice = kitTip ? `${p.store} recommends confirming your size before you buy, so the kit's a smart first step.` : ((p.optionsNote || '').split(/(?<=\.)\s/)[0] || 'Check the sizing guide on the product page before you buy.');
+      return ask(`${p.name} comes in sizes ${a} through ${b}${kit ? ", and there's a sizing kit option too" : ''}. ${advice} It's ${money(p.price)}${color ? ` in ${color}` : ''}.${twin ? ` ${twin.name} comes in the same sizes.` : ''}`);
+    }
     return ask(`${p.name} is one size, so there's nothing to pick. ${p.optionsNote || ''}`.trim());
   }
+  if (lang !== 'en' && !/\b(colou?rs?|finish(es)?)\b/.test(lower)) return null;
   const asked = COLOR_WORDS.find(c => new RegExp('\\b' + c + '\\b').test(lower));
   if (asked || /\b(colou?rs?|finish(es)?)\b/.test(lower)) {
     const names = (p.colors || []).filter(c => c !== 'standard').map(c => (p.colorNames && p.colorNames[c]) || c[0].toUpperCase() + c.slice(1));
@@ -331,7 +415,7 @@ function compatibility(lower, ctx, cats, named, budget) {
     if (!ps.length) return answer(`I don't have a matching audio pick within that budget for ${phone}. Would you like to change the budget?`, []);
     const bluetooth = ps.filter(bluetoothAudio);
     const intro = bluetooth.length ? `These Bluetooth ${cats.includes('headphones') ? 'headphones' : 'earbuds'} pair with ${phone} for audio.` : `For ${phone}, AirPods are the iPhone-focused option in our catalog.`;
-    return answer(`${intro} I'd look at ${ps.map(p => `${p.name} at ${money(p.price)}`).join(' or ')}. Some app features depend on your phone and software version; check the retailer’s requirements before buying. Prices checked Nov 3.`, ps);
+    return answer(`${intro} I'd look at ${ps.map(p => `${p.name} at ${money(p.price)}`).join(' or ')}. Some app features depend on your phone and software version; check the retailer’s requirements before buying. ${checkedLine(ps)}`, ps);
   }
   return answer(`Which product would you like to use with ${phone}? Tell me the product name so I can check the catalog's compatibility notes.`, []);
 }
@@ -362,13 +446,24 @@ async function respond(message, ctx = {}) {
   if (/^(hi|hello|hey|yo|good (morning|afternoon|evening))\b/.test(lower) && cats.length === 0) {
     return { reply: "Hi! I'm Luxora, your AI shopping assistant. Tell me what you're shopping for, your budget, or a brand, and I'll recommend the best options. Try “best smart ring under $500”.", products: [] };
   }
-  if (/\b(track|where is|delivery|shipping|order status)\b/.test(lower)) {
-    return { reply: "Luxora checkout is currently in Stripe test mode, so test payments do not create a real order or shipment to track yet.", products: [] };
+  const lang = langOf(text, ctx);
+  if (/\b(are you (a |an )?(human|real|person|bot|ai|robot)|real person|who are you|what are you)\b/.test(lower)) {
+    return { reply: "I'm Luxora's AI shopping assistant, not a person, but I'm happy to help you find something. What are you shopping for?", products: [] };
   }
+  if (/\b(thanks|thank you|thx)\b/.test(lower) && cats.length === 0) return { reply: "You're welcome! Anything else I can help you find?", products: [] };
+  if (/\b(returns?|refunds?|exchanges?|send (it )?back)\b/.test(lower)) return { reply: HELP.returns[lang], products: [] };
+  if (/\b(track|where is|order status)\b/.test(lower)) return { reply: HELP.track[lang], products: [] };
+  if (/\b(delivery|shipping)\b/.test(lower)) return { reply: HELP.ship[lang], products: [] };
   const named = namedProducts(lower);
   const last = (ctx && Array.isArray(ctx.last) ? ctx.last : []).map(id => products.find(p => p.id === id)).filter(Boolean);
   const comparing = /\b(compare|vs|versus|difference|differ)\b/.test(lower) || /\bwhich\b.*\b(better|best|cheaper|cheapest|worth|pricier|higher rated)\b/.test(lower) || (named.length >= 2 && /\b(better|cheaper|prefer|choose|pick|or)\b/.test(lower) && /\b(which|better|cheaper|prefer|should|choose|pick)\b/.test(lower));
   if (comparing && named.length >= 2) return sideBySide(named[0], named[1]);
+  /* sizes / colours: answer for the named product, "the Oura ring", or the one product shown last ("what sizes does it come in?") */
+  if (!comparing && named.length <= 1 && OPTION_ASK.test(lower)) {
+    const p = named[0] || brandPick(lower, cats) || (last.length === 1 ? last[0] : null);
+    const so = p && sizeOrColor(lower, p, lang);
+    if (so) return so;
+  }
   const fu = followUp(lower, last, cats, named);
   if (fu) return fu;
   /* "AirPods Pro or Sony earbuds?": one named product plus another brand counts as a comparison */
@@ -425,15 +520,14 @@ function fallback() {
   };
 }
 
-module.exports = { ck, pre, parseBudget, detectCategories, namedProducts, respond, name: 'rules' };
+module.exports = { ck, pre, checkedLine, whyClause, compareNotes, langOf, HELP, parseBudget, detectCategories, namedProducts, respond, name: 'rules' };
 
   };
   defs.sender = function (module, exports, require) {
 // SENDER responder: reuses rules.js for product matching, rewrites the replies in a warm, casual voice.
 // Contract: async respond(message, ctx) -> { reply, products, title?, followUp? }
 const rules = require('./rules');
-const { ck, pre } = rules;
-const facts = p => (p.highlights || []).slice(0, 2).join(', ');
+const { ck, pre, checkedLine, whyClause, compareNotes, HELP } = rules;
 const { categories, products: allProducts } = require('../products');
 
 const money = n => '$' + (Number.isInteger(n) ? n.toLocaleString('en-US') : n.toFixed(2));
@@ -484,16 +578,22 @@ async function respondCore(message, ctx = {}) {
   const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
   const seller = p => { const r = p.retailer || {}; return r.name === 'Amazon' ? 'Amazon' : `${r.name}${host(r.url) ? ' (' + host(r.url) + ')' : ''}`; };
   const variantNote = (p, what) => Object.values(p.variants || {}).filter(v => v.retailer && v.retailer.name !== (p.retailer || {}).name).map(v => ` The ${v.label} finish is listed on ${v.retailer.name}, so ${v.retailer.name}'s ${what} applies to that one.`).join('');
-  const isReturn = /\b(returns?|refunds?|exchanges?|send (it )?back)\b/.test(lower);
-  const isShip = /\b(how long|how fast|when will|shipping time|delivery time|ship to|deliver to)\b/.test(lower) && /\b(ship|shipping|deliver|delivery|arrive)\b/.test(lower);
-  if (isReturn || isShip) {
+  const isReturn = /\b(returns?|refunds?|exchanges?|send (it )?back|retourner|retours?|rembours\w*|devolver|devoluci\w*|reembolso)\b|rückgabe|rueckgabe|zurückschicken|zurückgeben|erstattung/.test(lower);
+  const isShip = (/\b(how long|how fast|when will|shipping time|delivery time|ship to|deliver to)\b/.test(lower) && /\b(ship|shipping|deliver|delivery|arrive)\b/.test(lower)) || /\b(livraison|expédition|expedition|envío|envio|entrega)\b|versand|lieferung|lieferzeit/.test(lower);
+  const isTrack = /où est ma commande|suivre ma commande|suivi de commande|dónde está mi pedido|donde esta mi pedido|seguir mi pedido|wo ist meine bestellung|bestellung verfolgen|sendungsverfolgung/.test(lower);
+  const hl = rules.langOf(text, ctx);
+  if (isReturn || isShip || isTrack) {
+    if (isTrack && !isReturn) return { reply: HELP.track[hl], products: [] };
     const p = about();
+    const tail = { fr: n => ` Pour ${p.name}, le marchand est ${n}.`, es: n => ` Para ${p.name}, la tienda es ${n}.`, de: n => ` Bei ${p.name} ist das ${n}.` }[hl];
     if (isReturn) {
-      if (p) return { title: 'Returns', reply: `Luxora checkout is in Stripe test mode, so test payments do not create a real order to return. For a future real purchase of ${p.name}, check the seller's return policy before buying. The main retailer listed in Luxora is ${seller(p)}.`, products: [] };
-      return { reply: "Luxora checkout is in Stripe test mode, so there is no real order to return yet. For a future real purchase, check the seller's return policy before buying. Which product are you asking about?", products: [] };
+      if (p && hl === 'en') return { title: 'Returns', reply: `Returns go through the store you buy from. For ${p.name} that's ${seller(p)}, so it's worth a quick look at ${p.retailer.name}'s return policy first.${variantNote(p, 'return policy')}${(p.alsoAt || []).length ? ` If you buy it at ${p.alsoAt.map(a => a.name).join(' or ')} instead, that store's policy applies.` : ''} (Luxora's own checkout is just test mode for now, so there's nothing to return there.)`, products: [] };
+      if (p) return { title: 'Returns', reply: HELP.returns[hl].replace(/\s*[^.?!]*\?$/, '') + tail(seller(p)), products: [] };
+      return { reply: HELP.returns[hl], products: [] };
     }
-    if (p) return { title: 'Shipping', reply: `Luxora checkout is currently in Stripe test mode, so it does not create a real shipment. The main retailer listed for ${p.name} is ${seller(p)}; real delivery timing will need to be confirmed when Luxora enables live ordering.`, products: [] };
-    return { reply: "Luxora checkout is currently in Stripe test mode, so it does not create real shipments. Which product are you asking about?", products: [] };
+    if (p && hl === 'en') return { title: 'Shipping', reply: `Luxora's own checkout is still in test mode, so nothing ships from us yet. ${p.name} is sold by ${seller(p)}, so shipping and delivery timing depend on ${p.retailer.name}.${pre(p)}${variantNote(p, 'shipping')}`, products: [] };
+    if (p) return { title: 'Shipping', reply: HELP.ship[hl].replace(/\s*[^.?!]*\?$/, '') + tail(seller(p)), products: [] };
+    return { reply: HELP.ship[hl], products: [] };
   }
   // gifts
   if (/\b(gifts?|present|birthday|christmas|holiday|for my (mom|mum|mother|dad|father|wife|husband|partner|girlfriend|boyfriend|friend|sister|brother|son|daughter|grandma|grandpa|teacher|boss))\b|\bsomething for (my|a|her|him)\b/.test(lower) && !productWords && !/\$\s*\d|\b(under|below|less than)\s*\$?\d/.test(lower)) {
@@ -513,13 +613,14 @@ async function respondCore(message, ctx = {}) {
   })();
   const FEATURED = ['aura-ring-4', 'echo-buds-pro', 'studio-cans', 'orbit-watch', 'kindle-16gb-2026', 'drift-buds', 'calm-over-ear', 'pulse-watch-s', 'echo-dot-2026', 'ipad-mini-a20'];
   const featured = (cats, max) => { const ps = FEATURED.map(id => allProducts.find(p => p.id === id)).filter(Boolean).filter(p => (!cats.length || cats.includes(p.category)) && (max == null || p.price <= max)); const seen = new Set(), out = []; for (const p of ps) if (!seen.has(p.category) || cats.length) { seen.add(p.category); out.push(p); if (out.length === 3) break; } return out; };
-  const list = ps => ps.map(x => `${x.name} (${money(x.price)})`).join(', ').replace(/, ([^,]*)$/, ' and $1');
+  const list = ps => ps.map(x => `${x.name} at ${money(x.price)}`).join(', ').replace(/, ([^,]*)$/, ' and $1');
+  const because = p => { const w = whyClause(p); return w ? `, since ${w}` : ''; };
   const curCats = catsIn(lower);
   if (popRe.test(lower)) {
     const cats = curCats, ps = featured(cats, amt);
     if (ps.length) {
       const noData = /\b(sold|sell|sells|selling|bought|purchased|today|this week|right now)\b/.test(lower) ? "I don't have live sales numbers, so I can't tell you exactly what sold the most" + (/\btoday\b/.test(lower) ? ' today' : '') + ". " : '';
-      return { title: 'Popular on Luxora', products: ps, reply: `${noData}${noData ? 'But the' : 'The'} picks Luxora shoppers ask about most${cats.length === 1 ? ' in ' + categories[cats[0]].label.toLowerCase() : ''} are ${list(ps)}. ${ps[0].name} is a real crowd favorite${(ps[0].highlights || [])[0] ? ` (${ps[0].highlights[0].toLowerCase()})` : ''}. Prices checked Nov 3.`, followUp: 'Got a budget in mind? I can narrow it down.' };
+      return { title: 'Popular on Luxora', products: ps, reply: `${noData}${noData ? 'But the' : 'The'} picks Luxora shoppers ask about most${cats.length === 1 ? ' in ' + categories[cats[0]].label.toLowerCase() : ''} are ${list(ps)}. ${ps[0].name} is a real crowd favorite${because(ps[0])}. ${checkedLine(ps)}`, followUp: 'Got a budget in mind? I can narrow it down.' };
     }
   }
   if (amt != null && !productWords && curCats.length === 0 && !/\b(compare|vs|versus)\b/.test(lower)) {
@@ -527,19 +628,18 @@ async function respondCore(message, ctx = {}) {
     let ps = hc.length ? allProducts.filter(p => hc.includes(p.category) && p.price <= amt).sort((a, b) => b.price - a.price).slice(0, 3) : featured([], amt);
     if (!ps.length) {
       const cheapest = [...allProducts].filter(p => !hc.length || hc.includes(p.category)).sort((a, b) => a.price - b.price)[0];
-      return { title: 'Closest match', products: [cheapest], reply: `Ah, ${money(amt)} is a little tight for what we carry${hc.length ? ' there' : ''}. The most affordable is ${cheapest.name} at ${money(cheapest.price)}. Prices checked Nov 3.`, followUp: 'Want me to look at something else instead?' };
+      return { title: 'Closest match', products: [cheapest], reply: `Ah, ${money(amt)} is a little tight for what we carry${hc.length ? ' there' : ''}. The most affordable is the ${cheapest.name} at ${money(cheapest.price)}. ${checkedLine([cheapest])}`, followUp: 'Want me to look at something else instead?' };
     }
     const lead = wasPop ? `Nice, with ${money(amt)} you can grab any of the popular picks` : hc.length ? `Got it, ${money(amt)} for ${categories[hc[0]].label.toLowerCase()}` : `Nice, ${money(amt)} goes a long way here`;
-    return { title: `Picks under ${money(amt)}`, products: ps, reply: `${lead}. I'd look at ${list(ps)}. ${ps[0].name} is my favorite of those${(ps[0].highlights || [])[0] ? ` (${ps[0].highlights[0].toLowerCase()})` : ''}. Prices checked Nov 3.`, followUp: 'Want me to focus on one type, like earbuds or a smartwatch?' };
+    return { title: `Picks under ${money(amt)}`, products: ps, reply: `${lead}. I'd look at ${list(ps)}. ${ps[0].name} is my favorite of those${because(ps[0])}. ${checkedLine(ps)}`, followUp: 'Want me to focus on one type, like earbuds or a smartwatch?' };
   }
 
   const out = await rules.respond(text, ctx);
   const p = out.products || [];
   if (out.keep) { const { keep, ...rest } = out; return rest; }
 
-  if (/order status|track|where is|delivery|shipping/.test(lower) && p.length === 0) {
-    return { reply: "Luxora checkout is currently in Stripe test mode, so test payments do not create a real order or shipment to track yet.", products: [] };
-  }
+  if (/order status|track|where is/.test(lower) && p.length === 0) return { reply: HELP.track.en, products: [] };
+  if (/delivery|shipping/.test(lower) && p.length === 0) return { reply: HELP.ship.en, products: [] };
   if (p.length === 0) {
     if (!productWords && /\b(weather|news|joke|time is it|sports?|score|homework|math|movie|song|recipe|cook|politic|game)\b/.test(lower)) {
       return { reply: "Ha, I'm no good with that one, but I'm great with gadgets! Looking for a smart ring, watch, earbuds, headphones or a tablet?", products: [] };
@@ -555,25 +655,25 @@ async function respondCore(message, ctx = {}) {
     const tip = android(a) || android(b) ? ` ${android(a) ? a.name : b.name} only works with Android/Samsung phones, so on iPhone go with ${android(a) ? b.name : a.name}.`
       : ios(dear) && !ios(cheap) ? ` ${dear.name} is the pick if you're on iPhone; ${cheap.name} costs${diff >= 1 ? ` about $${diff}` : ''} less.`
       : diff >= 1 ? ` If price matters most, ${cheap.name} saves you about $${diff}.` : '';
-    return { ...out, reply: `Good pair! ${a.name} is ${money(a.price)} (${facts(a)}) and ${b.name} is ${money(b.price)} (${facts(b)}).${tip} Prices checked Nov 3.`, followUp: 'Want me to save one for later?' };
+    return { ...out, reply: `Good pair! ${a.name} is ${money(a.price)} and ${b.name} is ${money(b.price)}.${compareNotes(a, b)}${tip} ${checkedLine([a, b])}`, followUp: 'Want me to save one for later?' };
   }
-  if (out.title === 'Your pick') {
-    return { ...out, reply: /^(Good question|Yes!|Not |Here we)/.test(out.reply) ? out.reply : `Sure thing. ${out.reply}` };
-  }
+  if (out.title === 'Your pick') return out;
   if (out.title === 'Closest match') {
     const c = p[0], cat = categories[c.category], label = cat ? cat.label.toLowerCase() : 'these';
-    return { ...out, reply: `${label[0].toUpperCase() + label.slice(1)} start at ${money(c.price)}, so that budget won't quite get there, sorry! The cheapest is ${c.name} at ${money(c.price)}. Prices checked Nov 3.`, followUp: 'Want me to look at something else in your budget instead?' };
+    const b = rules.parseBudget(text);
+    const gap = b != null ? (b >= c.price * 0.8 ? `Ah, ${money(b)} is just a bit under what ${label} go for here.` : `Ah, ${money(b)} is a bit tight for ${label} here.`) : `${label[0].toUpperCase() + label.slice(1)} here start a little higher than that.`;
+    return { ...out, reply: `${gap} The most affordable is the ${c.name} at ${money(c.price)}. ${checkedLine([c])}`, followUp: 'Want me to look at something else in your budget instead?' };
   }
 
   const top = p[0];
-  const extra = p.length > 1 ? ` ${p.slice(1).map(x => `${x.name} (${money(x.price)})`).join(' and ')} ${p.length > 2 ? 'are good options' : 'is a good option'} too.` : '';
+  const extra = p.length > 1 ? ` ${p.slice(1).map(x => `${x.name} at ${money(x.price)}`).join(' and ')} ${p.length > 2 ? 'are good options' : 'is a good option'} too.` : '';
   const budget = rules.parseBudget(text);
   const need = (lower.replace(/\bworks?\s+(?:well\s+)?with\b/g, 'compatible with').match(/\b(running|workouts?|gym|fitness|sleep|travel|commute|work|music|reading|kids)\b/) || [])[1];
   const opener = need ? `For ${need}, ` : budget ? `Under ${money(budget)}, ` : '';
-  const why = (top.highlights || [])[0];
+  const why = whyClause(top, need);
   return {
     ...out,
-    reply: `${opener ? opener + "I'd" : "I'd"} go with ${top.name} at ${money(top.price)}${why ? ` (${why.toLowerCase()})` : ''}.${pre(top)}${extra} Prices checked Nov 3.`,
+    reply: `${opener ? opener + "I'd" : "I'd"} go with ${top.name} at ${money(top.price)}${why ? `, since ${why}` : ''}.${pre(top)}${extra} ${checkedLine(p)}`,
     followUp: pick(['Want me to save it for later?', 'Want to see how it compares with another one?', 'Want me to add it to your cart?'])
   };
 }
