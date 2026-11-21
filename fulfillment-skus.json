@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "products": {
+    "calm-over-ear": {
+      "name": "Sony WH-CH720N",
+      "sku": "LUX-SONY-WHCH720N-BLK",
+      "fulfillmentProvider": "amazon_mcf",
+      "amazonMcfEnabled": false
+    }
+  }
+}
