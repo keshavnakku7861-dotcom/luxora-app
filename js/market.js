@@ -23,12 +23,12 @@
   };
   // Illustrative stock photos: real department inventory is not configured.
   const PREVIEW_PHOTOS = {
-    "Fresh Vegetables": 'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?auto=format&fit=crop&w=700&h=560&q=84',
-    "Farm Eggs": 'https://images.unsplash.com/photo-1756361946794-d7976ff5f765?auto=format&fit=crop&w=700&h=560&q=84',
-    "Fresh Bananas": 'https://images.unsplash.com/photo-1737041769394-32ac2c139c1d?auto=format&fit=crop&w=700&h=560&q=84',
-    "Whole Milk": 'https://images.unsplash.com/photo-1601436423474-51738541c1b1?auto=format&fit=crop&w=700&h=560&q=84',
-    "Premium Rice": 'https://images.unsplash.com/photo-1704916029542-da6fa7bc34e7?auto=format&fit=crop&w=700&h=560&q=84',
-    "Organic Tomatoes": 'https://images.unsplash.com/photo-1783306083326-4b65b6383253?auto=format&fit=crop&w=700&h=560&q=84',
+    "Fresh Vegetables": 'https://images.unsplash.com/photo-1597362925123-77861d3fbac7?auto=format&fit=max&w=900&q=86',
+    "Farm Eggs": 'https://images.unsplash.com/photo-1635843086739-624d71f440b3?auto=format&fit=max&w=900&q=86',
+    "Fresh Bananas": 'https://images.unsplash.com/photo-1675586677399-2dbd468cad2f?auto=format&fit=max&w=900&q=86',
+    "Whole Milk": 'https://images.unsplash.com/photo-1639151082235-406d8eb262b9?auto=format&fit=max&w=900&q=86',
+    "Premium Rice": 'https://images.unsplash.com/photo-1704916029292-ec7b5976204c?auto=format&fit=max&w=900&q=86',
+    "Organic Tomatoes": 'https://images.unsplash.com/photo-1755405003720-c4c8935139da?auto=format&fit=max&w=900&q=86',
     "Everyday Clothing": 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=700&h=560&q=84',
     "Sneakers": 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=700&h=560&q=84',
     "Dresses": 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=700&h=560&q=84',
