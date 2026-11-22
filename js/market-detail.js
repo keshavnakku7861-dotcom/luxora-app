@@ -8,7 +8,9 @@
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function selected() {
     const path = (location.hash || '').replace(/^#\/?/, '').split('?')[0].split('/');
-    if (path[0] !== 'market' || !['p','item'].includes(path[1]) || !path[2]) return null;
+    if(path[0] !== 'market') return null;
+    if(path[1] === 'sale' || path[1] === 'about') return {kind:path[1]};
+    if(!['p','item'].includes(path[1]) || !path[2]) return null;
     let key;
     try { key = decodeURIComponent(path.slice(2).join('/')); } catch { return {kind:'missing'}; }
     if (path[1] === 'p') {
@@ -28,6 +30,44 @@
     const photo=model.photos[item[0]];
     return '<span class="fm-preview-emoji" aria-hidden="true">'+item[1]+'</span>'+
       (photo ? '<img class="fm-preview-photo" src="'+esc(photo)+'" alt="'+esc(item[0])+'" loading="lazy" decoding="async">' : '');
+  }
+  function salePage() {
+    const {store:S,art:Art}=model;
+    // Limit sale claims to products with a higher recorded list price than the current checkout price.
+    const deals=model.products.filter(p=>{
+      if(S.comingSoon(p))return false;
+      const list=Number(p.listPrice), current=S.promoPrice(p).price;
+      return Number.isFinite(list)&&list>0&&Number.isFinite(current)&&current<list;
+    });
+    const cards=deals.map(p=>{
+      const price=S.promoPrice(p).price, old=Number(p.listPrice);
+      return '<article class="fm-product-card">'+
+        '<a class="fm-product-photo" href="#/market/p/'+encodeURIComponent(p.id)+'" aria-label="View '+esc(p.name)+'">'+Art.product(p,0)+'</a>'+
+        '<div class="fm-product-info"><small>'+esc(p.store)+'</small>'+
+        '<h3><a href="#/market/p/'+encodeURIComponent(p.id)+'">'+esc(p.name)+'</a></h3>'+
+        '<div class="fm-product-bottom"><strong>'+esc(S.money(price))+'</strong>'+
+        '<del class="fm-sale-old">'+esc(S.money(old))+'</del></div></div></article>';
+    }).join('');
+    document.title='Sale | Luxora';
+    return '<section class="fm-subpage fm-sale-page">'+
+      '<nav class="fm-detail-crumb"><a href="#/market">← Back to shopping</a></nav>'+
+      '<h1>Sale</h1><p class="fm-subpage-lead">Browse discounted products in the Luxora demo catalog.</p>'+
+      (deals.length?'<div class="fm-products-grid">'+cards+'</div>':
+       '<div class="fm-subpage-empty"><h2>No current catalog discounts</h2><p>Browse the full selection instead.</p><a href="#/market">Browse products</a></div>')+
+      '<p class="fm-detail-muted">These are catalog prices, not live retailer offers. Prices and availability may change. Checkout remains in test mode.</p>'+
+      '</section>';
+  }
+  function aboutPage() {
+    document.title='About | Luxora';
+    return '<section class="fm-subpage fm-about-page">'+
+      '<nav class="fm-detail-crumb"><a href="#/market">← Back to shopping</a></nav>'+
+      '<div class="fm-about-panel"><p class="fm-about-kicker">ABOUT LUXORA</p>'+
+      '<h1>Shopping made simpler.</h1>'+
+      '<p class="fm-subpage-lead">Luxora brings products from multiple categories together in one clean shopping experience.</p>'+
+      '<p>Explore electronics, browse grocery and lifestyle collections, and find product information in a modern, easy-to-use store.</p>'+
+      '<p>Luxora is currently a shopping-app demo. Some categories use illustrative images and do not yet offer ordering. The existing checkout uses test payments; no real orders or deliveries are placed.</p>'+
+      '<a class="fm-about-shop" href="#/market">Explore products <span aria-hidden="true">→</span></a>'+
+      '</div></section>';
   }
   function productDetails(sel) {
     if (sel.kind === 'missing') return '<section class="fm-detail-missing"><h1>Product not found</h1><p><a href="#/market">← Back to shopping</a></p></section>';
@@ -110,7 +150,8 @@
       const sel=selected(), view=document.getElementById('viewMarket');
       if(sel && !wasDetail)catalogScroll=view.scrollTop;
       if(sel) {
-        root.querySelector('.fm-container').innerHTML=productDetails(sel);
+        const content=sel.kind==='sale'?salePage():sel.kind==='about'?aboutPage():productDetails(sel);
+        root.querySelector('.fm-container').innerHTML=content;
         view.scrollTop=0;
       } else if(wasDetail) {
         view.scrollTop=catalogScroll;
