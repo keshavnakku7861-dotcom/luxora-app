@@ -9,7 +9,7 @@
   function selected() {
     const path = (location.hash || '').replace(/^#\/?/, '').split('?')[0].split('/');
     if(path[0] !== 'market') return null;
-    if(path[1] === 'sale' || path[1] === 'about') return {kind:path[1]};
+    if(['sale','about','cart'].includes(path[1])) return {kind:path[1]};
     if(!['p','item'].includes(path[1]) || !path[2]) return null;
     let key;
     try { key = decodeURIComponent(path.slice(2).join('/')); } catch { return {kind:'missing'}; }
@@ -150,7 +150,7 @@
       const sel=selected(), view=document.getElementById('viewMarket');
       if(sel && !wasDetail)catalogScroll=view.scrollTop;
       if(sel) {
-        const content=sel.kind==='sale'?salePage():sel.kind==='about'?aboutPage():productDetails(sel);
+        const content=sel.kind==='sale'?salePage():sel.kind==='about'?aboutPage():sel.kind==='cart'?window.LuxoraMarketCart.render(root,model):productDetails(sel);
         root.querySelector('.fm-container').innerHTML=content;
         view.scrollTop=0;
       } else if(wasDetail) {
