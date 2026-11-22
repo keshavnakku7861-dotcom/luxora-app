@@ -70,6 +70,7 @@
     const soon = S.comingSoon(p);
     const price = soon ? '' : S.money(S.promoPrice(p).price);
     return '<article class="fm-product-card">'+
+      '<button type="button" class="fm-card-heart" data-fm-save="'+esc(p.id)+'" data-fm-name="'+esc(p.name)+'" aria-label="'+(S.isSaved(p.id)?'Remove ':'Save ')+esc(p.name)+(S.isSaved(p.id)?' from wishlist':' to wishlist')+'" aria-pressed="'+S.isSaved(p.id)+'">'+(S.isSaved(p.id)?'♥':'♡')+'</button>'+
       '<a class="fm-product-photo" href="'+detailLink(p)+'" aria-label="View '+esc(p.name)+'">'+Art.product(p,0)+'</a>'+
       '<div class="fm-product-info"><small>'+esc(p.store)+'</small><h3><a href="'+detailLink(p)+'">'+esc(p.name)+'</a></h3>'+
       '<div class="fm-product-bottom">'+(price?'<strong>'+esc(price)+'</strong>':'')+
@@ -113,7 +114,7 @@
           '<div class="fm-header-left"><span class="fm-lang" title="English (United States)">🇺🇸 <strong>En</strong> <span aria-hidden="true">⌄</span></span>'+
           '<form class="fm-search" role="search" id="marketSearch"><label for="marketQuery" class="sr-only">Search Luxora products</label><span aria-hidden="true" class="fm-search-icon">⌕</span><input id="marketQuery" type="search" placeholder="Search grocery items..." value="'+esc(query)+'"></form></div>'+
           '<a class="fm-logo" data-market-home href="#/market" aria-label="Luxora homepage">Luxora<span class="fm-logo-arc" aria-hidden="true"></span></a>'+
-          '<div class="fm-header-right"><a href="#/saved" class="fm-utility" title="Wishlist"><span aria-hidden="true">♡</span> Wishlist</a>'+
+          '<div class="fm-header-right"><a href="#/market/wishlist" class="fm-utility" title="Wishlist"><span aria-hidden="true">♡</span> Wishlist</a>'+
           '<a href="#/market/cart" class="fm-utility" title="Cart"><span aria-hidden="true">🛒</span> Cart <b data-cart-badge hidden>0</b></a>'+
           '<button type="button" class="fm-avatar" data-signin aria-label="Sign in or account">👤 <span aria-hidden="true">⌄</span></button></div>'+
         '</div>'+
