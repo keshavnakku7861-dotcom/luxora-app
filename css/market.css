@@ -216,3 +216,42 @@ body.luxora-market-mode { overflow:hidden; background:#fff; }
   .fm-product-card:not(.fm-product-card--preview) .fm-product-photo {padding:9px;}
   .fm-product-card--preview .fm-product-photo .fm-preview-photo {padding:7px;}
 }
+
+
+/* Amazon-style packshot presentation using the approved, full-resolution product collage.
+   Single-product white backgrounds; no market scenery or giant emoji icons. */
+.fm-product-photo { background:#fff; }
+.fm-product-card--preview .fm-product-photo {
+  aspect-ratio: 1 / 1;
+  background:#fff;
+  padding:0;
+  min-height:0;
+}
+.fm-sprite-photo {
+  display:block;
+  position:absolute;
+  z-index:3;
+  inset:0;
+  width:100%;
+  height:100%;
+  background-image:url('../assets/luxora-grocery-packshots.webp');
+  background-repeat:no-repeat;
+  background-size:300% 200%;
+  image-rendering:auto;
+}
+.fm-sprite-0-0 { background-position:0% 0%; }
+.fm-sprite-1-0 { background-position:50% 0%; }
+.fm-sprite-2-0 { background-position:100% 0%; }
+.fm-sprite-0-1 { background-position:0% 100%; }
+.fm-sprite-1-1 { background-position:50% 100%; }
+.fm-sprite-2-1 { background-position:100% 100%; }
+.fm-product-card--preview .fm-product-photo .fm-preview-photo {
+  object-fit:contain;
+  object-position:center;
+  max-height:none;
+  padding:8px;
+  background:#fff;
+}
+.fm-product-card--preview:hover .fm-preview-photo { transform:none; }
+.fm-product-card--preview .fm-preview-emoji { background:#fff; }
+.fm-hero-artwork { image-rendering:auto; }
