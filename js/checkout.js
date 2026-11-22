@@ -64,7 +64,7 @@
     if (ses && ses.returnTo) return 'app.html' + ses.returnTo;
     if (ses && ses.mode === 'cart') return 'app.html#/market/cart';
     const i = ses && ses.items && ses.items[0];
-    return i ? `app.html#/shop/p/${encodeURIComponent(i.id)}${byId[i.id] && byId[i.id].variants && byId[i.id].variants[i.color] ? '?c=' + encodeURIComponent(i.color) : ''}` : 'app.html#/shop';
+    return i ? `app.html#/market/p/${encodeURIComponent(i.id)}${byId[i.id] && byId[i.id].variants && byId[i.id].variants[i.color] ? '?c=' + encodeURIComponent(i.color) : ''}` : 'app.html#/market';
   };
 
   /* ---------- nothing to check out ---------- */
@@ -127,7 +127,7 @@
           ${canQty ? `<div class="qty" role="group" aria-label="Quantity"><button type="button" id="qMinus" aria-label="Decrease quantity" ${l0.qty <= 1 ? 'disabled' : ''}>&minus;</button><span id="qVal" aria-live="polite">${l0.qty}</span><button type="button" id="qPlus" aria-label="Increase quantity" ${l0.qty >= Pr.MAX_QTY ? 'disabled' : ''}>+</button></div>` : `<div class="qty" aria-label="Quantity ${l0.qty}"><span style="border:0;padding:0 10px">Qty ${l0.qty}</span></div>`}
           ${st.step === 4 ? '<div class="paid">Test paid</div>' : ''}<div>${lineTag(l0, q)}</div></div>
       </div>` : `<div class="lines">${lines.map(l => `<div class="li"><div class="thumb">${imgOf(l)}</div><div><div class="li__name">${l.qty} &times; ${esc(nameOf(l.id, l.color))}</div><div class="li__meta">${esc(optsOf(l) || 'One size')}</div>${lineTag(l, q)}</div><div class="li__price">${usd(l.unitCents * l.qty)}${l.promoApplied ? `<s>${usd(l.baseUnitCents * l.qty)}</s>` : ''}</div></div>`).join('')}</div>
-        ${ses.mode === 'cart' && st.step < 3 ? '<a class="edit-cart" href="app.html#/cart" target="_blank" rel="noopener">Edit cart in Luxora</a>' : ''}${st.step === 4 ? '<div class="paid">Test paid</div>' : ''}`}
+        ${ses.mode === 'cart' && st.step < 3 ? '<a class="edit-cart" href="app.html#/market/cart" target="_blank" rel="noopener">Edit cart in Luxora</a>' : ''}${st.step === 4 ? '<div class="paid">Test paid</div>' : ''}`}
       ${promoHtml}
       <div class="break" id="coBreak">
         ${q.promoCode ? (q.discountCents > 0 ? `<div class="promo"><span>Promo ${esc(q.promoCode)}</span><span>&minus;${usd(q.discountCents)}</span></div>` : `<div class="promo promo--none"><span class="muted">Promo ${esc(q.promoCode)}: items on deal are excluded</span><span>${usd(0)}</span></div>`) : ''}
