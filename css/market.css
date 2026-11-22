@@ -266,3 +266,55 @@ body.luxora-market-mode { overflow:hidden; background:#fff; }
 }
 .fm-product-card--preview .fm-product-info { background:#fff; }
 .fm-product-card--preview:hover .fm-sprite-photo { filter:none; transform:none; }
+
+
+/* Compact catalog sizing: keep the same five-column design, but reduce the
+   photo-stage height and give each white-background product more breathing room. */
+.fm-product-card:not(.fm-product-card--preview) .fm-product-photo,
+.fm-product-card--preview .fm-product-photo {
+  aspect-ratio:auto;
+  height:170px;
+  min-height:0;
+  padding:0;
+  background:#fff;
+}
+.fm-product-card:not(.fm-product-card--preview) .fm-product-photo img.pimg {
+  width:76%;
+  height:76%;
+  max-width:160px;
+  max-height:135px;
+  object-fit:contain;
+}
+.fm-product-card--preview .fm-sprite-photo {
+  inset:auto;
+  top:50%;
+  left:50%;
+  width:155px;
+  height:155px;
+  max-width:82%;
+  max-height:91%;
+  aspect-ratio:1/1;
+  transform:translate(-50%,-50%);
+  background-size:300% 200%;
+}
+.fm-product-card--preview:hover .fm-sprite-photo {transform:translate(-50%,-50%);}
+.fm-product-card--preview .fm-product-photo .fm-preview-photo {
+  inset:12%;
+  width:76%;
+  height:76%;
+  padding:0;
+  object-fit:contain;
+}
+@media(max-width:920px) {
+  .fm-product-card:not(.fm-product-card--preview) .fm-product-photo,
+  .fm-product-card--preview .fm-product-photo {height:155px;}
+  .fm-product-card--preview .fm-sprite-photo {width:138px;height:138px;}
+}
+@media(max-width:600px) {
+  .fm-product-card:not(.fm-product-card--preview) .fm-product-photo,
+  .fm-product-card--preview .fm-product-photo {height:126px;}
+  .fm-product-card:not(.fm-product-card--preview) .fm-product-photo img.pimg {
+    max-width:102px;max-height:102px;width:75%;height:75%;
+  }
+  .fm-product-card--preview .fm-sprite-photo {width:108px;height:108px;}
+}
