@@ -164,3 +164,6 @@ body.luxora-market-mode { overflow:hidden; background:#fff; }
   .fm-product-card--preview .fm-product-info h3 {font-size:12px;}
 }
 @media(prefers-reduced-motion:reduce){.fm-preview-photo{transition:none;}}
+
+.fm-product-card--preview .fm-product-photo .fm-preview-photo {object-fit:cover;max-height:none;}
+.fm-product-card--preview .fm-preview-photo[hidden] {display:none!important;}
