@@ -50,6 +50,11 @@
     "Notebooks": 'https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=700&h=560&q=84',
     "School Supplies": 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=700&h=560&q=84'
   };
+  // Exact six packshots from the user's approved generated six-item image, arranged 3x2.
+  const PACKSHOT_CELLS = {
+    'Fresh Vegetables': [0,0], 'Farm Eggs': [1,0], 'Fresh Bananas': [2,0],
+    'Whole Milk': [0,1], 'Premium Rice': [1,1], 'Organic Tomatoes': [2,1]
+  };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let dept='all', query='', menuOpen=false;
   const match = (v,q) => v.toLowerCase().includes(q.toLowerCase());
@@ -72,10 +77,13 @@
   }
   function previewCard(p) {
     const category = Object.entries(previews).find(([,items])=>items.some(x=>x[0]===p[0]))?.[0] || 'catalog';
+    const cell = PACKSHOT_CELLS[p[0]];
     const photo = PREVIEW_PHOTOS[p[0]];
-    const img = photo ? '<img class="fm-preview-photo" src="'+esc(photo)+'" alt="'+esc(p[0])+'" loading="lazy" decoding="async">' : '';
+    const picture = cell
+      ? '<span class="fm-sprite-photo fm-sprite-'+cell[0]+'-'+cell[1]+'" role="img" aria-label="'+esc(p[0])+'"></span>'
+      : photo ? '<img class="fm-preview-photo" src="'+esc(photo)+'" alt="'+esc(p[0])+'" loading="lazy" decoding="async">' : '';
     return '<article class="fm-product-card fm-product-card--preview">'+
-      '<div class="fm-product-photo" role="img" aria-label="'+esc(p[0])+'"><span class="fm-preview-emoji" aria-hidden="true">'+p[1]+'</span>'+img+'</div>'+
+      '<div class="fm-product-photo"><span class="fm-preview-emoji" aria-hidden="true">'+p[1]+'</span>'+picture+'</div>'+
       '<div class="fm-product-info"><small>'+esc(category.charAt(0).toUpperCase()+category.slice(1))+'</small><h3>'+esc(p[0])+'</h3></div></article>';
   }
   function mainProducts() {
@@ -115,7 +123,7 @@
           '<nav class="fm-secondary" aria-label="Support menu"><a href="privacy.html">Policy</a><a href="#/help">FAQs</a><a href="#/help">ⓘ &nbsp;Help &amp; Support</a></nav>'+
         '</div></div></header>'+
         '<main class="fm-container">'+
-          (home?'<section class="fm-hero" aria-label="Luxora grocery shopping promotional design"><img class="fm-hero-artwork" src="assets/luxora-reference-hero.webp" alt="Luxora banner showing a shopper carrying bags of groceries, large lime-green Luxora lettering and a Fresh Vegetables promotional card"><a href="#/shop" class="fm-hero-shop" aria-label="Shop products now"><span class="sr-only">Shop Now</span></a></section>'+
+          (home?'<section class="fm-hero" aria-label="Luxora grocery shopping promotional design"><img class="fm-hero-artwork" src="assets/luxora-reference-hero-hq.webp" alt="Luxora banner showing a shopper carrying bags of groceries, large lime-green Luxora lettering and a Fresh Vegetables promotional card"><a href="#/shop" class="fm-hero-shop" aria-label="Shop products now"><span class="sr-only">Shop Now</span></a></section>'+
           '<div class="fm-benefits" aria-label="Shopping highlights">'+
             '<div><span>✿</span><strong>Peak Quality</strong><small>Explore curated products</small></div>'+
             '<div><span>▣</span><strong>New Products</strong><small>Discover new arrivals</small></div>'+
