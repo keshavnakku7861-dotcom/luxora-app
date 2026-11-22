@@ -1,132 +1,128 @@
-/* Luxora Market — visual storefront modeled on GreatStack's InstantMart tutorial.
-   Existing catalog items use LuxoraStore's price allowlist and Stripe TEST checkout.
-   Other departments are clearly labeled previews; no invented prices or orders. */
-(function () {
+/* Luxora FreshMart-inspired marketplace storefront.
+   The uploaded reference art is decorative. All new department inventory is preview-only;
+   existing electronics and Stripe TEST mode remain connected to Luxora's store. */
+(() => {
   const root = document.getElementById('marketRoot');
   if (!root) return;
-  const S = window.LuxoraStore;
-  const Art = window.LuxoraArt;
-  const products = [...(window.LuxoraOffline && window.LuxoraOffline.products || []), ...(window.LuxoraOffline && window.LuxoraOffline.drops || [])];
-  const depts = [
-    { id:'groceries', name:'Groceries', emoji:'🥑' },
-    { id:'electronics', name:'Electronics', emoji:'🎧' },
-    { id:'fashion', name:'Fashion', emoji:'👕' },
-    { id:'home', name:'Home & Living', emoji:'🛋️' },
-    { id:'beauty', name:'Beauty', emoji:'🧴' },
-    { id:'sports', name:'Sports', emoji:'⚽' },
-    { id:'toys', name:'Toys & Games', emoji:'🧸' },
-    { id:'books', name:'Books', emoji:'📚' }
+  const S = window.LuxoraStore, Art = window.LuxoraArt;
+  const products = [...(window.LuxoraOffline?.products || []), ...(window.LuxoraOffline?.drops || [])];
+  const departments = [
+    ['groceries','Groceries','🥬'],['electronics','Electronics','🎧'],
+    ['fashion','Fashion','👕'],['home','Home & Kitchen','🍳'],
+    ['beauty','Beauty','🧴'],['sports','Sports','⚽'],
+    ['toys','Toys & Games','🧸'],['books','Books','📚']
   ];
-  /* Illustrative collections only. No payment is possible until the seller's inventory,
-     official price catalog, stock, and fulfillment support are configured. */
   const previews = {
-    groceries: [['Fresh Avocados','🥑'],['Strawberries','🍓'],['Bananas','🍌'],['Fresh Milk','🥛'],['Artisan Bread','🍞'],['Carrots','🥕']],
-    fashion: [['Everyday T-Shirts','👕'],['Casual Sneakers','👟'],['Denim Collection','👖'],['Handbags','👜'],['Summer Dresses','👗']],
-    home: [['Modern Sofa','🛋️'],['Table Lighting','💡'],['Home Plants','🪴'],['Dining Essentials','🍽️'],['Bed Linen','🛏️']],
-    beauty: [['Skincare Essentials','🧴'],['Beauty Sets','💄'],['Fragrance','🌸'],['Self Care','🧼']],
-    sports: [['Soccer Equipment','⚽'],['Basketball','🏀'],['Running Shoes','👟'],['Yoga & Fitness','🧘']],
-    toys: [['Building Blocks','🧱'],['Plush Toys','🧸'],['Toy Vehicles','🚗'],['Puzzles','🧩']],
-    books: [['Books & Reading','📚'],['Notebooks','📓'],['Art Supplies','🎨'],['School Essentials','🎒']]
+    groceries:[['Fresh Vegetables','🥬'],['Farm Eggs','🥚'],['Fresh Bananas','🍌'],['Whole Milk','🥛'],['Premium Rice','🍚'],['Organic Tomatoes','🍅']],
+    fashion:[['Everyday Clothing','👕'],['Sneakers','👟'],['Dresses','👗'],['Handbags','👜']],
+    home:[['Kitchen Essentials','🍳'],['Home Furniture','🛋️'],['Table Lamps','💡'],['Home Decor','🪴']],
+    beauty:[['Skin Care','🧴'],['Beauty Essentials','💄'],['Fragrances','🌺']],
+    sports:[['Sports Equipment','⚽'],['Basketballs','🏀'],['Fitness Gear','🏋️']],
+    toys:[['Toys & Games','🧸'],['Building Blocks','🧱'],['Toy Vehicles','🚗']],
+    books:[['Books','📚'],['Notebooks','📓'],['School Supplies','🎒']]
   };
-  const escapeHTML = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let active = 'all', search = '';
-  const isElectronics = id => ['smart-rings','smartwatches','earbuds','headphones','tablets','e-readers','smart-home','luxora-originals'].includes(id);
-  const eligible = p => isElectronics(p.category);
-  const match = (name,term) => name.toLowerCase().includes(term.toLowerCase().trim());
-  function categoryCards() {
-    return depts.map(d => '<button type="button" class="market-category" data-dept="'+d.id+'" aria-pressed="'+(active===d.id)+'"><span class="market-category-icon" aria-hidden="true">'+d.emoji+'</span><strong>'+escapeHTML(d.name)+'</strong></button>').join('');
-  }
-  function realCard(p) {
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let dept='all', query='', menuOpen=false;
+  const match = (v,q) => v.toLowerCase().includes(q.toLowerCase());
+  const detailLink = p => '#/shop/p/'+encodeURIComponent(p.id);
+  const categories = () => departments.map(([id,name,emoji]) =>
+    '<button type="button" class="fm-category '+(dept===id?'selected':'')+'" data-dept="'+id+'" aria-pressed="'+(dept===id)+'"><span class="fm-category-emoji" aria-hidden="true">'+emoji+'</span><strong>'+name+'</strong></button>'
+  ).join('');
+  const dropdown = () => departments.map(([id,name,emoji]) =>
+    '<button type="button" data-dept="'+id+'"><span aria-hidden="true">'+emoji+'</span> '+name+'</button>'
+  ).join('');
+  function electronicCard(p) {
     const soon = S.comingSoon(p);
     const price = soon ? 'Coming soon' : S.money(S.promoPrice(p).price);
-    return '<article class="market-card">' +
-      '<a class="market-card-image" href="#/shop/p/'+encodeURIComponent(p.id)+'" aria-label="View '+escapeHTML(p.name)+'">'+Art.product(p,0)+'</a>' +
-      '<small style="padding-top:12px">'+escapeHTML(p.store)+'</small>' +
-      '<h3><a href="#/shop/p/'+encodeURIComponent(p.id)+'">'+escapeHTML(p.name)+'</a></h3>'+
-      '<small>'+(soon?'Product preview':escapeHTML(S.checked(p)))+'</small>'+
-      '<div class="market-card-bottom"><span class="market-price">'+price+'</span>'+
-      (soon ? '<button type="button" disabled class="market-add" aria-label="Coming soon">·</button>' : '<button type="button" data-market-add="'+escapeHTML(p.id)+'" class="market-add" aria-label="Add '+escapeHTML(p.name)+' to cart">+</button>')+
-      '</div></article>';
+    return '<article class="fm-product-card">'+
+      '<a class="fm-product-photo" href="'+detailLink(p)+'" aria-label="View '+esc(p.name)+'">'+Art.product(p,0)+'</a>'+
+      '<div class="fm-product-info"><small>'+esc(p.store)+'</small><h3><a href="'+detailLink(p)+'">'+esc(p.name)+'</a></h3>'+
+      '<div class="fm-product-bottom"><strong>'+esc(price)+'</strong>'+
+      (soon ? '<span class="fm-soon">Coming soon</span>' : '<button type="button" class="fm-plus" data-market-add="'+esc(p.id)+'" aria-label="Add '+esc(p.name)+' to cart">+</button>')+
+      '</div></div></article>';
   }
-  function previewCard(item) {
-    return '<article class="market-card"><div class="market-card-image"><span class="market-emoji" role="img" aria-label="'+escapeHTML(item[0])+'">'+item[1]+'</span></div>'+
-      '<span class="market-label">Coming soon</span><h3>'+escapeHTML(item[0])+'</h3>'+
-      '<small>Catalog preview — not yet for sale</small>'+
-      '<div class="market-card-bottom"><span class="market-price">Price to be announced</span><button type="button" class="market-add" disabled aria-label="Not available">·</button></div></article>';
+  function previewCard(p) {
+    return '<article class="fm-product-card fm-product-card--preview"><div class="fm-product-photo" role="img" aria-label="'+esc(p[0])+'"><span class="fm-preview-emoji">'+p[1]+'</span></div>'+
+      '<div class="fm-product-info"><small>Upcoming category</small><h3>'+esc(p[0])+'</h3><span class="fm-soon">Coming soon</span></div></article>';
   }
-  function heading(title,desc,extra) {
-    return '<div class="market-heading"><div><h2>'+title+'</h2><p>'+desc+'</p></div>'+(extra||'')+'</div>';
+  function mainProducts() {
+    const q=query.trim();
+    let real=products.filter(p=>dept==='all'||dept==='electronics');
+    if(q) real=real.filter(p=>match([p.name,p.store,p.category,...(p.tags||[])].join(' '),q));
+    let planned = (dept==='all' ? Object.values(previews).flat() : (previews[dept]||[]));
+    if(q) planned=planned.filter(p=>match(p[0],q));
+    let cards='';
+    if(dept==='all' || dept==='electronics') cards+=real.slice(0,q?30:10).map(electronicCard).join('');
+    if(dept!=='electronics') cards+=planned.slice(0,q?30:dept==='all'?5:15).map(previewCard).join('');
+    const heading=q?'Search results':dept==='all'?'Popular Products':departments.find(d=>d[0]===dept)?.[1]||'Products';
+    return '<section class="fm-products" id="fmProducts"><div class="fm-section-header"><div><h2>'+esc(heading)+'</h2>'+
+      '<p>'+ (dept==='all'?'Explore Luxora products and upcoming departments':'Products from your selected department')+'</p></div><a href="#/shop">View All <span aria-hidden="true">→</span></a></div>'+
+      '<div class="fm-products-grid">'+(cards||'<p class="fm-empty">No products found. Try another search or category.</p>')+'</div></section>';
   }
-  function productSection() {
-    const term=search.trim();
-    let list = products.filter(eligible);
-    if (term) list = list.filter(p=>match([p.name,p.store,p.category,(p.tags||[]).join(' ')].join(' '),term));
-    const allPreviews = Object.values(previews).flat();
-    if (active==='all' || active==='electronics') {
-      const samples = term && active==='all' ? allPreviews.filter(p=>match(p[0],term)) : [];
-      const title = term?'Search results':'Popular Electronics';
-      const description = term ? 'Available electronics and clearly marked upcoming products' : 'Shop the electronics already listed in Luxora';
-      const content = list.slice(0,active==='all'&&!term?10:25).map(realCard).join('') +
-        samples.map(previewCard).join('');
-      return '<section class="market-section" id="marketProducts">'+heading(title,description,'<a href="#/shop">View all available electronics →</a>')+
-        '<div class="market-grid">'+(content || '<div class="market-empty"><h3>No products found</h3><p>Try a different search or department.</p></div>')+'</div></section>';
-    }
-    const selection = (previews[active]||[]).filter(p=>!term || match(p[0],term));
-    const title = depts.find(d=>d.id===active)?.name || 'Coming soon';
-    return '<section class="market-section" id="marketProducts">'+heading(escapeHTML(title), 'A preview of upcoming Luxora departments. Items here are not available for checkout.')+
-      '<div class="market-grid">'+(selection.length?selection.map(previewCard).join(''):'<div class="market-empty"><h3>No preview items matched</h3><p>Try another search or department.</p></div>')+'</div></section>';
+  function badgeCount() {
+    const n = S?.count?.() || 0;
+    root.querySelectorAll('[data-cart-badge]').forEach(el=>{el.textContent=String(n);el.hidden=!n;});
   }
   function render() {
-    const home=active==='all';
-    root.innerHTML =
-      '<div class="market-promo">The new Luxora marketplace is in preview • Existing checkout remains in TEST mode • No real orders or deliveries</div>'+
-      '<header class="market-header"><div class="market-nav">'+
-        '<a href="#/market" data-market-home class="market-brand"><span class="market-brand-mark" aria-hidden="true">✦</span>Luxora</a>'+
-        '<nav class="market-links" aria-label="Shop navigation"><a href="#/market" data-market-home>Home</a><a href="#/shop">Products</a><a class="sale" href="#/shop?cat=deals">Deals</a></nav>'+
-        '<form class="market-search" id="marketSearch" role="search"><button aria-label="Search">⌕</button><label class="sr-only" for="marketQuery">Search products</label><input id="marketQuery" type="search" placeholder="Search for anything..." value="'+escapeHTML(search)+'"></form>'+
-        '<div class="market-actions"><a class="market-action ai" href="#/assistant" title="Ask Luxora AI">✧ <span>Ask AI</span></a><a class="market-action" href="#/saved" title="Saved">♡</a><a class="market-action" href="#/cart" title="Open cart">🛒 <span data-cart-badge hidden>0</span></a><button type="button" data-signin class="market-action" title="Sign in">♙</button></div>'+
-      '</div></header>'+
-      '<main class="market-wrap">'+
-        (home ?
-        '<section class="market-hero" aria-label="Shopping at Luxora"><div class="market-hero-content"><span class="market-hero-kicker">✦ Great finds for every day</span><h1>Everything you love,<br><em>all in one place</em></h1><p>Discover groceries, electronics, style and home essentials at Luxora. Shop available electronics now and explore upcoming departments.</p><div class="market-hero-buttons"><a href="#/shop">Shop Now →</a><a href="#/market" data-market-browse>Browse Categories</a></div></div><div class="market-hero-art" aria-hidden="true"><span class="food">🥑</span><span class="food">🍊</span><span class="food">🛍️</span></div></section>'+
-        '<section class="market-features" aria-label="Luxora advantages"><div class="market-feature"><span class="market-feature-icon">🛍️</span><div><strong>Shop more categories</strong><p>Electronics now, more on the way</p></div></div><div class="market-feature"><span class="market-feature-icon">✨</span><div><strong>AI shopping help</strong><p>Ask Luxora for recommendations</p></div></div><div class="market-feature"><span class="market-feature-icon">♡</span><div><strong>Save your favorites</strong><p>Keep products in one place</p></div></div><div class="market-feature"><span class="market-feature-icon">🔒</span><div><strong>Test checkout</strong><p>Try the shopping flow safely</p></div></div></section>'
-        : '')+
-        '<section class="market-section" id="marketBrowse">'+heading('Browse Categories','Find exactly what you need in one place')+'<div class="market-categories">'+categoryCards()+'</div></section>'+
-        productSection()+
-        (home?'<section class="market-section">'+heading('Fresh Grocery Essentials','A first look at the groceries planned for Luxora','<button type="button" data-dept="groceries">Explore groceries →</button>')+'<div class="market-grid">'+previews.groceries.slice(0,5).map(previewCard).join('')+'</div></section>':'')+
-        '<section class="market-banner"><div><h2>A smarter way to shop</h2><p>Luxora AI can help compare the electronics we currently list. Grocery and other categories will be added when suppliers, inventory, pricing and delivery are ready.</p></div><a href="#/assistant">Explore Luxora AI →</a></section>'+
-      '</main><footer class="market-bottom"><strong>✦ Luxora</strong><p>Marketplace design preview. Existing electronics can be explored; new categories are coming soon. Stripe checkout is in test mode.</p></footer>';
-    if (S && S.count) {root.querySelectorAll('[data-cart-badge]').forEach(b=>{const n=S.count();b.textContent=String(n);b.hidden=!n;});}
+    const home = dept==='all' && !query;
+    root.innerHTML = '<div class="fm-site">'+
+      '<header class="fm-header"><div class="fm-header-inner">'+
+        '<div class="fm-header-main">'+
+          '<div class="fm-header-left"><span class="fm-lang" title="English (United States)">🇺🇸 <strong>En</strong> <span aria-hidden="true">⌄</span></span>'+
+          '<form class="fm-search" role="search" id="marketSearch"><label for="marketQuery" class="sr-only">Search Luxora products</label><span aria-hidden="true" class="fm-search-icon">⌕</span><input id="marketQuery" type="search" placeholder="Search grocery items..." value="'+esc(query)+'"></form></div>'+
+          '<a class="fm-logo" data-market-home href="#/market" aria-label="Luxora homepage">Luxora<span class="fm-logo-arc" aria-hidden="true"></span></a>'+
+          '<div class="fm-header-right"><a href="#/saved" class="fm-utility" title="Wishlist"><span aria-hidden="true">♡</span> Wishlist</a>'+
+          '<a href="#/cart" class="fm-utility" title="Cart"><span aria-hidden="true">🛒</span> Cart <b data-cart-badge hidden>0</b></a>'+
+          '<button type="button" class="fm-avatar" data-signin aria-label="Sign in or account">👤 <span aria-hidden="true">⌄</span></button></div>'+
+        '</div>'+
+        '<div class="fm-header-sub"><nav class="fm-primary" aria-label="Main menu">'+
+          '<a href="#/shop">Shop</a><div class="fm-dropdown-wrap"><button type="button" id="fmMenuToggle" aria-expanded="'+menuOpen+'" aria-controls="fmDropdown">Categories <span aria-hidden="true">⌄</span></button>'+
+          '<div class="fm-dropdown" id="fmDropdown" '+(menuOpen?'':'hidden')+'>'+dropdown()+'</div></div>'+
+          '<a href="#/shop?cat=deals">Sale</a><a href="#/info">About</a></nav>'+
+          '<nav class="fm-secondary" aria-label="Support menu"><a href="privacy.html">Policy</a><a href="#/help">FAQs</a><a href="#/help">ⓘ &nbsp;Help &amp; Support</a></nav>'+
+        '</div></div></header>'+
+        '<main class="fm-container">'+
+          (home?'<section class="fm-hero" aria-label="Luxora grocery shopping promotional design"><img class="fm-hero-artwork" src="assets/luxora-reference-hero.svg" alt="Luxora banner showing a shopper carrying bags of groceries, large lime-green Luxora lettering and a Fresh Vegetables promotional card"><a href="#/shop" class="fm-hero-shop" aria-label="Shop products now"><span class="sr-only">Shop Now</span></a></section>'+
+          '<div class="fm-benefits" aria-label="Shopping highlights">'+
+            '<div><span>✿</span><strong>Peak Quality</strong><small>Explore curated products</small></div>'+
+            '<div><span>▣</span><strong>New Products</strong><small>Discover new arrivals</small></div>'+
+            '<div><span>♧</span><strong>Flash Savings</strong><small>See current deals</small></div>'+
+            '<div><span>▧</span><strong>Delivery Pass</strong><small>Coming soon</small></div>'+
+            '<div><span>♨</span><strong>Prepared Meals</strong><small>Coming soon</small></div>'+
+          '</div><p class="fm-concept-note">Design preview: same-day delivery and grocery sales are not active. Checkout for existing items is in test mode.</p>':'')+
+          '<section class="fm-categories" id="marketBrowse"><div class="fm-section-header"><div><h2>Shop by Category</h2><p>Find exactly what you need</p></div></div><div class="fm-category-list">'+categories()+'</div></section>'+
+          mainProducts()+
+        '</main>'+
+        '<footer class="fm-footer"><span class="fm-footer-logo">Luxora</span><span>Online shopping demo · Checkout uses test payments · No real delivery orders</span><a href="#/assistant">Luxora AI</a></footer>'+
+      '</div>';
+    badgeCount();
   }
-  root.addEventListener('click',e=>{
-    const dep=e.target.closest('[data-dept]');
-    if(dep){active=dep.dataset.dept;search='';render();document.getElementById('viewMarket').scrollTop=0;return;}
-    if(e.target.closest('[data-market-home]')) {active='all';search='';render();document.getElementById('viewMarket').scrollTop=0;return;}
-    if(e.target.closest('[data-market-browse]')) {e.preventDefault();root.querySelector('#marketBrowse')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
-    const add=e.target.closest('[data-market-add]');
-    if(add) {
-      const p=products.find(v=>v.id===add.dataset.marketAdd);
-      if(!p) return;
-      if(S.needsSize(p)){location.hash='#/shop/p/'+encodeURIComponent(p.id);return;}
+  function message(t) {
+    const old=document.getElementById('fmToast');old?.remove();
+    const el=document.createElement('div');el.id='fmToast';el.className='fm-toast';el.setAttribute('role','status');el.textContent=t;document.body.appendChild(el);
+    setTimeout(()=>el.remove(),2600);
+  }
+  root.addEventListener('click',event=>{
+    const selected=event.target.closest('[data-dept]');
+    if(selected){dept=selected.dataset.dept;query='';menuOpen=false;render();root.querySelector('#fmProducts')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
+    if(event.target.closest('[data-market-home]')){dept='all';query='';menuOpen=false;render();document.getElementById('viewMarket').scrollTop=0;return;}
+    if(event.target.closest('#fmMenuToggle')){menuOpen=!menuOpen;render();return;}
+    const add=event.target.closest('[data-market-add]');
+    if(add){
+      const p=products.find(x=>x.id===add.dataset.marketAdd);
+      if(!p)return;
+      if(S.needsSize(p)){location.hash=detailLink(p);return;}
       const line=S.addToCart(p);
-      notice(line ? p.name+' added to cart':'This item cannot be purchased through Luxora yet');
-      root.querySelectorAll('[data-cart-badge]').forEach(b=>{const n=S.count();b.textContent=String(n);b.hidden=!n;});
+      message(line?p.name+' added to cart':'This item cannot be purchased yet');
+      badgeCount();
     }
   });
   root.addEventListener('submit',e=>{
-    if(e.target.id!=='marketSearch') return;
+    if(e.target.id!=='marketSearch')return;
     e.preventDefault();
-    search=root.querySelector('#marketQuery').value.trim();
-    active='all';
-    render();
-    root.querySelector('#marketProducts')?.scrollIntoView({behavior:'smooth',block:'start'});
+    query=root.querySelector('#marketQuery').value.trim();dept='all';menuOpen=false;render();root.querySelector('#fmProducts')?.scrollIntoView({behavior:'smooth',block:'start'});
   });
-  function notice(msg) {
-    const old=document.getElementById('marketToast');if(old)old.remove();
-    const el=document.createElement('div');el.id='marketToast';el.className='market-toast';el.setAttribute('role','status');el.textContent=msg;document.body.appendChild(el);
-    setTimeout(()=>el.remove(),3000);
-  }
-  document.addEventListener('luxora:change',()=>root.querySelectorAll('[data-cart-badge]').forEach(b=>{const n=S.count();b.textContent=String(n);b.hidden=!n;}));
-  window.LuxoraMarket = {show:render};
+  document.addEventListener('luxora:change',badgeCount);
+  window.LuxoraMarket={show:render};
   render();
 })();
