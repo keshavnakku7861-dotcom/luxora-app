@@ -428,3 +428,229 @@ body.luxora-market-mode { overflow:hidden; background:#fff; }
   .fm-subpage h1 {font-size:29px;}
   .fm-subpage-lead {font-size:15px;}
 }
+
+/* Original Luxora Information-page styling, scoped to the new About page. */
+/* information page */
+#viewMarket .fm-about-legacy {
+  overflow-y: auto;
+}
+
+#viewMarket .fm-about-legacy .info-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 28px 72px;
+}
+
+#viewMarket .fm-about-legacy .vhead {
+  padding: 12px 0 24px;
+  border-bottom: 1px solid var(--gray-100);
+  margin-bottom: 28px;
+}
+
+#viewMarket .fm-about-legacy .vhead .eyebrow,
+#viewMarket .fm-about-legacy .info-section > .eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--orange-deep);
+  margin-bottom: 8px;
+}
+
+#viewMarket .fm-about-legacy .vhead h1 {
+  font-size: clamp(32px, 4.5vw, 50px);
+  line-height: 1.05;
+  letter-spacing: -.035em;
+  max-width: 760px;
+}
+
+#viewMarket .fm-about-legacy .info-hero {
+  background: var(--orange-soft);
+  border: 1px solid var(--gray-100);
+  border-radius: 22px;
+  padding: clamp(24px, 4vw, 44px);
+  margin-bottom: 42px;
+}
+
+#viewMarket .fm-about-legacy .info-kicker {
+  color: var(--orange-deep);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+#viewMarket .fm-about-legacy .info-hero h2 {
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+
+#viewMarket .fm-about-legacy .info-hero > p {
+  max-width: 760px;
+  line-height: 1.6;
+  color: var(--gray-600);
+}
+
+#viewMarket .fm-about-legacy .info-goal {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--white);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin: 22px 0 14px;
+}
+
+#viewMarket .fm-about-legacy .info-goal strong {
+  font-size: 30px;
+  color: var(--orange-deep);
+}
+
+#viewMarket .fm-about-legacy .info-goal span {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+#viewMarket .fm-about-legacy .demo-note {
+  font-size: 13px;
+  color: var(--gray-600);
+}
+
+#viewMarket .fm-about-legacy .info-section {
+  margin-top: 46px;
+}
+
+#viewMarket .fm-about-legacy .info-section > h2 {
+  font-size: clamp(25px, 3vw, 34px);
+  margin-bottom: 20px;
+  letter-spacing: -.02em;
+}
+
+#viewMarket .fm-about-legacy .info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+#viewMarket .fm-about-legacy .info-grid article {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: 16px;
+  padding: 22px;
+  display: grid;
+  gap: 6px;
+}
+
+#viewMarket .fm-about-legacy .info-grid strong {
+  font-size: 24px;
+  color: var(--orange-deep);
+}
+
+#viewMarket .fm-about-legacy .info-grid span {
+  font-size: 13px;
+  color: var(--gray-600);
+}
+
+#viewMarket .fm-about-legacy .info-features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+#viewMarket .fm-about-legacy .info-features article {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: 16px;
+  padding: 22px;
+}
+
+#viewMarket .fm-about-legacy .info-features h3 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+#viewMarket .fm-about-legacy .info-features p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--gray-600);
+}
+
+#viewMarket .fm-about-legacy .info-roadmap {
+  display: grid;
+  gap: 12px;
+}
+
+#viewMarket .fm-about-legacy .info-roadmap > div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+
+#viewMarket .fm-about-legacy .info-roadmap strong {
+  color: var(--orange-deep);
+  font-size: 17px;
+}
+
+#viewMarket .fm-about-legacy .info-roadmap span {
+  font-size: 14px;
+}
+
+#viewMarket .fm-about-legacy .info-deals {
+  background: var(--orange-soft);
+  border-radius: 20px;
+  padding: 30px;
+  margin-bottom: 20px;
+}
+
+#viewMarket .fm-about-legacy .info-deals > p:not(.eyebrow) {
+  max-width: 680px;
+  line-height: 1.6;
+  color: var(--gray-600);
+}
+
+#viewMarket .fm-about-legacy .info-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+  #viewMarket .fm-about-legacy .info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #viewMarket .fm-about-legacy .info-features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  #viewMarket .fm-about-legacy .info-page {
+    padding: 20px 16px 56px;
+  }
+
+  #viewMarket .fm-about-legacy .info-grid,
+  #viewMarket .fm-about-legacy .info-features {
+    grid-template-columns: 1fr;
+  }
+
+  #viewMarket .fm-about-legacy .info-roadmap > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  #viewMarket .fm-about-legacy .info-hero,
+  #viewMarket .fm-about-legacy .info-deals {
+    padding: 22px;
+  }
+}
+
+/* Match the existing Information page without changing the new store navigation. */
+#viewMarket .fm-about-legacy .info-page { width:100%; }
