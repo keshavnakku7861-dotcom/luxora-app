@@ -39,6 +39,7 @@
   }
   function route() {
     const r = parse(), Shop = window.LuxoraShop;
+    document.body.classList.toggle('luxora-market-mode', r.view === 'market');
     for (const k in views) views[k].hidden = k !== r.view;
     for (const k in nav) { const on = k === r.view; nav[k].classList.toggle('on', on); on ? nav[k].setAttribute('aria-current', 'page') : nav[k].removeAttribute('aria-current'); }
     if (r.view === 'market') { document.title = 'Shop at Luxora'; window.LuxoraMarket.show(); }
