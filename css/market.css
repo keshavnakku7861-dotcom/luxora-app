@@ -405,3 +405,26 @@ body.luxora-market-mode { overflow:hidden; background:#fff; }
   .fm-detail-crumb {margin-bottom:16px;}
   .fm-detail-add {max-width:none;}
 }
+
+
+/* Sale and About remain within the new white-and-green Luxora storefront. */
+.fm-subpage {padding:32px 0 85px;min-height:55vh;}
+.fm-subpage h1 {font-size:clamp(30px,3.5vw,46px);line-height:1.13;letter-spacing:-1.2px;color:#07422f;margin:0 0 13px;font-weight:800;}
+.fm-subpage-lead {font-size:16px;color:#63776a;line-height:1.7;margin:0 0 32px;max-width:680px;}
+.fm-sale-old {font-size:12px;color:#86948d;margin-left:auto;white-space:nowrap;}
+.fm-subpage-empty {padding:32px;border:1px solid #dce7df;border-radius:18px;background:#fcfffc;}
+.fm-subpage-empty h2 {font-size:21px;margin:0 0 12px;color:#174b34;}
+.fm-subpage-empty p {color:#6d8274;}
+.fm-subpage-empty a {display:inline-block;margin-top:9px;color:#006a46!important;font-weight:750;}
+.fm-about-panel {max-width:850px;background:linear-gradient(130deg,#f2faf5,#fff 66%);border:1px solid #e6eee8;border-radius:24px;padding:clamp(28px,5vw,64px);}
+.fm-about-kicker {color:#00704a;font-size:12px;font-weight:800;letter-spacing:2px;margin:0 0 16px;}
+.fm-about-panel>.fm-subpage-lead {font-size:19px;color:#315d46;margin-bottom:18px;font-weight:550;}
+.fm-about-panel>p:not(.fm-about-kicker):not(.fm-subpage-lead) {font-size:15px;line-height:1.8;color:#61766a;max-width:680px;margin:0 0 18px;}
+.fm-about-shop {display:inline-flex;align-items:center;gap:12px;border-radius:28px;background:#00633f;color:white!important;padding:14px 22px;font-size:14px;font-weight:750;margin-top:13px;}
+.fm-about-shop:hover {background:#008858;}
+@media(max-width:600px) {
+  .fm-subpage {padding:21px 0 52px;}
+  .fm-about-panel {padding:25px 20px;border-radius:16px;}
+  .fm-subpage h1 {font-size:29px;}
+  .fm-subpage-lead {font-size:15px;}
+}
