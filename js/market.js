@@ -94,7 +94,7 @@
     if(q) planned=planned.filter(p=>match(p[0],q));
     let cards='';
     if(dept==='all' || dept==='electronics') cards+=real.slice(0,q?30:10).map(electronicCard).join('');
-    if(dept!=='electronics') cards+=planned.slice(0,q?30:dept==='all'?5:15).map(previewCard).join('');
+    if(dept!=='electronics') cards+=planned.slice(0,q?30:dept==='all'?6:15).map(previewCard).join('');
     const heading=q?'Search results':dept==='all'?'Popular Products':departments.find(d=>d[0]===dept)?.[1]||'Products';
     return '<section class="fm-products" id="fmProducts"><div class="fm-section-header"><div><h2>'+esc(heading)+'</h2>'+
       '<p>'+ (dept==='all'?'Explore Luxora products and categories':'Products from your selected department')+'</p></div><a href="#/shop">View All <span aria-hidden="true">→</span></a></div>'+
