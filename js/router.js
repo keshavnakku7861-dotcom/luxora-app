@@ -3,6 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s), S = window.LuxoraStore;
   const views = {
+  market: $('#viewMarket'),
   assistant: $('#viewAssistant'),
   saved: $('#viewSaved'),
   shop: $('#viewShop'),
@@ -18,13 +19,15 @@
   settings: $('#navSettings'),
   info: $('#navInfo'),
   news: $('#navNews'),
-  help: $('#navHelp')
+  help: $('#navHelp'),
+  market: $('#navHome')
 };
   let prev = '#/shop', cartOpen = false;
 
   function parse() {
     const raw = location.hash || '#/assistant', [path, qs] = raw.split('?'), query = Object.fromEntries(new URLSearchParams(qs || ''));
     const seg = path.replace(/^#\/?/, '').split('/');
+    if (seg[0] === 'market') return { view: 'market', query };
     if (seg[0] === 'saved') return { view: 'saved', query };
     if (seg[0] === 'settings') return { view: 'settings', query };
      if (seg[0] === 'info') return { view: 'info', query };
@@ -32,13 +35,14 @@
      if (seg[0] === 'help') return { view: 'help', query };
     if (seg[0] === 'cart') return { view: 'shop', cart: true, query };
     if (seg[0] === 'shop') return { view: 'shop', pid: seg[1] === 'p' ? seg[2] : null, query };
-    return { view: 'assistant', query };
+    return { view: 'market', query };
   }
   function route() {
     const r = parse(), Shop = window.LuxoraShop;
     for (const k in views) views[k].hidden = k !== r.view;
     for (const k in nav) { const on = k === r.view; nav[k].classList.toggle('on', on); on ? nav[k].setAttribute('aria-current', 'page') : nav[k].removeAttribute('aria-current'); }
-    if (r.view === 'assistant') { document.title = 'AI Assistant - Luxora'; window.LuxoraAssistant.refresh(); }
+    if (r.view === 'market') { document.title = 'Shop at Luxora'; window.LuxoraMarket.show(); }
+    else if (r.view === 'assistant') { document.title = 'AI Assistant - Luxora'; window.LuxoraAssistant.refresh(); }
     else if (r.view === 'settings') { document.title = 'Settings - Luxora'; views.settings.scrollTop = 0; }
        else if (r.view === 'info') { document.title = 'Information - Luxora'; views.info.scrollTop = 0; }
           else if (r.view === 'news') { document.title = "What's New - Luxora"; views.news.scrollTop = 0; }
@@ -56,7 +60,7 @@
   }
   window.addEventListener('hashchange', route);
   /* clicking Home while already on it starts a fresh chat */
-  nav.assistant.addEventListener('click', e => { if (parse().view === 'assistant') { e.preventDefault(); location.reload(); } });
+  // Home now opens the multi-category marketplace, while AI remains available at #/assistant.
   /* Help Center: topic rows open their answer in place (no hash change, so routing is untouched); search filters topics;
      the Contact card's ask box hands the question to the Assistant chat */
   views.help.addEventListener('click', e => {
@@ -88,7 +92,7 @@
     inp.value = ''; location.hash = '#/assistant';
     setTimeout(() => { const m = $('#msg'), c = $('#composer'); if (m && c) { m.value = q; c.requestSubmit(); } }, 0);
   });
-  if (!location.hash) history.replaceState(null, '', location.pathname + location.search + '#/assistant');
+  if (!location.hash) history.replaceState(null, '', location.pathname + location.search + '#/market');
   route();
  
 
