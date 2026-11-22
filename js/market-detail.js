@@ -9,7 +9,7 @@
   function selected() {
     const path = (location.hash || '').replace(/^#\/?/, '').split('?')[0].split('/');
     if(path[0] !== 'market') return null;
-    if(['sale','about','cart'].includes(path[1])) return {kind:path[1]};
+    if(['sale','about','cart','wishlist'].includes(path[1])) return {kind:path[1]};
     if(!['p','item'].includes(path[1]) || !path[2]) return null;
     let key;
     try { key = decodeURIComponent(path.slice(2).join('/')); } catch { return {kind:'missing'}; }
@@ -105,7 +105,9 @@
     return '<section class="fm-detail" aria-label="'+esc(name)+'">'+
       '<nav class="fm-detail-crumb" aria-label="Breadcrumb"><a href="#/market">← Back to products</a><span>/</span><span>'+esc(category)+'</span></nav>'+
       '<div class="fm-detail-layout"><div class="fm-detail-image '+(live?'fm-detail-image--live':'fm-detail-image--preview')+'">'+photo+'</div>'+
-      '<div class="fm-detail-copy"><p class="fm-detail-category">'+esc(category)+'</p><h1>'+esc(name)+'</h1>'+info+'</div></div></section>';
+      '<div class="fm-detail-copy"><p class="fm-detail-category">'+esc(category)+'</p><h1>'+esc(name)+'</h1>'+
+      (live?'<button type="button" class="fm-detail-save" data-fm-save="'+esc(p.id)+'" data-fm-name="'+esc(p.name)+'" aria-pressed="'+S.isSaved(p.id)+'" aria-label="'+(S.isSaved(p.id)?'Remove ':'Save ')+esc(p.name)+(S.isSaved(p.id)?' from wishlist':' to wishlist')+'">'+(S.isSaved(p.id)?'♥':'♡')+'</button>':'')+
+      info+'</div></div></section>';
   }
   function notify(text) {
     document.getElementById('fmProductToast')?.remove();
@@ -150,7 +152,7 @@
       const sel=selected(), view=document.getElementById('viewMarket');
       if(sel && !wasDetail)catalogScroll=view.scrollTop;
       if(sel) {
-        const content=sel.kind==='sale'?salePage():sel.kind==='about'?aboutPage():sel.kind==='cart'?window.LuxoraMarketCart.render(root,model):productDetails(sel);
+        const content=sel.kind==='sale'?salePage():sel.kind==='about'?aboutPage():sel.kind==='cart'?window.LuxoraMarketCart.render(root,model):sel.kind==='wishlist'?window.LuxoraMarketWishlist.render(root,model):productDetails(sel);
         root.querySelector('.fm-container').innerHTML=content;
         view.scrollTop=0;
       } else if(wasDetail) {
