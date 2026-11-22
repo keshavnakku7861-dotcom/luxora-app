@@ -155,6 +155,10 @@
     e.preventDefault();
     query=root.querySelector('#marketQuery').value.trim();dept='all';menuOpen=false;render();root.querySelector('#fmProducts')?.scrollIntoView({behavior:'smooth',block:'start'});
   });
+  // If an external photo fails, show the existing product emoji instead of a broken image.
+  root.addEventListener('error', e=>{
+    if(e.target instanceof HTMLImageElement && e.target.classList.contains('fm-preview-photo')) e.target.hidden=true;
+  }, true);
   document.addEventListener('luxora:change',badgeCount);
   window.LuxoraMarket={show:render};
   render();
