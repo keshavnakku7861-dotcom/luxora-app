@@ -21,6 +21,35 @@
     toys:[['Toys & Games','🧸'],['Building Blocks','🧱'],['Toy Vehicles','🚗']],
     books:[['Books','📚'],['Notebooks','📓'],['School Supplies','🎒']]
   };
+  // Illustrative stock photos: real department inventory is not configured.
+  const PREVIEW_PHOTOS = {
+    "Fresh Vegetables": 'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?auto=format&fit=crop&w=700&h=560&q=84',
+    "Farm Eggs": 'https://images.unsplash.com/photo-1756361946794-d7976ff5f765?auto=format&fit=crop&w=700&h=560&q=84',
+    "Fresh Bananas": 'https://images.unsplash.com/photo-1737041769394-32ac2c139c1d?auto=format&fit=crop&w=700&h=560&q=84',
+    "Whole Milk": 'https://images.unsplash.com/photo-1601436423474-51738541c1b1?auto=format&fit=crop&w=700&h=560&q=84',
+    "Premium Rice": 'https://images.unsplash.com/photo-1704916029542-da6fa7bc34e7?auto=format&fit=crop&w=700&h=560&q=84',
+    "Organic Tomatoes": 'https://images.unsplash.com/photo-1783306083326-4b65b6383253?auto=format&fit=crop&w=700&h=560&q=84',
+    "Everyday Clothing": 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=700&h=560&q=84',
+    "Sneakers": 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=700&h=560&q=84',
+    "Dresses": 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=700&h=560&q=84',
+    "Handbags": 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=700&h=560&q=84',
+    "Kitchen Essentials": 'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=700&h=560&q=84',
+    "Home Furniture": 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=700&h=560&q=84',
+    "Table Lamps": 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=700&h=560&q=84',
+    "Home Decor": 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=700&h=560&q=84',
+    "Skin Care": 'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=700&h=560&q=84',
+    "Beauty Essentials": 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=700&h=560&q=84',
+    "Fragrances": 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=700&h=560&q=84',
+    "Sports Equipment": 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=700&h=560&q=84',
+    "Basketballs": 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=700&h=560&q=84',
+    "Fitness Gear": 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=700&h=560&q=84',
+    "Toys & Games": 'https://images.unsplash.com/photo-1558060370-d644479cb6f7?auto=format&fit=crop&w=700&h=560&q=84',
+    "Building Blocks": 'https://images.unsplash.com/photo-1558060370-d644479cb6f7?auto=format&fit=crop&w=700&h=560&q=84',
+    "Toy Vehicles": 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&w=700&h=560&q=84',
+    "Books": 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=700&h=560&q=84',
+    "Notebooks": 'https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=700&h=560&q=84',
+    "School Supplies": 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=700&h=560&q=84'
+  };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let dept='all', query='', menuOpen=false;
   const match = (v,q) => v.toLowerCase().includes(q.toLowerCase());
@@ -33,17 +62,21 @@
   ).join('');
   function electronicCard(p) {
     const soon = S.comingSoon(p);
-    const price = soon ? 'Coming soon' : S.money(S.promoPrice(p).price);
+    const price = soon ? '' : S.money(S.promoPrice(p).price);
     return '<article class="fm-product-card">'+
       '<a class="fm-product-photo" href="'+detailLink(p)+'" aria-label="View '+esc(p.name)+'">'+Art.product(p,0)+'</a>'+
       '<div class="fm-product-info"><small>'+esc(p.store)+'</small><h3><a href="'+detailLink(p)+'">'+esc(p.name)+'</a></h3>'+
-      '<div class="fm-product-bottom"><strong>'+esc(price)+'</strong>'+
-      (soon ? '<span class="fm-soon">Coming soon</span>' : '<button type="button" class="fm-plus" data-market-add="'+esc(p.id)+'" aria-label="Add '+esc(p.name)+' to cart">+</button>')+
+      '<div class="fm-product-bottom">'+(price?'<strong>'+esc(price)+'</strong>':'')+
+      (soon ? '<a class="fm-view-details" href="'+detailLink(p)+'">View details →</a>' : '<button type="button" class="fm-plus" data-market-add="'+esc(p.id)+'" aria-label="Add '+esc(p.name)+' to cart">+</button>')+
       '</div></div></article>';
   }
   function previewCard(p) {
-    return '<article class="fm-product-card fm-product-card--preview"><div class="fm-product-photo" role="img" aria-label="'+esc(p[0])+'"><span class="fm-preview-emoji">'+p[1]+'</span></div>'+
-      '<div class="fm-product-info"><small>Upcoming category</small><h3>'+esc(p[0])+'</h3><span class="fm-soon">Coming soon</span></div></article>';
+    const category = Object.entries(previews).find(([,items])=>items.some(x=>x[0]===p[0]))?.[0] || 'catalog';
+    const photo = PREVIEW_PHOTOS[p[0]];
+    const img = photo ? '<img class="fm-preview-photo" src="'+esc(photo)+'" alt="'+esc(p[0])+'" loading="lazy" decoding="async">' : '';
+    return '<article class="fm-product-card fm-product-card--preview">'+
+      '<div class="fm-product-photo" role="img" aria-label="'+esc(p[0])+'"><span class="fm-preview-emoji" aria-hidden="true">'+p[1]+'</span>'+img+'</div>'+
+      '<div class="fm-product-info"><small>'+esc(category.charAt(0).toUpperCase()+category.slice(1))+'</small><h3>'+esc(p[0])+'</h3></div></article>';
   }
   function mainProducts() {
     const q=query.trim();
@@ -56,7 +89,7 @@
     if(dept!=='electronics') cards+=planned.slice(0,q?30:dept==='all'?5:15).map(previewCard).join('');
     const heading=q?'Search results':dept==='all'?'Popular Products':departments.find(d=>d[0]===dept)?.[1]||'Products';
     return '<section class="fm-products" id="fmProducts"><div class="fm-section-header"><div><h2>'+esc(heading)+'</h2>'+
-      '<p>'+ (dept==='all'?'Explore Luxora products and upcoming departments':'Products from your selected department')+'</p></div><a href="#/shop">View All <span aria-hidden="true">→</span></a></div>'+
+      '<p>'+ (dept==='all'?'Explore Luxora products and categories':'Products from your selected department')+'</p></div><a href="#/shop">View All <span aria-hidden="true">→</span></a></div>'+
       '<div class="fm-products-grid">'+(cards||'<p class="fm-empty">No products found. Try another search or category.</p>')+'</div></section>';
   }
   function badgeCount() {
@@ -87,8 +120,8 @@
             '<div><span>✿</span><strong>Peak Quality</strong><small>Explore curated products</small></div>'+
             '<div><span>▣</span><strong>New Products</strong><small>Discover new arrivals</small></div>'+
             '<div><span>♧</span><strong>Flash Savings</strong><small>See current deals</small></div>'+
-            '<div><span>▧</span><strong>Delivery Pass</strong><small>Coming soon</small></div>'+
-            '<div><span>♨</span><strong>Prepared Meals</strong><small>Coming soon</small></div>'+
+            '<div><span>▧</span><strong>Delivery Pass</strong><small>Delivery information</small></div>'+
+            '<div><span>♨</span><strong>Prepared Meals</strong><small>Explore categories</small></div>'+
           '</div><p class="fm-concept-note">Design preview: same-day delivery and grocery sales are not active. Checkout for existing items is in test mode.</p>':'')+
           '<section class="fm-categories" id="marketBrowse"><div class="fm-section-header"><div><h2>Shop by Category</h2><p>Find exactly what you need</p></div></div><div class="fm-category-list">'+categories()+'</div></section>'+
           mainProducts()+
