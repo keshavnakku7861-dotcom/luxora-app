@@ -88,3 +88,16 @@ body.luxora-market-mode { background:#fff; overflow:hidden; }
 @media(max-width:1100px) { .market-links { display:none; } .market-categories { grid-template-columns:repeat(4,minmax(0,1fr)); }.market-grid{grid-template-columns:repeat(3,minmax(0,1fr));} .market-features{grid-template-columns:repeat(2,minmax(0,1fr));} }
 @media(max-width:680px){.market-nav{flex-wrap:wrap;gap:10px;padding:12px 15px}.market-brand{font-size:20px}.market-brand-mark{width:30px;height:30px}.market-search{order:3;max-width:none;flex-basis:100%;margin:0}.market-actions{margin-left:auto}.market-action{min-height:35px;padding:7px;font-size:12px}.market-wrap{padding:0 14px}.market-hero{margin-top:16px;display:block;min-height:455px}.market-hero-content{width:100%;padding:32px 27px;position:relative;z-index:1}.market-hero h1{font-size:37px;max-width:420px}.market-hero-art{width:100%;height:160px;top:auto;bottom:0;right:0;justify-content:flex-end;padding-right:22px;opacity:.8}.market-hero-art .food{font-size:81px}.market-hero-art .food:not(:first-child){margin-left:-17px}.market-hero-art .food:nth-child(2){transform:translateY(-17px)}.market-hero-art .food:nth-child(3){transform:translateY(16px)}.market-features{grid-template-columns:repeat(2,minmax(0,1fr));padding:14px 12px;gap:13px}.market-feature{align-items:flex-start}.market-feature-icon{width:33px;height:33px;font-size:17px}.market-feature p{font-size:10px}.market-category{min-height:106px;padding:9px 5px}.market-category-icon{width:54px;height:54px;font-size:28px}.market-categories{gap:7px}.market-category strong{font-size:10px}.market-section{padding-top:36px}.market-heading h2{font-size:21px}.market-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.market-card{padding:8px}.market-card h3{font-size:12px}.market-card-image .market-emoji{font-size:56px}.market-banner{margin:30px 0;display:block;padding:25px}.market-banner h2{font-size:24px}.market-banner a{display:inline-block;margin-top:16px}.market-promo{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.market-category{transition:none}}
+
+/* Photo treatment echoes the produce photograph in the GreatStack hero.
+   Image: Tom Paolini, Unsplash (Unsplash License). Emoji beneath provides an offline fallback. */
+.market-hero-art::after {
+  content:""; position:absolute; inset:0; z-index:3;
+  background-image:url("https://images.unsplash.com/photo-1635774855717-0aec182f92cc?auto=format&fit=crop&w=1100&q=82");
+  background-size:cover; background-position:center;
+  opacity:.96; -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 20%);
+  mask-image:linear-gradient(90deg,transparent 0%,#000 20%);
+}
+@media(max-width:680px) {
+  .market-hero-art::after { opacity:.7; -webkit-mask-image:linear-gradient(0deg,#000,transparent 95%); mask-image:linear-gradient(0deg,#000,transparent 95%); }
+}
