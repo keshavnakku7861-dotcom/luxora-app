@@ -257,7 +257,7 @@
         ? 'Enter a card securely with Stripe. You can also use Link if Stripe offers it in the form.'
         : view === 'saved'
           ? 'If Stripe Link is offered in the secure form, sign in to reuse payment details saved with Link. If it is not offered, select Card. Luxora never stores card numbers.'
-          : 'Choose an available wallet below. Confirming the wallet completes a Stripe TEST payment; it skips the separate review step.';
+          : 'Apple Pay, Google Pay and Stripe Link are offered where supported. Only the Stripe wallet buttons below can start a TEST payment; availability depends on your browser, wallet and domain.';
     }
     const card = $('#coCardViz'), foot = $('#coFoot'), regular = $('#peHost'), express = $('#expressHost');
     if (card) card.hidden = view !== 'card';
@@ -284,14 +284,44 @@
           emailRequired: true,
           billingAddressRequired: true,
           buttonHeight: 48,
-          paymentMethods: { paypal: 'never', amazonPay: 'never', klarna: 'never' }
+          // Stripe renders genuine wallet buttons only on supported devices.
+          // 'always' expands Apple Pay / Google Pay eligibility on browsers that
+          // otherwise hide an unconfigured wallet; it cannot bypass platform rules.
+          paymentMethods: {
+            applePay: 'always',
+            googlePay: 'always',
+            link: 'auto',
+            paypal: 'never',
+            amazonPay: 'never',
+            klarna: 'never'
+          },
+          paymentMethodOrder: ['applePay', 'googlePay', 'link'],
+          layout: { maxColumns: 2, maxRows: 2 }
         });
         expressEl.on('availablepaymentmethodschange', ({ paymentMethods }) => {
-          st.expressAvailable = !!paymentMethods && Object.keys(paymentMethods).some(k => paymentMethods[k]);
+          const wallets = paymentMethods || {};
+          // Stripe reports camelCase wallet availability; tolerate snake_case
+          // for API compatibility without assuming an absent method is usable.
+          const has = (camel, snake) => !!(wallets[camel] || wallets[snake]);
+          const methods = [
+            ['applePay','apple_pay'],
+            ['googlePay','google_pay'],
+            ['link','link']
+          ];
+          st.expressAvailable = methods.some(([camel,snake]) => has(camel,snake));
+          methods.forEach(([camel,snake]) => {
+            const status = document.querySelector('[data-wallet-status="'+camel+'"]');
+            if (status) {
+              const available = has(camel,snake);
+              status.textContent = available ? 'Available' : 'Not available here';
+              status.classList.toggle('is-available', available);
+              status.classList.toggle('is-unavailable', !available);
+            }
+          });
           const msg = $('#expressStatus');
           if (msg) msg.textContent = st.expressAvailable
-            ? 'Select a wallet to authorize your Stripe test payment.'
-            : 'No compatible wallet is available in this browser or on this domain. Use Card or Saved method instead.';
+            ? 'Use one of the available Stripe buttons above to authorize a TEST payment. Other wallets may require a different device or browser.'
+            : 'No wallet is available on this device or checkout domain. Choose Card or Saved method. Your payment details are still handled by Stripe.';
         });
         expressEl.on('confirm', confirmExpress);
       } catch (error) {
