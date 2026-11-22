@@ -120,7 +120,7 @@
         '<div class="fm-header-sub"><nav class="fm-primary" aria-label="Main menu">'+
           '<a href="#/market" data-market-browse>Shop</a><div class="fm-dropdown-wrap"><button type="button" id="fmMenuToggle" aria-expanded="'+menuOpen+'" aria-controls="fmDropdown">Categories <span aria-hidden="true">⌄</span></button>'+
           '<div class="fm-dropdown" id="fmDropdown" '+(menuOpen?'':'hidden')+'>'+dropdown()+'</div></div>'+
-          '<a href="#/shop?cat=deals">Sale</a><a href="#/info">About</a></nav>'+
+          '<a href="#/market/sale">Sale</a><a href="#/market/about">About</a></nav>'+
           '<nav class="fm-secondary" aria-label="Support menu"><a href="privacy.html">Policy</a><a href="#/help">FAQs</a><a href="#/help">ⓘ &nbsp;Help &amp; Support</a></nav>'+
         '</div></div></header>'+
         '<main class="fm-container">'+
