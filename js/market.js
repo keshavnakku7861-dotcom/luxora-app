@@ -114,7 +114,7 @@
           '<form class="fm-search" role="search" id="marketSearch"><label for="marketQuery" class="sr-only">Search Luxora products</label><span aria-hidden="true" class="fm-search-icon">⌕</span><input id="marketQuery" type="search" placeholder="Search grocery items..." value="'+esc(query)+'"></form></div>'+
           '<a class="fm-logo" data-market-home href="#/market" aria-label="Luxora homepage">Luxora<span class="fm-logo-arc" aria-hidden="true"></span></a>'+
           '<div class="fm-header-right"><a href="#/saved" class="fm-utility" title="Wishlist"><span aria-hidden="true">♡</span> Wishlist</a>'+
-          '<a href="#/cart" class="fm-utility" title="Cart"><span aria-hidden="true">🛒</span> Cart <b data-cart-badge hidden>0</b></a>'+
+          '<a href="#/market/cart" class="fm-utility" title="Cart"><span aria-hidden="true">🛒</span> Cart <b data-cart-badge hidden>0</b></a>'+
           '<button type="button" class="fm-avatar" data-signin aria-label="Sign in or account">👤 <span aria-hidden="true">⌄</span></button></div>'+
         '</div>'+
         '<div class="fm-header-sub"><nav class="fm-primary" aria-label="Main menu">'+
