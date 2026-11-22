@@ -56,9 +56,10 @@
     'Whole Milk': [0,1], 'Premium Rice': [1,1], 'Organic Tomatoes': [2,1]
   };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let dept='all', query='', menuOpen=false;
+  let dept='all', query='', menuOpen=false, allProducts=false;
   const match = (v,q) => v.toLowerCase().includes(q.toLowerCase());
-  const detailLink = p => '#/shop/p/'+encodeURIComponent(p.id);
+  const detailLink = p => '#/market/p/'+encodeURIComponent(p.id);
+  const previewLink = item => '#/market/item/'+encodeURIComponent(item[0]);
   const categories = () => departments.map(([id,name,emoji]) =>
     '<button type="button" class="fm-category '+(dept===id?'selected':'')+'" data-dept="'+id+'" aria-pressed="'+(dept===id)+'"><span class="fm-category-emoji fm-category-photo fm-category-photo--'+id+'" aria-hidden="true"><span class="fm-category-fallback">'+emoji+'</span></span><strong>'+name+'</strong></button>'
   ).join('');
@@ -83,8 +84,8 @@
       ? '<span class="fm-sprite-photo fm-sprite-'+cell[0]+'-'+cell[1]+'" role="img" aria-label="'+esc(p[0])+'"></span>'
       : photo ? '<img class="fm-preview-photo" src="'+esc(photo)+'" alt="'+esc(p[0])+'" loading="lazy" decoding="async">' : '';
     return '<article class="fm-product-card fm-product-card--preview">'+
-      '<div class="fm-product-photo"><span class="fm-preview-emoji" aria-hidden="true">'+p[1]+'</span>'+picture+'</div>'+
-      '<div class="fm-product-info"><small>'+esc(category.charAt(0).toUpperCase()+category.slice(1))+'</small><h3>'+esc(p[0])+'</h3></div></article>';
+      '<a class="fm-product-photo" href="'+previewLink(p)+'" aria-label="View '+esc(p[0])+' details"><span class="fm-preview-emoji" aria-hidden="true">'+p[1]+'</span>'+picture+'</a>'+
+      '<div class="fm-product-info"><small>'+esc(category.charAt(0).toUpperCase()+category.slice(1))+'</small><h3><a href="'+previewLink(p)+'">'+esc(p[0])+'</a></h3></div></article>';
   }
   function mainProducts() {
     const q=query.trim();
@@ -93,11 +94,11 @@
     let planned = (dept==='all' ? Object.values(previews).flat() : (previews[dept]||[]));
     if(q) planned=planned.filter(p=>match(p[0],q));
     let cards='';
-    if(dept==='all' || dept==='electronics') cards+=real.slice(0,q?30:10).map(electronicCard).join('');
-    if(dept!=='electronics') cards+=planned.slice(0,q?30:dept==='all'?6:15).map(previewCard).join('');
+    if(dept==='all' || dept==='electronics') cards+=real.slice(0,(q||allProducts)?60:10).map(electronicCard).join('');
+    if(dept!=='electronics') cards+=planned.slice(0,(q||allProducts)?60:(dept==='all'?6:15)).map(previewCard).join('');
     const heading=q?'Search results':dept==='all'?'Popular Products':departments.find(d=>d[0]===dept)?.[1]||'Products';
     return '<section class="fm-products" id="fmProducts"><div class="fm-section-header"><div><h2>'+esc(heading)+'</h2>'+
-      '<p>'+ (dept==='all'?'Explore Luxora products and categories':'Products from your selected department')+'</p></div><a href="#/shop">View All <span aria-hidden="true">→</span></a></div>'+
+      '<p>'+ (dept==='all'?'Explore Luxora products and categories':'Products from your selected department')+'</p></div><a href="#/market" data-market-all>View All <span aria-hidden="true">→</span></a></div>'+
       '<div class="fm-products-grid">'+(cards||'<p class="fm-empty">No products found. Try another search or category.</p>')+'</div></section>';
   }
   function badgeCount() {
@@ -117,13 +118,13 @@
           '<button type="button" class="fm-avatar" data-signin aria-label="Sign in or account">👤 <span aria-hidden="true">⌄</span></button></div>'+
         '</div>'+
         '<div class="fm-header-sub"><nav class="fm-primary" aria-label="Main menu">'+
-          '<a href="#/shop">Shop</a><div class="fm-dropdown-wrap"><button type="button" id="fmMenuToggle" aria-expanded="'+menuOpen+'" aria-controls="fmDropdown">Categories <span aria-hidden="true">⌄</span></button>'+
+          '<a href="#/market" data-market-browse>Shop</a><div class="fm-dropdown-wrap"><button type="button" id="fmMenuToggle" aria-expanded="'+menuOpen+'" aria-controls="fmDropdown">Categories <span aria-hidden="true">⌄</span></button>'+
           '<div class="fm-dropdown" id="fmDropdown" '+(menuOpen?'':'hidden')+'>'+dropdown()+'</div></div>'+
           '<a href="#/shop?cat=deals">Sale</a><a href="#/info">About</a></nav>'+
           '<nav class="fm-secondary" aria-label="Support menu"><a href="privacy.html">Policy</a><a href="#/help">FAQs</a><a href="#/help">ⓘ &nbsp;Help &amp; Support</a></nav>'+
         '</div></div></header>'+
         '<main class="fm-container">'+
-          (home?'<section class="fm-hero" aria-label="Luxora grocery shopping promotional design"><img class="fm-hero-artwork" src="assets/luxora-reference-hero-hq.webp" alt="Luxora banner showing a shopper carrying bags of groceries, large lime-green Luxora lettering and a Fresh Vegetables promotional card"><a href="#/shop" class="fm-hero-shop" aria-label="Shop products now"><span class="sr-only">Shop Now</span></a></section>'+
+          (home?'<section class="fm-hero" aria-label="Luxora grocery shopping promotional design"><img class="fm-hero-artwork" src="assets/luxora-reference-hero-hq.webp" alt="Luxora banner showing a shopper carrying bags of groceries, large lime-green Luxora lettering and a Fresh Vegetables promotional card"><a href="#/market" data-market-browse class="fm-hero-shop" aria-label="Shop products now"><span class="sr-only">Shop Now</span></a></section>'+
           '<div class="fm-benefits" aria-label="Shopping highlights">'+
             '<div><span>✿</span><strong>Peak Quality</strong><small>Explore curated products</small></div>'+
             '<div><span>▣</span><strong>New Products</strong><small>Discover new arrivals</small></div>'+
@@ -136,6 +137,9 @@
         '</main>'+
         '<footer class="fm-footer"><span class="fm-footer-logo">Luxora</span><span>Online shopping demo · Checkout uses test payments · No real delivery orders</span><a href="#/assistant">Luxora AI</a></footer>'+
       '</div>';
+    window.LuxoraMarketDetails?.render(root,{
+      products,previews,packshots:PACKSHOT_CELLS,photos:PREVIEW_PHOTOS,store:S,art:Art
+    });
     badgeCount();
   }
   function message(t) {
@@ -145,8 +149,20 @@
   }
   root.addEventListener('click',event=>{
     const selected=event.target.closest('[data-dept]');
-    if(selected){dept=selected.dataset.dept;query='';menuOpen=false;render();root.querySelector('#fmProducts')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
-    if(event.target.closest('[data-market-home]')){dept='all';query='';menuOpen=false;render();document.getElementById('viewMarket').scrollTop=0;return;}
+    if(selected){dept=selected.dataset.dept;query='';menuOpen=false;allProducts=false;
+      if(location.hash.startsWith('#/market/'))location.hash='#/market';
+      render();root.querySelector('#fmProducts')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
+    if(event.target.closest('[data-market-home]')){dept='all';query='';menuOpen=false;allProducts=false;render();document.getElementById('viewMarket').scrollTop=0;return;}
+    if(event.target.closest('[data-market-browse]')){
+      event.preventDefault();dept='all';query='';menuOpen=false;allProducts=false;
+      if(location.hash.startsWith('#/market/'))location.hash='#/market';
+      render();root.querySelector('#fmProducts')?.scrollIntoView({behavior:'smooth',block:'start'});return;
+    }
+    if(event.target.closest('[data-market-all]')){
+      event.preventDefault();dept='all';query='';menuOpen=false;allProducts=true;
+      if(location.hash.startsWith('#/market/'))location.hash='#/market';
+      render();root.querySelector('#fmProducts')?.scrollIntoView({behavior:'smooth',block:'start'});return;
+    }
     if(event.target.closest('#fmMenuToggle')){menuOpen=!menuOpen;render();return;}
     const add=event.target.closest('[data-market-add]');
     if(add){
@@ -161,7 +177,9 @@
   root.addEventListener('submit',e=>{
     if(e.target.id!=='marketSearch')return;
     e.preventDefault();
-    query=root.querySelector('#marketQuery').value.trim();dept='all';menuOpen=false;render();root.querySelector('#fmProducts')?.scrollIntoView({behavior:'smooth',block:'start'});
+    query=root.querySelector('#marketQuery').value.trim();dept='all';menuOpen=false;allProducts=false;
+    if(location.hash.startsWith('#/market/'))location.hash='#/market';
+    render();root.querySelector('#fmProducts')?.scrollIntoView({behavior:'smooth',block:'start'});
   });
   // If an external photo fails, show the existing product emoji instead of a broken image.
   root.addEventListener('error', e=>{
