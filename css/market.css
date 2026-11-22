@@ -318,3 +318,36 @@ body.luxora-market-mode { overflow:hidden; background:#fff; }
   }
   .fm-product-card--preview .fm-sprite-photo {width:108px;height:108px;}
 }
+
+/* Realistic studio category illustrations, cropped individually from the
+   approved eight-category image sheet. Keeps the existing category tile layout. */
+.fm-category-photo {
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+  background-color:#fff0df;
+}
+.fm-category-photo::before {
+  content:"";
+  position:absolute;
+  z-index:2;
+  inset:6px 8px;
+  border-radius:12px;
+  background:#fff url('../assets/luxora-category-studio.webp') no-repeat;
+  background-size:400% 200%;
+  image-rendering:auto;
+}
+.fm-category-photo--groceries::before {background-position:0% 0%;}
+.fm-category-photo--electronics::before {background-position:33.3333% 0%;}
+.fm-category-photo--fashion::before {background-position:66.6667% 0%;}
+.fm-category-photo--home::before {background-position:100% 0%;}
+.fm-category-photo--beauty::before {background-position:0% 100%;}
+.fm-category-photo--sports::before {background-position:33.3333% 100%;}
+.fm-category-photo--toys::before {background-position:66.6667% 100%;}
+.fm-category-photo--books::before {background-position:100% 100%;}
+.fm-category-fallback {visibility:hidden;}
+.fm-category-art-failed .fm-category-photo::before {display:none;}
+.fm-category-art-failed .fm-category-fallback {visibility:visible;}
+@media(max-width:600px) {
+  .fm-category-photo::before {inset:3px 4px;border-radius:9px;}
+}
