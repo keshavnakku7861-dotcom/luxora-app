@@ -44,7 +44,7 @@
       }
       return null;
     }
-    if (src === 'cart') return { h: '', mode: 'cart', items: null, returnTo: '#/cart', method: (tab && tab.mode === 'cart' && tab.method) || 'standard' };
+    if (src === 'cart') return { h: '', mode: 'cart', items: null, returnTo: '#/market/cart', method: (tab && tab.mode === 'cart' && tab.method) || 'standard' };
     return null;
   }
   /* purge stale hand-offs (a tab that never opened, e.g. popup blocked and abandoned) */
@@ -62,15 +62,15 @@
   const checkedOf = i => { const p = byId[i.id], v = p && p.variants && p.variants[i.color]; return S.checked(v && v.checkedAt ? v : p); };
   const backHref = () => {
     if (ses && ses.returnTo) return 'app.html' + ses.returnTo;
-    if (ses && ses.mode === 'cart') return 'app.html#/cart';
+    if (ses && ses.mode === 'cart') return 'app.html#/market/cart';
     const i = ses && ses.items && ses.items[0];
     return i ? `app.html#/shop/p/${encodeURIComponent(i.id)}${byId[i.id] && byId[i.id].variants && byId[i.id].variants[i.color] ? '?c=' + encodeURIComponent(i.color) : ''}` : 'app.html#/shop';
   };
 
   /* ---------- nothing to check out ---------- */
   function emptyPage(title, text) {
-    $('#coSteps').innerHTML = ''; $('#coStage').outerHTML = `<div class="empty"><h1>${esc(title)}</h1><p>${esc(text)}</p><a class="btn" href="app.html#/shop">Back to the Luxora shop</a></div>`;
-    $('#coBack').href = 'app.html#/shop'; $('#coBack').innerHTML = '&larr; Back to Luxora'; document.title = 'Checkout - Luxora';
+    $('#coSteps').innerHTML = ''; $('#coStage').outerHTML = `<div class="empty"><h1>${esc(title)}</h1><p>${esc(text)}</p><a class="btn" href="app.html#/market">Back to the Luxora shop</a></div>`;
+    $('#coBack').href = 'app.html#/market'; $('#coBack').innerHTML = '&larr; Back to Luxora'; document.title = 'Checkout - Luxora';
   }
   if (!ses) { emptyPage('This checkout link has expired', 'Checkout links only work once, in the tab Luxora opened. Go back to the product and press Buy now again.'); return; }
   /* drop lines Luxora checkout cannot sell (same rules as the Worker) */
