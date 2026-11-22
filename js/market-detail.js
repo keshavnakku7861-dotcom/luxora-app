@@ -58,16 +58,16 @@
       '</section>';
   }
   function aboutPage() {
-    document.title='About | Luxora';
-    return '<section class="fm-subpage fm-about-page">'+
-      '<nav class="fm-detail-crumb"><a href="#/market">← Back to shopping</a></nav>'+
-      '<div class="fm-about-panel"><p class="fm-about-kicker">ABOUT LUXORA</p>'+
-      '<h1>Shopping made simpler.</h1>'+
-      '<p class="fm-subpage-lead">Luxora brings products from multiple categories together in one clean shopping experience.</p>'+
-      '<p>Explore electronics, browse grocery and lifestyle collections, and find product information in a modern, easy-to-use store.</p>'+
-      '<p>Luxora is currently a shopping-app demo. Some categories use illustrative images and do not yet offer ordering. The existing checkout uses test payments; no real orders or deliveries are placed.</p>'+
-      '<a class="fm-about-shop" href="#/market">Explore products <span aria-hidden="true">→</span></a>'+
-      '</div></section>';
+    document.title='About Luxora | Luxora';
+    // Reuse the exact Information page from the existing app.html inside the
+    // redesigned marketplace container. No navigation to the legacy #/info route.
+    const original=document.querySelector('#viewInfo .info-page');
+    if (!original) {
+      return '<section class="fm-about-legacy"><p>Information is temporarily unavailable.</p><a href="#/market">Back to shopping</a></section>';
+    }
+    return '<section class="fm-about-legacy" aria-label="About Luxora">'+
+      original.outerHTML+
+      '</section>';
   }
   function productDetails(sel) {
     if (sel.kind === 'missing') return '<section class="fm-detail-missing"><h1>Product not found</h1><p><a href="#/market">← Back to shopping</a></p></section>';
