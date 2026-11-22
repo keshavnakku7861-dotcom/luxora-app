@@ -60,7 +60,7 @@
   const match = (v,q) => v.toLowerCase().includes(q.toLowerCase());
   const detailLink = p => '#/shop/p/'+encodeURIComponent(p.id);
   const categories = () => departments.map(([id,name,emoji]) =>
-    '<button type="button" class="fm-category '+(dept===id?'selected':'')+'" data-dept="'+id+'" aria-pressed="'+(dept===id)+'"><span class="fm-category-emoji" aria-hidden="true">'+emoji+'</span><strong>'+name+'</strong></button>'
+    '<button type="button" class="fm-category '+(dept===id?'selected':'')+'" data-dept="'+id+'" aria-pressed="'+(dept===id)+'"><span class="fm-category-emoji fm-category-photo fm-category-photo--'+id+'" aria-hidden="true"><span class="fm-category-fallback">'+emoji+'</span></span><strong>'+name+'</strong></button>'
   ).join('');
   const dropdown = () => departments.map(([id,name,emoji]) =>
     '<button type="button" data-dept="'+id+'"><span aria-hidden="true">'+emoji+'</span> '+name+'</button>'
@@ -168,6 +168,10 @@
     if(e.target instanceof HTMLImageElement && e.target.classList.contains('fm-preview-photo')) e.target.hidden=true;
   }, true);
   document.addEventListener('luxora:change',badgeCount);
+  // Restore recognizable icons if the local category artwork cannot load.
+  const categoryArtwork = new Image();
+  categoryArtwork.onerror = () => root.classList.add('fm-category-art-failed');
+  categoryArtwork.src = 'assets/luxora-category-studio.webp';
   window.LuxoraMarket={show:render};
   render();
 })();
