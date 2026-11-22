@@ -351,3 +351,57 @@ body.luxora-market-mode { overflow:hidden; background:#fff; }
 @media(max-width:600px) {
   .fm-category-photo::before {inset:3px 4px;border-radius:9px;}
 }
+
+
+/* Luxora marketplace-native product detail pages.
+   The design deliberately shares the storefront's green/white visual system. */
+.fm-detail {padding:35px 0 90px;}
+.fm-detail-crumb {display:flex;align-items:center;gap:12px;color:#64746a;font-size:13px;margin:0 0 29px;}
+.fm-detail-crumb a {color:#006340!important;font-weight:700;}
+.fm-detail-crumb a:hover {text-decoration:underline;}
+.fm-detail-layout {display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);gap:clamp(28px,5vw,75px);align-items:start;}
+.fm-detail-image {position:relative;display:grid;place-items:center;background:#fff;border:1px solid #ebeeeb;border-radius:23px;min-height:460px;overflow:hidden;isolation:isolate;}
+.fm-detail-image--live img.pimg {display:block;width:78%;height:auto;max-height:410px;object-fit:contain;object-position:center;}
+.fm-detail-image--preview .fm-sprite-photo {
+  display:block;position:absolute;inset:auto;z-index:3;top:50%;left:50%;
+  width:min(370px,80%);height:auto;aspect-ratio:1/1;
+  transform:translate(-50%,-50%);
+  background-size:300% 200%;background-repeat:no-repeat;background-color:#fff;
+}
+.fm-detail-image--preview .fm-preview-photo {
+  display:block;position:absolute;inset:10%;z-index:3;
+  width:80%;height:80%;max-height:none;object-fit:contain;padding:0;background:#fff;
+}
+.fm-detail-image--preview .fm-preview-emoji {position:absolute;inset:0;display:grid;place-items:center;background:#fff;font-size:95px;}
+.fm-detail-copy {padding:20px 0;color:#173f30;}
+.fm-detail-category {font-size:13px;font-weight:700;color:#588273;margin:0 0 12px;}
+.fm-detail-copy h1 {font-size:clamp(28px,3vw,43px);line-height:1.16;letter-spacing:-1.2px;font-weight:800;color:#083e2e;margin:0 0 21px;}
+.fm-detail-price {font-size:29px;font-weight:800;color:#005d3e;margin:0 0 21px;}
+.fm-detail-description {font-size:15px;line-height:1.85;color:#54655b;margin:0 0 22px;}
+.fm-detail-highlights {padding-left:20px;color:#47594f;font-size:14px;line-height:1.7;margin:0 0 27px;}
+.fm-detail-highlights li {margin-bottom:5px;}
+.fm-detail-options {display:flex;gap:15px;align-items:end;flex-wrap:wrap;margin:24px 0 18px;}
+.fm-detail-label {display:flex;flex-direction:column;gap:8px;font-size:12px;font-weight:700;color:#264736;}
+.fm-detail-label select {border:1px solid #d8e4dc;background:#fff;min-width:135px;border-radius:11px;padding:12px 35px 12px 13px;font-size:14px;color:#153c2a;}
+.fm-detail-qty select {min-width:95px;}
+.fm-detail-add {display:flex;justify-content:center;align-items:center;gap:16px;max-width:340px;width:100%;background:#006643;color:white;border:0;border-radius:25px;padding:16px 26px;font-size:14px;font-weight:800;box-shadow:0 6px 18px #004e301d;}
+.fm-detail-add:hover {background:#008451;}
+.fm-detail-muted {max-width:440px;font-size:12px;line-height:1.7;color:#718078;margin:16px 0 0;}
+.fm-detail-missing {padding:65px 0;color:#123e29;}
+.fm-detail-missing a {color:#006f48!important;}
+@media(max-width:850px) {
+  .fm-detail-image {min-height:360px;}
+  .fm-detail-layout {gap:25px;}
+}
+@media(max-width:620px) {
+  .fm-detail {padding:22px 0 55px;}
+  .fm-detail-layout {grid-template-columns:1fr;gap:16px;}
+  .fm-detail-image {min-height:320px;border-radius:17px;}
+  .fm-detail-image--live img.pimg {width:73%;max-height:275px;}
+  .fm-detail-image--preview .fm-sprite-photo {width:min(260px,77%);}
+  .fm-detail-copy {padding:7px 3px;}
+  .fm-detail-copy h1 {font-size:29px;}
+  .fm-detail-price {font-size:25px;}
+  .fm-detail-crumb {margin-bottom:16px;}
+  .fm-detail-add {max-width:none;}
+}
