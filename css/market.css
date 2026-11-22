@@ -717,3 +717,40 @@ body.luxora-market-mode { overflow:hidden; background:#fff; }
   .fm-cart-summary {padding:20px;}
   .fm-cart-header h1 {font-size:30px;}
 }
+
+
+/* Wishlist — part of the new Luxora storefront, not the legacy saved-items view. */
+.fm-product-card {position:relative;}
+.fm-card-heart {position:absolute;right:10px;top:10px;width:32px;height:32px;border:1px solid #e1eae5;border-radius:50%;background:rgba(255,255,255,.97);box-shadow:0 2px 9px #1c382311;display:grid;place-items:center;font-size:23px;color:#35644d;z-index:6;line-height:1;}
+.fm-card-heart:hover,.fm-card-heart[aria-pressed="true"] {color:#b0404b;border-color:#f1c9cd;}
+.fm-detail-save {display:inline-flex;align-items:center;justify-content:center;border:1px solid #d8e7de;border-radius:25px;width:45px;height:42px;background:#fff;color:#1d6b48;font-size:28px;margin:0 0 19px;line-height:1;}
+.fm-detail-save[aria-pressed="true"] {color:#b0404b;border-color:#f1c9cd;}
+.fm-wishlist-page {padding:34px 0 90px;min-height:65vh;}
+.fm-wishlist-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;}
+.fm-wishlist-item {display:grid;grid-template-columns:135px minmax(0,1fr);gap:16px;padding:18px;border:1px solid #e5ede7;border-radius:18px;background:#fff;min-width:0;box-shadow:0 4px 22px #0b412709;}
+.fm-wishlist-image {grid-row:span 2;width:135px;height:135px;display:grid;place-items:center;overflow:hidden;background:#fff;border-radius:12px;}
+.fm-wishlist-image img.pimg {display:block;max-width:120px;max-height:120px;width:100%;height:100%;object-fit:contain;}
+.fm-wishlist-item-text {min-width:0;}
+.fm-wishlist-item-text small {font-size:12px;color:#718778;display:block;margin:2px 0 8px;}
+.fm-wishlist-item-text h2 {font-size:16px;line-height:1.5;font-weight:750;margin:0 0 8px;color:#143e2a;}
+.fm-wishlist-item-text h2 a {color:inherit;}
+.fm-wishlist-item-text h2 a:hover {color:#007247;}
+.fm-wishlist-options {font-size:12px;color:#7b8a80;margin:0 0 10px;}
+.fm-wishlist-price {font-size:17px;font-weight:800;color:#006543;}
+.fm-wishlist-actions {grid-column:2;display:flex;flex-wrap:wrap;gap:11px;align-items:center;justify-content:flex-start;}
+.fm-wishlist-move {background:#006542;border:0;color:#fff!important;border-radius:25px;padding:12px 20px;font-size:12px;font-weight:800;display:inline-flex;gap:9px;align-items:center;justify-content:center;text-decoration:none;}
+.fm-wishlist-move:hover {background:#008753;color:#fff!important;}
+.fm-wishlist-remove {background:transparent;border:0;color:#a64a3f;font-size:12px;font-weight:700;padding:9px 4px;text-decoration:underline;text-underline-offset:3px;}
+.fm-wishlist-empty {max-width:700px;}
+.fm-wishlist-empty-icon {color:#006b47;font-size:62px;margin-bottom:15px;line-height:1;}
+@media(max-width:950px){.fm-wishlist-grid {grid-template-columns:1fr;}}
+@media(max-width:620px){
+  .fm-wishlist-page {padding:22px 0 58px;}
+  .fm-wishlist-item {grid-template-columns:100px minmax(0,1fr);gap:10px;padding:13px;}
+  .fm-wishlist-image {width:100px;height:100px;}
+  .fm-wishlist-image img.pimg {max-width:90px;max-height:90px;}
+  .fm-wishlist-item-text h2 {font-size:14px;}
+  .fm-wishlist-actions {grid-column:1/-1;justify-content:flex-end;}
+  .fm-wishlist-move {padding:10px 15px;}
+  .fm-card-heart {right:7px;top:7px;width:29px;height:29px;font-size:20px;}
+}
