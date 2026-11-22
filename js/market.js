@@ -61,12 +61,19 @@
     const term=search.trim();
     let list = products.filter(eligible);
     if (term) list = list.filter(p=>match([p.name,p.store,p.category,(p.tags||[]).join(' ')].join(' '),term));
-    if (active!=='all' && active!=='electronics') list=[];
-    if (active==='all' || active==='electronics') return '<section class="market-section" id="marketProducts">'+heading(term?'Search results':'Popular Electronics',term?'Matching products in the current Luxora catalog':'Shop the electronics already listed in Luxora','<a href="#/shop">View all products →</a>')+
-      '<div class="market-grid">'+(list.length?list.slice(0,active==='all'?10:25).map(realCard).join(''):'<div class="market-empty"><h3>No products found</h3><p>Try a different search, or explore our categories.</p></div>')+'</div></section>';
+    const allPreviews = Object.values(previews).flat();
+    if (active==='all' || active==='electronics') {
+      const samples = term && active==='all' ? allPreviews.filter(p=>match(p[0],term)) : [];
+      const title = term?'Search results':'Popular Electronics';
+      const description = term ? 'Available electronics and clearly marked upcoming products' : 'Shop the electronics already listed in Luxora';
+      const content = list.slice(0,active==='all'&&!term?10:25).map(realCard).join('') +
+        samples.map(previewCard).join('');
+      return '<section class="market-section" id="marketProducts">'+heading(title,description,'<a href="#/shop">View all available electronics →</a>')+
+        '<div class="market-grid">'+(content || '<div class="market-empty"><h3>No products found</h3><p>Try a different search or department.</p></div>')+'</div></section>';
+    }
     const selection = (previews[active]||[]).filter(p=>!term || match(p[0],term));
     const title = depts.find(d=>d.id===active)?.name || 'Coming soon';
-    return '<section class="market-section" id="marketProducts">'+heading(escapeHTML(title), 'A preview of upcoming Luxora departments. Items here are not yet available for checkout.')+
+    return '<section class="market-section" id="marketProducts">'+heading(escapeHTML(title), 'A preview of upcoming Luxora departments. Items here are not available for checkout.')+
       '<div class="market-grid">'+(selection.length?selection.map(previewCard).join(''):'<div class="market-empty"><h3>No preview items matched</h3><p>Try another search or department.</p></div>')+'</div></section>';
   }
   function render() {
