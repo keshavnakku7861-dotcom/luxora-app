@@ -256,7 +256,7 @@
       info.textContent = view === 'card'
         ? 'Enter a card securely with Stripe. You can also use Link if Stripe offers it in the form.'
         : view === 'saved'
-          ? 'Sign in to Stripe Link in the secure payment form to reuse a card or other method saved to your Link account. Luxora does not store card details.'
+          ? 'If Stripe Link is offered in the secure form, sign in to reuse payment details saved with Link. If it is not offered, select Card. Luxora never stores card numbers.'
           : 'Choose an available wallet below. Confirming the wallet completes a Stripe TEST payment; it skips the separate review step.';
     }
     const card = $('#coCardViz'), foot = $('#coFoot'), regular = $('#peHost'), express = $('#expressHost');
