@@ -737,3 +737,251 @@ button.linkbtn { background: none; border: 0; padding: 0; font-size: 13px; font-
 .addrsrc { display: grid; gap: 10px; }
 .saved--other b { font-weight: 600; }
 .saved:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+
+/* ==========================================================================
+   LUXORA STOREFRONT CHECKOUT — white & green
+   Match the redesigned FreshMart-inspired Luxora homepage.
+   Visual styling only: the four-step form, prices, Stripe, and submission logic
+   are untouched. Keep order text on readable light surfaces.
+   ========================================================================== */
+:root {
+  --ink: #15392b;
+  --muted: #647b6b;
+  --faint: #758c7d;
+  --line: #dceadf;
+  --line-soft: #e8f2eb;
+  --cream: #ffffff;
+  --paper: #ffffff;
+  --page: #f4faf6;
+  --peach: #e5f4e9;
+  --peach-deep: #b7dfc8;
+  --orange: #006746;
+  --orange-deep: #004d36;
+  --orange-soft: #e1f4e8;
+  --emerald: #006746;
+  --emerald-soft: #e1f4e8;
+  --shadow: 0 18px 48px rgba(8,62,38,.09);
+  --shadow-sm: 0 7px 21px rgba(8,62,38,.055);
+}
+body { background: #fff; color:var(--ink); }
+.top {
+  background: #fff;
+  border-bottom: 1px solid #e1eee7;
+  box-shadow: 0 3px 15px rgba(6,63,39,.04);
+}
+.brand {
+  font-family: Georgia, 'Times New Roman',serif;
+  font-size: 29px;
+  font-weight: 800;
+  letter-spacing:-1.1px;
+  color:#005940;
+  position:relative;
+  line-height:1;
+  padding-bottom:5px;
+}
+.brand [data-logo] { display:none!important; }
+.brand::after {
+  content:"";
+  position:absolute;
+  left:19%; bottom:-4px;
+  width:65%;height:8px;
+  border-top:2px solid #f77b28;
+  border-radius:52% 52% 0 0;
+  transform:rotate(-2deg);
+}
+.secure,.back { color:#315642; }
+.back:hover,.change:hover,.edit-cart:hover { color:#00815a; }
+.step {color:#6d8275;}
+.step .n {border-color:#ccdfd2;color:#597665;}
+.step.is-active {color:#005f42;}
+.step.is-active .n {
+  background:#006746;
+  border-color:#006746;
+  box-shadow:0 0 0 4px #e2f5e9;
+}
+.step.is-done {color:#154c34;}
+.step.is-done .n {background:#005940;border-color:#005940;}
+.rail,.rail.is-done {background:#d1e4d7;}
+.main {
+  background:
+    radial-gradient(700px 400px at 0% 0%, rgba(165,221,183,.16), transparent 65%),
+    #fff;
+}
+.main h1 {color:#163e2c; font-weight:600;}
+.kicker {color:#006746;}
+.lead {color:#677b6d;}
+.saved {border-color:#00754c;box-shadow:var(--shadow-sm),0 0 0 3px #e6f6ed;}
+.saved[aria-checked="false"] {border-color:var(--line);box-shadow:var(--shadow-sm);}
+.saved .radio {border-color:#006746;}
+.saved .tag {color:#00593e;background:#e2f5e9;}
+.fl input,.fl select {border-color:#dbe9df;color:#193c2b;background:#fff;}
+.fl input::placeholder {color:#84978b;}
+.fl input.is-focus,.fl.is-focus input,.fl.is-focus select,.fl input:focus,.fl select:focus {
+  border-color:#00754e;
+  box-shadow:0 0 0 4px rgba(0,103,70,.13);
+}
+.fl.is-focus > span,.fl input.is-focus + span,.fl input:focus + span,.fl select:focus + span {color:#005d42;}
+.check i,.methods .on,.ship input {accent-color:#006746;}
+.methods .on,.ship label:has(input:checked) {border-color:#00754e;box-shadow:0 0 0 3px #e3f5ea;}
+.methods button:disabled {background:#f5f9f6;}
+.methods .soon {background:#e2f5e9;color:#005a3d;}
+/* Payment card visualization retains its structure, using the new palette. */
+.card-viz {
+  background:
+    radial-gradient(420px 210px at 110% -10%,rgba(173,245,123,.23),transparent 62%),
+    linear-gradient(145deg,#0a694b 0%,#004b34 65%,#063e2d 100%);
+  color:#fff;
+  box-shadow:0 20px 40px rgba(4,65,39,.2),inset 0 1px 0 rgba(255,255,255,.14);
+}
+.card-viz .brand-mini {color:#f0fbf3;}
+.card-viz .pan,.card-viz .exp {color:rgba(244,255,248,.8);}
+.card-viz .brand-mini svg {color:#bcf76b;}
+.btn:not(.btn--ghost) {
+  background:#006746;
+  color:#fff;
+  box-shadow:0 10px 20px rgba(1,99,58,.17);
+}
+.btn:not(.btn--ghost):hover {background:#008358;}
+.btn--ghost {color:#125238;border-color:#cfe5d7;}
+.btn:focus-visible,.linkbtn:focus-visible,.qty button:focus-visible,a:focus-visible,.ship label:focus-within {
+  outline:3px solid rgba(0,103,70,.35);outline-offset:2px;
+}
+.panel {
+  background:
+    radial-gradient(520px 390px at 98% -6%,rgba(132,208,151,.62),transparent 70%),
+    linear-gradient(160deg,#c0e6cd 0%,#e2f4e9 45%,#f5fbf7 100%);
+  box-shadow:inset 1px 0 0 #d4e9d9;
+  color:#143e2b;
+}
+.panel h2 {color:#214c36;}
+.hero {
+  background:#fff;
+  border:1px solid #dce9df;
+  box-shadow:0 14px 33px rgba(7,78,48,.11);
+}
+.illus {background:rgba(255,255,255,.95);border-color:#deebe1;}
+.store,.pvar,.break .muted,.secure-line,.ask span {color:#41634e;}
+.pname,.pprice,.break .total {color:#113e2b;}
+.pdate {color:#637e6a;}
+.qty,.ask {background:rgba(255,255,255,.8);border-color:rgba(19,103,66,.18);}
+.qty b,.qty button,.qty span {color:#1f553b;}
+.qty span {border-left-color:#d2e6d8;border-right-color:#d2e6d8;}
+.break,.break .total {border-top-color:#bfdac9;}
+.ask svg,.ask b,.change,.edit-cart {color:#006746;}
+.promoform input {background:#fff;border-color:#c8dfcf;}
+.promoform button {border-color:#bfd8c7;color:#185038;background:#fff;}
+.promomsg,.li__meta,.pprice s,.li__price s {color:#4f705a;}
+.ptag {background:#006746;}
+.ptag--off {color:#496b54;background:#f6fbf8;border-color:#c6decf;}
+.testnote {background:#e1f4e8;color:#375942;}
+.testnote b {color:#005d3e;}
+.notes {background:#f2faf3;border-color:#addbbd;}
+.pe,.block,.mini,.addrbar {border-color:#dceadf;}
+.stage--done .main {background:#fff;}
+@media(max-width:760px) {
+  .top {background:#fff;}
+  .brand {font-size:27px;}
+  .panel {background:linear-gradient(155deg,#d1ebda 0%,#eff9f2 100%);}
+}
+
+
+/* Stripe Link and Express Checkout methods — consistent with green storefront. */
+.methods button { min-height: 50px; height: auto; padding: 10px 9px; }
+.methods button[aria-pressed="true"] {
+  background: #f5fcf7;
+  color: #005b3d;
+  border-color: #007c52;
+  box-shadow: 0 0 0 3px #e0f4e8;
+}
+.methods button:not([aria-pressed="true"]):hover {
+  border-color: #8bbda0;
+  color: #135338;
+}
+.methods button .soon {
+  font-size: 10px;
+  border-radius: 999px;
+  padding: 3px 7px;
+  color: #006244;
+  background: #e1f5e8;
+  font-weight: 750;
+  letter-spacing: .01em;
+  text-transform: none;
+}
+.pay-mode-note {
+  border-left: 3px solid #77b894;
+  color: #4a6e55;
+  background: #f3faf6;
+  font-size: 12px;
+  line-height: 1.55;
+  border-radius: 0 10px 10px 0;
+  padding: 9px 12px;
+  min-height: 38px;
+}
+.expresshost {
+  margin-top: 15px;
+  padding: 14px 15px;
+  border: 1px solid #d7e8dc;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 13px rgba(0,77,45,.04);
+}
+.express-status {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #51715c;
+}
+.expresshost .err { margin-top: 10px; }
+.expresshost[hidden], #coFoot[hidden] { display: none!important; }
+@media(max-width:760px) {
+  .methods button {
+    font-size: 12px;
+    min-height: 68px;
+    padding: 7px 4px;
+    gap: 4px;
+  }
+  .methods button .soon { font-size: 9px; padding: 2px 5px; }
+  .pay-mode-note { font-size: 11.5px; }
+  .expresshost { padding: 12px; }
+}
+
+
+/* Only Stripe-generated wallet buttons are clickable payment controls.
+   No decorative “available” tiles: Stripe decides which buttons work. */
+.express-title {font-size:13px;font-weight:800;color:#0c573c;margin:0 0 12px;}
+.express-status {font-size:12px;line-height:1.6;color:#527260;margin:12px 0 8px;}
+.express-use-card {
+  margin-top:10px;
+  border:1px solid #b9d8c4;
+  border-radius:999px;
+  background:#fff;
+  padding:11px 19px;
+  font-size:12px;
+  font-weight:750;
+  color:#006441;
+}
+.express-use-card:hover {background:#f1f9f3;}
+.express-use-card:focus-visible {outline:3px solid rgba(0,103,70,.3);outline-offset:2px;}
+
+/* Explain how Stripe Link verification works in test mode. */
+.link-test-help {
+  font-size:12px;
+  line-height:1.6;
+  color:#315d44;
+  background:#f1f9f3;
+  border:1px solid #d4eadb;
+  border-radius:12px;
+  padding:11px 14px;
+  margin:16px 0 3px;
+}
+.link-test-help strong {color:#005c3c;}
+.link-test-help code {
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-weight:800;
+  background:#dff3e6;
+  color:#005d3b;
+  padding:2px 6px;
+  border-radius:5px;
+  letter-spacing:1px;
+}

@@ -14,12 +14,12 @@
   const products = window.LuxoraOffline.products, byId = Object.fromEntries(products.map(p => [p.id, p]));
   const STRIPE_PUBLISHABLE_KEY = 'pk_test_51UYDQKJCa6aigpcZW3Z08Ky9Wnr78e77EtmPGxjbWMEuA7xZEi6toF01gfyHmuPvGP3WqyVgwNE2vhN3hs03VWGH003aNFeHf5';
   const STRIPE_PAYMENT_URL = 'https://luxora-api.keshavnakku7861.workers.dev/api/create-payment-intent';
-  /* payment methods: only card is enabled (Stripe test card 4242 confirmed end-to-end Nov 14, 2026). The Worker's
-     PaymentIntent uses automatic_payment_methods (Dashboard list: card, klarna, link, affirm, cashapp, amazon_pay), and
-     Stripe refuses to confirm a card collected with Elements paymentMethodTypes against it, so the client hides the
-     untested Dashboard methods with excludedPaymentMethodTypes (compatible) and turns the Link / Apple Pay / Google Pay
-     wallets off. A method Keshav adds in the Dashboard later is still blocked by the payType check before review. */
-  const ENABLED_METHODS = ['card'];
+  /* Card + Link (secure Link-saved methods) are eligible in the current Worker
+     automatic_payment_methods configuration. Luxora does NOT store cards or
+     have a server-backed Stripe Customer/CustomerSession for Luxora-saved cards.
+     Express uses the same existing server-verified test PaymentIntent endpoint
+     and only offers wallet buttons supported in the shopper's browser. */
+  const ENABLED_METHODS = ['card', 'link'];
   const EXCLUDED_METHODS = ['us_bank_account', 'klarna', 'affirm', 'cashapp', 'amazon_pay'];
   const HANDOFF = 'luxora.checkout.', TAB = 'luxora.checkout.tab', MAX_AGE = 30 * 60 * 1000;
   const usd = c => '$' + (c / 100).toFixed(2);   // checkout is always in USD cents (what Stripe charges)
@@ -44,14 +44,14 @@
       }
       return null;
     }
-    if (src === 'cart') return { h: '', mode: 'cart', items: null, returnTo: '#/cart', method: (tab && tab.mode === 'cart' && tab.method) || 'standard' };
+    if (src === 'cart') return { h: '', mode: 'cart', items: null, returnTo: '#/market/cart', method: (tab && tab.mode === 'cart' && tab.method) || 'standard' };
     return null;
   }
   /* purge stale hand-offs (a tab that never opened, e.g. popup blocked and abandoned) */
   try { Object.keys(localStorage).filter(k => k.startsWith(HANDOFF) && k !== TAB).forEach(k => { try { const v = JSON.parse(localStorage.getItem(k)); if (!v || Date.now() - Number(v.at || 0) > MAX_AGE) localStorage.removeItem(k); } catch { localStorage.removeItem(k); } }); } catch {}
 
   const ses = loadSession();
-  const st = { step: 1, method: ses ? ses.method || 'standard' : 'standard', addr: null, notes: [], payType: 'card', paying: false, done: null, peReady: false, peComplete: false };
+  const st = { step: 1, method: ses ? ses.method || 'standard' : 'standard', addr: null, notes: [], payType: 'card', paymentView: 'card', paying: false, done: null, peReady: false, peComplete: false, expressAvailable: false };
   const saveTab = () => { if (ses && ses.mode === 'buy') try { sessionStorage.setItem(TAB, JSON.stringify({ ...ses, method: st.method })); } catch {} };
   /* the lines being bought: the handed-over item (buy now) or the live cart */
   const items = () => st.doneItems ? st.doneItems : ses.mode === 'cart' ? S.cart().map(i => ({ id: i.id, color: i.color, size: i.size, qty: i.qty })) : ses.items;
@@ -62,15 +62,15 @@
   const checkedOf = i => { const p = byId[i.id], v = p && p.variants && p.variants[i.color]; return S.checked(v && v.checkedAt ? v : p); };
   const backHref = () => {
     if (ses && ses.returnTo) return 'app.html' + ses.returnTo;
-    if (ses && ses.mode === 'cart') return 'app.html#/cart';
+    if (ses && ses.mode === 'cart') return 'app.html#/market/cart';
     const i = ses && ses.items && ses.items[0];
-    return i ? `app.html#/shop/p/${encodeURIComponent(i.id)}${byId[i.id] && byId[i.id].variants && byId[i.id].variants[i.color] ? '?c=' + encodeURIComponent(i.color) : ''}` : 'app.html#/shop';
+    return i ? `app.html#/market/p/${encodeURIComponent(i.id)}${byId[i.id] && byId[i.id].variants && byId[i.id].variants[i.color] ? '?c=' + encodeURIComponent(i.color) : ''}` : 'app.html#/market';
   };
 
   /* ---------- nothing to check out ---------- */
   function emptyPage(title, text) {
-    $('#coSteps').innerHTML = ''; $('#coStage').outerHTML = `<div class="empty"><h1>${esc(title)}</h1><p>${esc(text)}</p><a class="btn" href="app.html#/shop">Back to the Luxora shop</a></div>`;
-    $('#coBack').href = 'app.html#/shop'; $('#coBack').innerHTML = '&larr; Back to Luxora'; document.title = 'Checkout - Luxora';
+    $('#coSteps').innerHTML = ''; $('#coStage').outerHTML = `<div class="empty"><h1>${esc(title)}</h1><p>${esc(text)}</p><a class="btn" href="app.html#/market">Back to the Luxora shop</a></div>`;
+    $('#coBack').href = 'app.html#/market'; $('#coBack').innerHTML = '&larr; Back to Luxora'; document.title = 'Checkout - Luxora';
   }
   if (!ses) { emptyPage('This checkout link has expired', 'Checkout links only work once, in the tab Luxora opened. Go back to the product and press Buy now again.'); return; }
   /* drop lines Luxora checkout cannot sell (same rules as the Worker) */
@@ -127,7 +127,7 @@
           ${canQty ? `<div class="qty" role="group" aria-label="Quantity"><button type="button" id="qMinus" aria-label="Decrease quantity" ${l0.qty <= 1 ? 'disabled' : ''}>&minus;</button><span id="qVal" aria-live="polite">${l0.qty}</span><button type="button" id="qPlus" aria-label="Increase quantity" ${l0.qty >= Pr.MAX_QTY ? 'disabled' : ''}>+</button></div>` : `<div class="qty" aria-label="Quantity ${l0.qty}"><span style="border:0;padding:0 10px">Qty ${l0.qty}</span></div>`}
           ${st.step === 4 ? '<div class="paid">Test paid</div>' : ''}<div>${lineTag(l0, q)}</div></div>
       </div>` : `<div class="lines">${lines.map(l => `<div class="li"><div class="thumb">${imgOf(l)}</div><div><div class="li__name">${l.qty} &times; ${esc(nameOf(l.id, l.color))}</div><div class="li__meta">${esc(optsOf(l) || 'One size')}</div>${lineTag(l, q)}</div><div class="li__price">${usd(l.unitCents * l.qty)}${l.promoApplied ? `<s>${usd(l.baseUnitCents * l.qty)}</s>` : ''}</div></div>`).join('')}</div>
-        ${ses.mode === 'cart' && st.step < 3 ? '<a class="edit-cart" href="app.html#/cart" target="_blank" rel="noopener">Edit cart in Luxora</a>' : ''}${st.step === 4 ? '<div class="paid">Test paid</div>' : ''}`}
+        ${ses.mode === 'cart' && st.step < 3 ? '<a class="edit-cart" href="app.html#/market/cart" target="_blank" rel="noopener">Edit cart in Luxora</a>' : ''}${st.step === 4 ? '<div class="paid">Test paid</div>' : ''}`}
       ${promoHtml}
       <div class="break" id="coBreak">
         ${q.promoCode ? (q.discountCents > 0 ? `<div class="promo"><span>Promo ${esc(q.promoCode)}</span><span>&minus;${usd(q.discountCents)}</span></div>` : `<div class="promo promo--none"><span class="muted">Promo ${esc(q.promoCode)}: items on deal are excluded</span><span>${usd(0)}</span></div>`) : ''}
@@ -217,7 +217,7 @@
   }
 
   /* ---------- Stripe ---------- */
-  let stripe = null, elements = null, payEl = null;
+  let stripe = null, elements = null, payEl = null, expressEl = null;
   function ensureStripe() {
     if (stripe) return true;
     if (typeof window.Stripe !== 'function') return false;
@@ -228,43 +228,189 @@
     if (!ensureStripe()) { box.innerHTML = '<p class="err">Stripe could not be loaded. Check your connection, then reload this page.</p>'; return; }
     if (!elements) {
       elements = stripe.elements({ mode: 'payment', amount: quote().totalCents, currency: 'usd', excludedPaymentMethodTypes: EXCLUDED_METHODS,
-        appearance: { theme: 'stripe', variables: { colorPrimary: '#F26B1D', colorText: '#111111', borderRadius: '12px', fontFamily: 'Outfit, system-ui, sans-serif' } } });
-      /* Link, Apple Pay and Google Pay are wallets inside the card option: off until tested */
-      payEl = elements.create('payment', { layout: 'tabs', wallets: { link: 'never', applePay: 'never', googlePay: 'never' }, defaultValues: { billingDetails: { name: st.addr.name, email: st.addr.email } } });
+        appearance: { theme: 'stripe', variables: { colorPrimary: '#006746', colorText: '#15392b', borderRadius: '12px', fontFamily: 'Outfit, system-ui, sans-serif' } } });
+      /* Link is Stripe's secure saved-wallet experience. Google/Apple Pay use
+         the separate Express Checkout Element so the options don't overlap. */
+      payEl = elements.create('payment', { layout: 'tabs', wallets: { link: 'auto', applePay: 'never', googlePay: 'never' }, defaultValues: { billingDetails: { name: st.addr.name, email: st.addr.email } } });
       payEl.on('ready', () => { st.peReady = true; const w = $('#peWait'); if (w) w.hidden = true; });
       payEl.on('change', e => { st.peComplete = !!e.complete; if (e.value && e.value.type) st.payType = e.value.type; });
     }
     if (!st.peMounted) { const node = document.createElement('div'); node.id = 'peNode'; box.append(node); payEl.mount(node); st.peMounted = true; }
     if (st.peReady) { const w = $('#peWait'); if (w) w.hidden = true; }
   }
+  /* The second mode uses Link's existing saved wallet, NOT browser-saved cards.
+     Express wallet buttons are rendered by Stripe only when supported by the
+     device, Stripe test account, registered domain and payment method settings. */
+  function paymentView(view) {
+    if (!['card', 'saved', 'express'].includes(view)) return;
+    st.paymentView = view;
+    ['card', 'saved', 'express'].forEach(name => {
+      const btn = $('#method' + name[0].toUpperCase() + name.slice(1));
+      if (!btn) return;
+      const on = name === view;
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-pressed', String(on));
+    });
+    const info = $('#payModeNote');
+    if (info) {
+      info.textContent = view === 'card'
+        ? 'Enter a card securely with Stripe. You can also use Link if Stripe offers it in the form.'
+        : view === 'saved'
+          ? 'Stripe Link test mode: if prompted for an email verification code, enter 000000. No email is sent. Link securely handles saved methods; Luxora never stores card numbers.'
+          : 'Stripe Link test: enter 000000 if the Link popup asks for an email verification code. Only the Stripe payment buttons shown below can start a test payment.';
+    }
+    const card = $('#coCardViz'), foot = $('#coFoot'), regular = $('#peHost'), express = $('#expressHost');
+    if (card) card.hidden = view !== 'card';
+    if (regular) regular.hidden = view === 'express';
+    if (express) express.hidden = view !== 'express';
+    if (foot) foot.hidden = view === 'express';
+    if (view === 'express') mountExpress();
+    else mountPayment();
+  }
+  function expressError(message, event) {
+    const messageText = message || 'This wallet payment could not be completed. Try again or use Card.';
+    const el = $('#expressErr'); if (el) el.textContent = messageText;
+    if (event && typeof event.paymentFailed === 'function') {
+      try { event.paymentFailed({ reason: 'fail', message: messageText }); } catch {}
+    }
+  }
+  function mountExpress() {
+    if (!ensureStripe()) { expressError('Stripe could not be loaded. Check your connection and reload checkout.'); return; }
+    if (!elements) mountPayment();
+    if (!elements) { expressError('Stripe is not available. Try Card instead.'); return; }
+    if (!expressEl) {
+      try {
+        expressEl = elements.create('expressCheckout', {
+          emailRequired: true,
+          billingAddressRequired: true,
+          buttonHeight: 48,
+          // Only show genuine, eligible Stripe wallet buttons.
+          // 'auto' respects device, wallet and registered-domain requirements.
+          paymentMethods: {
+            applePay: 'auto',
+            googlePay: 'auto',
+            link: 'auto',
+            paypal: 'never',
+            amazonPay: 'never',
+            klarna: 'never'
+          },
+          paymentMethodOrder: ['applePay', 'googlePay', 'link'],
+          layout: { maxColumns: 2, maxRows: 2 }
+        });
+        // Stripe's event returns objects, e.g. { applePay: { available:false } }.
+        // Checking truthiness of the object incorrectly marked false as available.
+        expressEl.on('availablepaymentmethodschange', ({ paymentMethods }) => {
+          const wallets = paymentMethods || {};
+          const available = name => wallets[name] && wallets[name].available === true;
+          st.expressAvailable = !!(available('applePay') || available('googlePay') || available('link'));
+          const msg = $('#expressStatus');
+          if (msg) {
+            if (!st.expressAvailable) {
+              msg.textContent = 'No supported express wallet is available on this device or checkout domain. Choose Card or Saved method instead.';
+            } else {
+              msg.textContent = 'Tap a payment button rendered by Stripe above. If Apple Pay or Google Pay does not appear as a button, you cannot use it here. Checkout is in TEST mode.';
+            }
+          }
+        });
+        expressEl.on('loaderror', ({ error }) => {
+          expressError(error && error.message ? error.message : 'Stripe wallets could not load. Choose Card instead.');
+        });
+        expressEl.on('confirm', confirmExpress);
+      } catch (error) {
+        expressError('Express wallets could not start. Use Card or Saved method instead.');
+        return;
+      }
+    }
+    if (!st.expressMounted) {
+      const node = $('#expressWallet');
+      if (!node) return;
+      try { expressEl.mount(node); st.expressMounted = true; }
+      catch { expressError('Express wallets are not supported here. Use Card instead.'); }
+    }
+  }
+  async function confirmExpress(event) {
+    if (st.paying || st.step !== 2 || st.paymentView !== 'express') return;
+    const kind = event && event.expressPaymentType;
+    if (!['apple_pay', 'google_pay', 'link'].includes(kind)) {
+      expressError('This express wallet is not enabled in Luxora checkout. Use Card instead.', event); return;
+    }
+    if (ses.mode === 'cart' && S.reprice().length) {
+      st.notes = S.takeNotices().map(x => x.message);
+      priceChanged(); expressError('Your cart changed. Please check the updated total and select the wallet again.', event); return;
+    }
+    const q = quote();
+    if (!q.ok) { expressError('Your order needs an update before payment. Please return to the cart.', event); return; }
+    st.paying = true; st.payType = kind;
+    const fail = message => { st.paying = false; expressError(message, event); };
+    const err = $('#expressErr'); if (err) err.textContent = '';
+    try {
+      elements.update({ amount: q.totalCents });
+      const sub = await elements.submit();
+      if (sub && sub.error) return fail(sub.error.message || 'Your wallet details were not accepted.');
+      // Same server endpoint and same item/price integrity checks as Card.
+      paymentStage = 'worker-request';
+      const res = await fetch(STRIPE_PAYMENT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: q.lines.map(i => ({ id: i.id, qty: i.qty, color: i.color, size: i.size, unitPriceCents: i.unitCents })),
+          method: st.method, currency: 'usd', expectedTotalCents: q.totalCents, ...(q.promoCode ? { promoCode: q.promoCode } : {}) }) });
+      paymentStage = 'worker-response';
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 400 && data.code === 'invalid_promo') {
+        S.clearPromo('That promo code was invalid and has been removed.');
+        priceChanged(); return fail('The promo code changed. Check your updated total and try again.');
+      }
+      if (res.status === 409) {
+        if (ses.mode === 'cart') { S.reprice(); S.takeNotices(); }
+        priceChanged(); return fail('The price changed. Check your updated total and try again.');
+      }
+      if (!res.ok || !data.clientSecret) return fail(data.message || 'The test payment service is unavailable. Nothing was charged.');
+      if (typeof data.amount === 'number' && data.amount !== q.totalCents)
+        return fail('The payment amount did not match the order total. No payment was started.');
+      const ret = new URL(location.href);
+      ['payment_intent', 'payment_intent_client_secret', 'redirect_status'].forEach(key => ret.searchParams.delete(key));
+      const result = await stripe.confirmPayment({ elements, clientSecret: data.clientSecret,
+        confirmParams: { return_url: ret.toString() }, redirect: 'if_required' });
+      if (result.error) return fail(result.error.message || 'This wallet payment failed.');
+      completed(result.paymentIntent, q.totalCents);
+    } catch (error) {
+      console.warn('Luxora express checkout failed:', error && error.message);
+      fail('Unable to process this test wallet payment. Check your connection and try again. If a payment is pending, do not retry until its status is verified.');
+    }
+  }
   function stepPayment() {
     const a = st.addr;
     $('#coStage').classList.add('stage--pay');
     setMain(`<p class="kicker">Step 2 of 4</p><h1>How would you like to pay?</h1>
       <p class="lead">Enter your payment details. Stripe test mode: use a Stripe test card such as 4242 4242 4242 4242. No real money is charged.</p>
+      <p class="link-test-help"><strong>Testing Stripe Link?</strong> Enter <code>000000</code> when Stripe asks for the six-digit email code. No email is sent in test mode. If Link asks for a card, use a Stripe test card, not a real card.</p>
       <div class="stack">${notesHtml()}
         <div class="addrbar"><div><b>${esc(a.name)}</b><p>${esc(addrLine(a))}</p></div><button type="button" class="linkbtn change" id="chgAddr">Change</button></div>
         <div class="methods" role="group" aria-label="Payment method">
-          <button type="button" class="on" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg> Card</button>
-          <button type="button" disabled aria-disabled="true" title="Coming soon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V6a5 5 0 0 1 10 0v1"/></svg> Saved method <small class="soon">Soon</small></button>
-          <button type="button" disabled aria-disabled="true" title="Coming soon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 14h7l-1 7 8-11h-7l1-7Z"/></svg> Express checkout <small class="soon">Soon</small></button>
+          <button type="button" id="methodCard" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg> Card</button>
+          <button type="button" id="methodSaved" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V6a5 5 0 0 1 10 0v1"/></svg> Saved method <small class="soon">Link</small></button>
+          <button type="button" id="methodExpress" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 14h7l-1 7 8-11h-7l1-7Z"/></svg> Express checkout <small class="soon">Wallets</small></button>
         </div>
-        <div class="card-viz" aria-hidden="true"><div class="chip"></div><div class="brand-mini">${logo}Luxora</div><div class="pan">${esc(a.name).slice(0, 26)}</div><div class="nums">STRIPE TEST MODE</div><div class="exp">USD</div></div>
+        <p id="payModeNote" class="pay-mode-note" role="status"></p>
+        <div class="card-viz" id="coCardViz" aria-hidden="true"><div class="chip"></div><div class="brand-mini">${logo}Luxora</div><div class="pan">${esc(a.name).slice(0, 26)}</div><div class="nums">STRIPE TEST MODE</div><div class="exp">USD</div></div>
       </div>`, `<div class="stack stack--foot"><p class="err" id="payErr" role="alert"></p><button type="button" class="btn" id="toReview">Continue to review &rarr;</button></div>`);
     $('#chgAddr').onclick = () => go(1);
-    mountPayment();
+    $('#methodCard').onclick = () => paymentView('card');
+    $('#methodSaved').onclick = () => paymentView('saved');
+    $('#methodExpress').onclick = () => paymentView('express');
+    const useCardInstead = $('#expressUseCard');
+    if (useCardInstead) useCardInstead.onclick = () => paymentView('card');
+    paymentView(st.paymentView);
     $('#toReview').onclick = async () => {
       if (!elements) return;
       const b = $('#toReview'); b.disabled = true; $('#payErr').textContent = '';
       try {
-        if (!ENABLED_METHODS.includes(st.payType)) { $('#payErr').textContent = 'Only card payments are available right now. Please choose Card.'; b.disabled = false; return; }
+        if (!ENABLED_METHODS.includes(st.payType)) { $('#payErr').textContent = 'Choose Card or a supported Stripe Link saved method.'; b.disabled = false; return; }
         const r = await elements.submit();      // validates the details in Stripe's form; nothing is charged
         if (r && r.error) { $('#payErr').textContent = r.error.message || 'Please check your payment details.'; b.disabled = false; return; }
       } catch (e) { $('#payErr').textContent = 'Please check your payment details.'; b.disabled = false; return; }
       go(3);
     };
   }
-  const payLabel = () => ({ card: 'Card', link: 'Link', cashapp: 'Cash App Pay', us_bank_account: 'US bank account', apple_pay: 'Apple Pay', google_pay: 'Google Pay' }[st.payType] || 'Stripe payment');
+  const payLabel = () => ({ card: 'Card', link: 'Stripe Link', cashapp: 'Cash App Pay', us_bank_account: 'US bank account', apple_pay: 'Apple Pay', google_pay: 'Google Pay' }[st.payType] || 'Stripe payment');
   function stepReview() {
     const a = st.addr, q = quote();
     $('#coStage').classList.remove('stage--pay');
@@ -298,7 +444,7 @@
   }
   /* the Stripe Payment Element lives in #peHost, which is never re-rendered or moved (moving an iframe reloads it and
      Stripe then treats the element as unmounted); steps render into #coStep / #coFoot around it */
-  function setMain(html, foot = '') { $('#coStep').innerHTML = html; $('#coFoot').innerHTML = foot; $('#peHost').hidden = st.step !== 2; }
+  function setMain(html, foot = '') { $('#coStep').innerHTML = html; $('#coFoot').innerHTML = foot; $('#peHost').hidden = st.step !== 2 || st.paymentView === 'express'; $('#expressHost').hidden = st.step !== 2 || st.paymentView !== 'express'; $('#coFoot').hidden = st.step === 2 && st.paymentView === 'express'; }
   function renderMain() { ({ 1: stepAddress, 2: stepPayment, 3: stepReview, 4: stepDone })[st.step](); }
   function go(n) {
     if (n > 1 && !st.addr.name) n = 1;
@@ -315,9 +461,12 @@
     if (ses.mode === 'cart' && S.reprice().length) { st.notes = S.takeNotices().map(x => x.message); st.finErr = 'Your cart changed. Please review the updated total.'; go(3); return; }
     const q = quote();
     if (!q.ok) { st.finErr = 'This order has an item Luxora checkout cannot sell. Please go back and review it.'; go(3); return; }
-    if (!ensureStripe() || !elements || !ENABLED_METHODS.includes(st.payType)) { go(2); return; }
+    if (!ensureStripe() || !elements || st.paymentView === 'express' || !ENABLED_METHODS.includes(st.payType)) { go(2); return; }
     st.paying = true; st.finErr = ''; renderPanel(); stepReview();
     const fail = msg => { st.paying = false; st.finErr = msg; renderPanel(); stepReview(); const e = $('#finErr'); if (e) e.focus && e.scrollIntoView({ block: 'center' }); };
+    // Track the step that failed. Stripe Link verification and a reachable
+    // Cloudflare PaymentIntent API are two different parts of checkout.
+    let paymentStage = 'stripe-form';
     try {
       try { elements.update({ amount: q.totalCents }); } catch {}
       const sub = await elements.submit();
@@ -336,16 +485,35 @@
         st.notes = [data.message || 'Prices changed. Please review your updated total before paying.'];
         st.paying = false; priceChanged(); go(3); return;
       }
-      if (!res.ok || !data.clientSecret) return fail(data.message || data.error || 'Unable to start payment. Nothing was charged. Please try again.');
+      if (!res.ok || !data.clientSecret) return fail(
+        data.message || data.error || ('Luxora payment service returned HTTP ' + res.status +
+          '. Check the Cloudflare Worker payment route and its test Stripe configuration before retrying.')
+      );
       if (typeof data.amount === 'number' && data.amount !== q.totalCents) return fail('The payment amount did not match your order total, so payment was not started. Nothing was charged.');
       const ret = new URL(location.href); ret.searchParams.delete('payment_intent'); ret.searchParams.delete('payment_intent_client_secret'); ret.searchParams.delete('redirect_status');
+      paymentStage = 'stripe-confirmation';
       const r = await stripe.confirmPayment({ elements, clientSecret: data.clientSecret, confirmParams: { return_url: ret.toString() }, redirect: 'if_required' });
-      if (r.error) return fail(r.error.message || 'Payment did not go through. Nothing was charged.');
+      if (r.error) return fail(r.error.message || 'Stripe could not complete this test payment. Check the Stripe test dashboard before retrying.');
+      if (!r.paymentIntent || r.paymentIntent.status !== 'succeeded') return fail(
+        'Stripe has not confirmed this payment as successful. Check its status in the Stripe test dashboard before trying again.'
+      );
+      paymentStage = 'completed';
       completed(r.paymentIntent, q.totalCents);
     } catch (e) {
-      console.warn('Luxora checkout: payment step failed', e && (e.name + ': ' + e.message));
-      /* a Stripe.js integration error happens before anything is charged; a network error may be before or after */
-      fail(e && e.name === 'IntegrationError' ? 'Payment could not start (checkout setup error). Nothing was charged.' : 'Unable to reach the payment service. Please check your connection and try again. If you were charged, do not pay twice.');
+      // Do not log payment credentials, secrets, or the request body.
+      console.warn('Luxora checkout failed at', paymentStage, e && (e.name + ': ' + e.message));
+      if (paymentStage === 'worker-request') {
+        const origin = location.origin || new URL(location.href).origin;
+        fail('Luxora could not contact its Cloudflare payment service from ' + origin +
+          '. The Worker may be blocking this site with CORS (OPTIONS/POST), or the payment route may be down. ' +
+          'The test payment was not confirmed. Check the browser Console/Network panel and the Worker logs before retrying.');
+      } else if (paymentStage === 'stripe-confirmation') {
+        fail('Stripe test payment confirmation was interrupted. Check the payment status in your Stripe test dashboard before trying again.');
+      } else if (e && e.name === 'IntegrationError') {
+        fail('Stripe payment form setup error. Return to Payment and choose another method.');
+      } else {
+        fail('The Stripe test payment could not be completed. Check the browser Console for details and avoid repeated attempts until it is resolved.');
+      }
     }
   }
   function completed(pi, amount) {

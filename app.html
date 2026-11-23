@@ -21,13 +21,14 @@
   <link rel="stylesheet" href="css/promo.css?v=checkout20261114">
   <link rel="stylesheet" href="css/guest.css?v=pub20261119">
   <link rel="stylesheet" href="css/mobilenav.css?v=pub20261119">
+  <link rel="stylesheet" href="css/market.css?v=native-wishlist-20261122">
 </head>
 <body>
 <div class="shell">
   <aside class="rail" aria-label="Main">
     <a href="index.html" class="rail__logo" aria-label="Luxora home"><span data-logo></span></a>
     <nav class="rail__nav">
-      <a class="rail__btn on" id="navHome" href="#/assistant" aria-label="Home" title="Assistant" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10"/></svg><span class="rail__lbl" aria-hidden="true">Home</span></a>
+      <a class="rail__btn on" id="navHome" href="#/market" aria-label="Home" title="Assistant" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10"/></svg><span class="rail__lbl" aria-hidden="true">Home</span></a>
       <a class="rail__btn" id="navSaved" href="#/saved" aria-label="Saved items" title="Saved items"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg><b class="badge" data-saved-badge hidden>0</b><span class="rail__lbl" aria-hidden="true">Saved</span></a>
       <a class="rail__btn" id="navCart" href="#/shop" aria-label="Shop and cart" title="Shop &amp; cart"><svg viewBox="0 0 24 24"><path d="M3 4h2.5l2 11h10l2-8H7M9 20h.01M17 20h.01"/></svg><b class="badge" data-cart-badge hidden>0</b><span class="rail__lbl" aria-hidden="true">Shop</span></a>
       <a class="rail__btn" id="navSettings" href="#/settings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/></svg></a>
@@ -82,6 +83,8 @@
     <button type="button" class="promo__remove" id="promoRemove" hidden>Remove</button>
     <p class="promo__msg" id="promoMsg" role="status" aria-live="polite" hidden></p>
   </form>
+  <!-- GreatStack InstantMart-inspired Luxora storefront; existing assistant remains available. -->
+  <section class="view view--market" id="viewMarket" aria-label="Luxora Marketplace" hidden><div id="marketRoot"></div></section>
   <div class="view view--assistant is-empty" id="viewAssistant">
   <main class="chat">
     <header class="chat__top">
@@ -485,7 +488,11 @@
 <script src="js/saved.js?v=drop20261121"></script>
 <script src="js/settings.js?v=stabilize20261111"></script>
 <script src="js/i18n.js?v=chat20261121"></script>
-<script src="js/router.js?v=pub20261119"></script>
+<script src="js/market.js?v=native-wishlist-20261122"></script>
+<script src="js/market-detail.js?v=native-wishlist-20261122"></script>
+<script src="js/market-cart.js?v=native-cart-20261122"></script>
+<script src="js/market-wishlist.js?v=native-wishlist-20261122"></script>
+<script src="js/router.js?v=market20261122"></script>
 <script src="js/mobilenav.js?v=pub20261119"></script>
 </body>
 </html>

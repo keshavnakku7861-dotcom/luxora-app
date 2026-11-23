@@ -7,19 +7,19 @@
   <meta name="referrer" content="same-origin">
   <title>Checkout - Luxora</title>
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/checkout.css?v=guest20261119">
+  <link rel="stylesheet" href="css/checkout.css?v=link-test-code-20261123">
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="app.html#/assistant" id="coBrand"><span data-logo></span>Luxora</a>
+    <a class="brand" href="app.html#/market" id="coBrand"><span data-logo></span>Luxora</a>
     <nav class="steps" id="coSteps" aria-label="Checkout progress"></nav>
     <div class="top__right">
       <span class="secure"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="11" width="12" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Secure checkout</span>
-      <a class="back" id="coBack" href="app.html#/shop">&larr; Back to product</a>
+      <a class="back" id="coBack" href="app.html#/market/cart">&larr; Back to product</a>
     </div>
   </header>
   <div class="stage" id="coStage">
-    <main class="main" id="coMain" tabindex="-1"><div id="coStep"><p class="lead">Loading checkout&hellip;</p></div><div class="pehost" id="peHost" hidden><div class="pe" id="pe"><p class="pe__wait" id="peWait">Loading secure Stripe payment form&hellip;</p></div></div><div id="coFoot"></div></main>
+    <main class="main" id="coMain" tabindex="-1"><div id="coStep"><p class="lead">Loading checkout&hellip;</p></div><div class="pehost" id="peHost" hidden><div class="pe" id="pe"><p class="pe__wait" id="peWait">Loading secure Stripe payment form&hellip;</p></div></div><div class="expresshost" id="expressHost" hidden><div class="express-title">Secure express payment</div><div id="expressWallet" aria-label="Available Stripe wallet payment buttons"></div><p class="express-status" id="expressStatus" role="status">Checking available express wallets&hellip;</p><p class="err" id="expressErr" role="alert"></p><button class="express-use-card" type="button" id="expressUseCard">Use a card instead</button></div><div id="coFoot"></div></main>
     <aside class="panel" id="coPanel" aria-labelledby="sumTitle"></aside>
   </div>
   <div class="sr-only" id="coLive" role="status" aria-live="polite"></div>
@@ -30,6 +30,6 @@
 <script src="js/store.js?v=drop20261121"></script>
 <script src="js/deals.js?v=checkout20261114"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="js/checkout.js?v=guest20261119"></script>
+<script src="js/checkout.js?v=worker-error-diagnostics-20261123"></script>
 </body>
 </html>
