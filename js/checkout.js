@@ -257,7 +257,7 @@
         ? 'Enter a card securely with Stripe. You can also use Link if Stripe offers it in the form.'
         : view === 'saved'
           ? 'If Stripe Link is offered in the secure form, sign in to reuse payment details saved with Link. If it is not offered, select Card. Luxora never stores card numbers.'
-          : 'Apple Pay, Google Pay and Stripe Link are offered where supported. Only the Stripe wallet buttons below can start a TEST payment; availability depends on your browser, wallet and domain.';
+          : 'Use the secure payment buttons provided by Stripe below. Wallets without a payment button cannot be selected on this device.';
     }
     const card = $('#coCardViz'), foot = $('#coFoot'), regular = $('#peHost'), express = $('#expressHost');
     if (card) card.hidden = view !== 'card';
@@ -284,12 +284,11 @@
           emailRequired: true,
           billingAddressRequired: true,
           buttonHeight: 48,
-          // Stripe renders genuine wallet buttons only on supported devices.
-          // 'always' expands Apple Pay / Google Pay eligibility on browsers that
-          // otherwise hide an unconfigured wallet; it cannot bypass platform rules.
+          // Only show genuine, eligible Stripe wallet buttons.
+          // 'auto' respects device, wallet and registered-domain requirements.
           paymentMethods: {
-            applePay: 'always',
-            googlePay: 'always',
+            applePay: 'auto',
+            googlePay: 'auto',
             link: 'auto',
             paypal: 'never',
             amazonPay: 'never',
@@ -298,30 +297,23 @@
           paymentMethodOrder: ['applePay', 'googlePay', 'link'],
           layout: { maxColumns: 2, maxRows: 2 }
         });
+        // Stripe's event returns objects, e.g. { applePay: { available:false } }.
+        // Checking truthiness of the object incorrectly marked false as available.
         expressEl.on('availablepaymentmethodschange', ({ paymentMethods }) => {
           const wallets = paymentMethods || {};
-          // Stripe reports camelCase wallet availability; tolerate snake_case
-          // for API compatibility without assuming an absent method is usable.
-          const has = (camel, snake) => !!(wallets[camel] || wallets[snake]);
-          const methods = [
-            ['applePay','apple_pay'],
-            ['googlePay','google_pay'],
-            ['link','link']
-          ];
-          st.expressAvailable = methods.some(([camel,snake]) => has(camel,snake));
-          methods.forEach(([camel,snake]) => {
-            const status = document.querySelector('[data-wallet-status="'+camel+'"]');
-            if (status) {
-              const available = has(camel,snake);
-              status.textContent = available ? 'Available' : 'Not available here';
-              status.classList.toggle('is-available', available);
-              status.classList.toggle('is-unavailable', !available);
-            }
-          });
+          const available = name => wallets[name] && wallets[name].available === true;
+          st.expressAvailable = !!(available('applePay') || available('googlePay') || available('link'));
           const msg = $('#expressStatus');
-          if (msg) msg.textContent = st.expressAvailable
-            ? 'Use one of the available Stripe buttons above to authorize a TEST payment. Other wallets may require a different device or browser.'
-            : 'No wallet is available on this device or checkout domain. Choose Card or Saved method. Your payment details are still handled by Stripe.';
+          if (msg) {
+            if (!st.expressAvailable) {
+              msg.textContent = 'No supported express wallet is available on this device or checkout domain. Choose Card or Saved method instead.';
+            } else {
+              msg.textContent = 'Tap a payment button rendered by Stripe above. If Apple Pay or Google Pay does not appear as a button, you cannot use it here. Checkout is in TEST mode.';
+            }
+          }
+        });
+        expressEl.on('loaderror', ({ error }) => {
+          expressError(error && error.message ? error.message : 'Stripe wallets could not load. Choose Card instead.');
         });
         expressEl.on('confirm', confirmExpress);
       } catch (error) {
@@ -401,6 +393,8 @@
     $('#methodCard').onclick = () => paymentView('card');
     $('#methodSaved').onclick = () => paymentView('saved');
     $('#methodExpress').onclick = () => paymentView('express');
+    const useCardInstead = $('#expressUseCard');
+    if (useCardInstead) useCardInstead.onclick = () => paymentView('card');
     paymentView(st.paymentView);
     $('#toReview').onclick = async () => {
       if (!elements) return;
