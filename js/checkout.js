@@ -348,9 +348,11 @@
       const sub = await elements.submit();
       if (sub && sub.error) return fail(sub.error.message || 'Your wallet details were not accepted.');
       // Same server endpoint and same item/price integrity checks as Card.
+      paymentStage = 'worker-request';
       const res = await fetch(STRIPE_PAYMENT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: q.lines.map(i => ({ id: i.id, qty: i.qty, color: i.color, size: i.size, unitPriceCents: i.unitCents })),
           method: st.method, currency: 'usd', expectedTotalCents: q.totalCents, ...(q.promoCode ? { promoCode: q.promoCode } : {}) }) });
+      paymentStage = 'worker-response';
       const data = await res.json().catch(() => ({}));
       if (res.status === 400 && data.code === 'invalid_promo') {
         S.clearPromo('That promo code was invalid and has been removed.');
@@ -462,6 +464,9 @@
     if (!ensureStripe() || !elements || st.paymentView === 'express' || !ENABLED_METHODS.includes(st.payType)) { go(2); return; }
     st.paying = true; st.finErr = ''; renderPanel(); stepReview();
     const fail = msg => { st.paying = false; st.finErr = msg; renderPanel(); stepReview(); const e = $('#finErr'); if (e) e.focus && e.scrollIntoView({ block: 'center' }); };
+    // Track the step that failed. Stripe Link verification and a reachable
+    // Cloudflare PaymentIntent API are two different parts of checkout.
+    let paymentStage = 'stripe-form';
     try {
       try { elements.update({ amount: q.totalCents }); } catch {}
       const sub = await elements.submit();
@@ -480,16 +485,35 @@
         st.notes = [data.message || 'Prices changed. Please review your updated total before paying.'];
         st.paying = false; priceChanged(); go(3); return;
       }
-      if (!res.ok || !data.clientSecret) return fail(data.message || data.error || 'Unable to start payment. Nothing was charged. Please try again.');
+      if (!res.ok || !data.clientSecret) return fail(
+        data.message || data.error || ('Luxora payment service returned HTTP ' + res.status +
+          '. Check the Cloudflare Worker payment route and its test Stripe configuration before retrying.')
+      );
       if (typeof data.amount === 'number' && data.amount !== q.totalCents) return fail('The payment amount did not match your order total, so payment was not started. Nothing was charged.');
       const ret = new URL(location.href); ret.searchParams.delete('payment_intent'); ret.searchParams.delete('payment_intent_client_secret'); ret.searchParams.delete('redirect_status');
+      paymentStage = 'stripe-confirmation';
       const r = await stripe.confirmPayment({ elements, clientSecret: data.clientSecret, confirmParams: { return_url: ret.toString() }, redirect: 'if_required' });
-      if (r.error) return fail(r.error.message || 'Payment did not go through. Nothing was charged.');
+      if (r.error) return fail(r.error.message || 'Stripe could not complete this test payment. Check the Stripe test dashboard before retrying.');
+      if (!r.paymentIntent || r.paymentIntent.status !== 'succeeded') return fail(
+        'Stripe has not confirmed this payment as successful. Check its status in the Stripe test dashboard before trying again.'
+      );
+      paymentStage = 'completed';
       completed(r.paymentIntent, q.totalCents);
     } catch (e) {
-      console.warn('Luxora checkout: payment step failed', e && (e.name + ': ' + e.message));
-      /* a Stripe.js integration error happens before anything is charged; a network error may be before or after */
-      fail(e && e.name === 'IntegrationError' ? 'Payment could not start (checkout setup error). Nothing was charged.' : 'Unable to reach the payment service. Please check your connection and try again. If you were charged, do not pay twice.');
+      // Do not log payment credentials, secrets, or the request body.
+      console.warn('Luxora checkout failed at', paymentStage, e && (e.name + ': ' + e.message));
+      if (paymentStage === 'worker-request') {
+        const origin = location.origin || new URL(location.href).origin;
+        fail('Luxora could not contact its Cloudflare payment service from ' + origin +
+          '. The Worker may be blocking this site with CORS (OPTIONS/POST), or the payment route may be down. ' +
+          'The test payment was not confirmed. Check the browser Console/Network panel and the Worker logs before retrying.');
+      } else if (paymentStage === 'stripe-confirmation') {
+        fail('Stripe test payment confirmation was interrupted. Check the payment status in your Stripe test dashboard before trying again.');
+      } else if (e && e.name === 'IntegrationError') {
+        fail('Stripe payment form setup error. Return to Payment and choose another method.');
+      } else {
+        fail('The Stripe test payment could not be completed. Check the browser Console for details and avoid repeated attempts until it is resolved.');
+      }
     }
   }
   function completed(pi, amount) {
