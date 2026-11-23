@@ -256,8 +256,8 @@
       info.textContent = view === 'card'
         ? 'Enter a card securely with Stripe. You can also use Link if Stripe offers it in the form.'
         : view === 'saved'
-          ? 'If Stripe Link is offered in the secure form, sign in to reuse payment details saved with Link. If it is not offered, select Card. Luxora never stores card numbers.'
-          : 'Use the secure payment buttons provided by Stripe below. Wallets without a payment button cannot be selected on this device.';
+          ? 'Stripe Link test mode: if prompted for an email verification code, enter 000000. No email is sent. Link securely handles saved methods; Luxora never stores card numbers.'
+          : 'Stripe Link test: enter 000000 if the Link popup asks for an email verification code. Only the Stripe payment buttons shown below can start a test payment.';
     }
     const card = $('#coCardViz'), foot = $('#coFoot'), regular = $('#peHost'), express = $('#expressHost');
     if (card) card.hidden = view !== 'card';
@@ -379,6 +379,7 @@
     $('#coStage').classList.add('stage--pay');
     setMain(`<p class="kicker">Step 2 of 4</p><h1>How would you like to pay?</h1>
       <p class="lead">Enter your payment details. Stripe test mode: use a Stripe test card such as 4242 4242 4242 4242. No real money is charged.</p>
+      <p class="link-test-help"><strong>Testing Stripe Link?</strong> Enter <code>000000</code> when Stripe asks for the six-digit email code. No email is sent in test mode. If Link asks for a card, use a Stripe test card, not a real card.</p>
       <div class="stack">${notesHtml()}
         <div class="addrbar"><div><b>${esc(a.name)}</b><p>${esc(addrLine(a))}</p></div><button type="button" class="linkbtn change" id="chgAddr">Change</button></div>
         <div class="methods" role="group" aria-label="Payment method">
