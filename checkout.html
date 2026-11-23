@@ -7,7 +7,7 @@
   <meta name="referrer" content="same-origin">
   <title>Checkout - Luxora</title>
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/checkout.css?v=apple-google-wallets-20261122">
+  <link rel="stylesheet" href="css/checkout.css?v=real-wallet-buttons-20261123">
 </head>
 <body>
   <header class="top">
@@ -19,7 +19,7 @@
     </div>
   </header>
   <div class="stage" id="coStage">
-    <main class="main" id="coMain" tabindex="-1"><div id="coStep"><p class="lead">Loading checkout&hellip;</p></div><div class="pehost" id="peHost" hidden><div class="pe" id="pe"><p class="pe__wait" id="peWait">Loading secure Stripe payment form&hellip;</p></div></div><div class="expresshost" id="expressHost" hidden><div class="express-title">Secure express payment</div><div id="expressWallet" aria-label="Available Stripe wallet payment buttons"></div><div class="express-wallet-status" aria-label="Wallet availability on this device"><div class="wallet-chip"><strong>Apple Pay</strong><span data-wallet-status="applePay">Checking…</span></div><div class="wallet-chip"><strong>Google Pay</strong><span data-wallet-status="googlePay">Checking…</span></div><div class="wallet-chip"><strong>Stripe Link</strong><span data-wallet-status="link">Checking…</span></div></div><p class="express-status" id="expressStatus" role="status">Checking available express wallets&hellip;</p><p class="err" id="expressErr" role="alert"></p></div><div id="coFoot"></div></main>
+    <main class="main" id="coMain" tabindex="-1"><div id="coStep"><p class="lead">Loading checkout&hellip;</p></div><div class="pehost" id="peHost" hidden><div class="pe" id="pe"><p class="pe__wait" id="peWait">Loading secure Stripe payment form&hellip;</p></div></div><div class="expresshost" id="expressHost" hidden><div class="express-title">Secure express payment</div><div id="expressWallet" aria-label="Available Stripe wallet payment buttons"></div><p class="express-status" id="expressStatus" role="status">Checking available express wallets&hellip;</p><p class="err" id="expressErr" role="alert"></p><button class="express-use-card" type="button" id="expressUseCard">Use a card instead</button></div><div id="coFoot"></div></main>
     <aside class="panel" id="coPanel" aria-labelledby="sumTitle"></aside>
   </div>
   <div class="sr-only" id="coLive" role="status" aria-live="polite"></div>
@@ -30,6 +30,6 @@
 <script src="js/store.js?v=drop20261121"></script>
 <script src="js/deals.js?v=checkout20261114"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="js/checkout.js?v=apple-google-wallets-20261122"></script>
+<script src="js/checkout.js?v=real-wallet-buttons-20261123"></script>
 </body>
 </html>
