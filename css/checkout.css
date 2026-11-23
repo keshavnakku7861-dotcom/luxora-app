@@ -963,3 +963,25 @@ body { background: #fff; color:var(--ink); }
 }
 .express-use-card:hover {background:#f1f9f3;}
 .express-use-card:focus-visible {outline:3px solid rgba(0,103,70,.3);outline-offset:2px;}
+
+/* Explain how Stripe Link verification works in test mode. */
+.link-test-help {
+  font-size:12px;
+  line-height:1.6;
+  color:#315d44;
+  background:#f1f9f3;
+  border:1px solid #d4eadb;
+  border-radius:12px;
+  padding:11px 14px;
+  margin:16px 0 3px;
+}
+.link-test-help strong {color:#005c3c;}
+.link-test-help code {
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-weight:800;
+  background:#dff3e6;
+  color:#005d3b;
+  padding:2px 6px;
+  border-radius:5px;
+  letter-spacing:1px;
+}
