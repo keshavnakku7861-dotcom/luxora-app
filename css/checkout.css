@@ -947,18 +947,19 @@ body { background: #fff; color:var(--ink); }
 }
 
 
-/* Apple Pay / Google Pay / Link availability: informational status, not fake payment buttons.
-   Only real Stripe-rendered wallet buttons above these chips initiate payment. */
+/* Only Stripe-generated wallet buttons are clickable payment controls.
+   No decorative “available” tiles: Stripe decides which buttons work. */
 .express-title {font-size:13px;font-weight:800;color:#0c573c;margin:0 0 12px;}
-.express-wallet-status {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:15px 0 0;}
-.wallet-chip {display:flex;flex-direction:column;gap:5px;align-items:center;justify-content:center;
-  min-width:0;min-height:62px;padding:8px 5px;background:#f7fcf9;border:1px solid #d8e9dd;border-radius:11px;}
-.wallet-chip strong {font-size:12px;font-weight:750;color:#194937;white-space:nowrap;}
-.wallet-chip span {font-size:10px;text-align:center;color:#6b8474;line-height:1.3;}
-.wallet-chip span.is-available {color:#086943;font-weight:750;}
-.wallet-chip span.is-unavailable {color:#7d8980;}
-@media(max-width:480px){
-  .express-wallet-status {gap:5px;}
-  .wallet-chip strong {font-size:11px;}
-  .wallet-chip span {font-size:9px;}
+.express-status {font-size:12px;line-height:1.6;color:#527260;margin:12px 0 8px;}
+.express-use-card {
+  margin-top:10px;
+  border:1px solid #b9d8c4;
+  border-radius:999px;
+  background:#fff;
+  padding:11px 19px;
+  font-size:12px;
+  font-weight:750;
+  color:#006441;
 }
+.express-use-card:hover {background:#f1f9f3;}
+.express-use-card:focus-visible {outline:3px solid rgba(0,103,70,.3);outline-offset:2px;}
